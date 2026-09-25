@@ -73,12 +73,25 @@ export const TCP_CLOSE_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
-/** サイトで案内する学習順（DNS → TCP → TLS、その後に TCP の接続の終了）に並べる */
+export const SUBNET_CALCULATOR_META = {
+  id: 'subnet-calculator',
+  kind: 'custom',
+  title: { en: 'Subnet calculator', ja: 'サブネット計算' },
+  summary: {
+    en: 'How an IPv4 address splits into a network part and a host part: work out the subnet mask, network and broadcast addresses, and how many hosts fit.',
+    ja: 'IPv4 アドレスがネットワーク部とホスト部に分かれるしくみ。サブネットマスク、ネットワークアドレスとブロードキャストアドレス、入るホストの数を求める。',
+  },
+  difficulty: 'beginner',
+  minutes: 8,
+} as const satisfies ThemeMeta
+
+/** サイトで案内する学習順（DNS → TCP → TLS → TCP の接続の終了、その後に計算ツール）に並べる */
 export const THEME_META = [
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
   TCP_CLOSE_META,
+  SUBNET_CALCULATOR_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']

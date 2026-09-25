@@ -80,3 +80,13 @@ test('未知のパスは 404 のページを表示する', async ({ page }) => {
   await page.goto('en/no-such-page')
   await expect(page.getByRole('heading', { name: MESSAGES.en.notFound.title })).toBeVisible()
 })
+
+test('サブネット計算: 入力すると結果と URL が変わる', async ({ page }) => {
+  await page.goto('en/themes/subnet-calculator')
+  const address = page.getByRole('textbox', { name: 'IPv4 address' })
+  await address.fill('192.168.1.130')
+  await page.getByRole('spinbutton', { name: 'Prefix length' }).fill('26')
+  await expect(page).toHaveURL(/\?ip=192\.168\.1\.130&prefix=26$/)
+  const networkRow = page.getByRole('term').filter({ hasText: /^Network address$/ })
+  await expect(networkRow.locator('xpath=following-sibling::dd[1]')).toHaveText('192.168.1.128')
+})

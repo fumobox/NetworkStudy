@@ -1,0 +1,38 @@
+## What a subnet is
+
+An IPv4 address is 32 bits long. A **subnet** is a block of addresses that share the same leading bits. Those leading bits are the **network part**, and the rest are the **host part** that tells the devices in the subnet apart.
+
+How many bits belong to the network part is given by the **prefix length**. In **CIDR notation**, it follows the address after a slash: `192.168.1.0/24` means the first 24 bits are the network part.
+
+## Subnet masks
+
+A **subnet mask** writes the same thing as an address: 1s for the network part and 0s for the host part. `/24` is `255.255.255.0`, and `/26` is `255.255.255.192`.
+
+Taking the bitwise AND of an address and its mask clears the host part and gives the **network address**. Setting all host bits to 1 gives the **broadcast address**, which reaches every host in the subnet.
+
+## How many hosts fit
+
+A subnet with a prefix length of _p_ has 2^(32 − _p_) addresses. The network address and the broadcast address cannot be given to a host, so a `/24` has 256 − 2 = **254** usable hosts.
+
+Two small cases are different:
+
+- A **/31** has only two addresses. On a point-to-point link between two routers, both of them are used for the hosts (RFC 3021).
+- A **/32** is a single address, used to name one host.
+
+## Private addresses
+
+Three ranges are reserved for private networks and are not routed on the Internet (RFC 1918): `10.0.0.0/8`, `172.16.0.0/12`, and `192.168.0.0/16`. Home and office networks usually use them behind a router that performs NAT.
+
+Before CIDR, addresses were split into **classes** A, B, and C by their first bits, with fixed network sizes. CIDR (RFC 4632) replaced classes so that networks of any size could be allocated. The calculator still shows the class because older materials refer to it.
+
+## What to try
+
+- Enter `192.168.1.130` with a prefix length of 26 and find which subnet it belongs to.
+- Move the prefix length and watch the network part grow in the binary view.
+- Compare /30, /31, and /32.
+
+## References
+
+- [RFC 4632: Classless Inter-domain Routing (CIDR)](https://www.rfc-editor.org/rfc/rfc4632)
+- [RFC 3021: Using 31-Bit Prefixes on IPv4 Point-to-Point Links](https://www.rfc-editor.org/rfc/rfc3021)
+- [RFC 1918: Address Allocation for Private Internets](https://www.rfc-editor.org/rfc/rfc1918)
