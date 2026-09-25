@@ -90,3 +90,20 @@ test('サブネット計算: 入力すると結果と URL が変わる', async (
   const networkRow = page.getByRole('term').filter({ hasText: /^Network address$/ })
   await expect(networkRow.locator('xpath=following-sibling::dd[1]')).toHaveText('192.168.1.128')
 })
+
+test.describe('スマホの幅（390px）', () => {
+  test.use({ viewport: { width: 390, height: 844 } })
+
+  for (const meta of THEME_META) {
+    test(`${meta.id} は横にはみ出さない`, async ({ page }) => {
+      // 最終ステップは、図・表・状態がいちばん多い
+      await page.goto(`ja/themes/${meta.id}?step=99`)
+      await expect(page.getByRole('heading', { level: 1, name: meta.title.ja })).toBeVisible()
+      await expect(page.getByRole('region', { name: MESSAGES.ja.quiz.title })).toBeVisible()
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+      expect(overflow).toBe(0)
+    })
+  }
+})
