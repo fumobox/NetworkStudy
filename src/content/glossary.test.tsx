@@ -114,9 +114,10 @@ describe('用語集（docs/glossary.md）の表記', () => {
       ]),
       ...collectJapanese(CERT_CHAIN_TEXT, 'tls-handshake.CertChainPanel'),
       ...THEMES.flatMap((theme) =>
-        [...collectLocalizedTexts(theme.scenario), ...collectQuizTexts(theme.quiz)].map(
-          (entry) => ({ path: `${theme.meta.id}.${entry.path}`, text: entry.text.ja }),
-        ),
+        [
+          ...(theme.kind === 'sequence' ? collectLocalizedTexts(theme.scenario) : []),
+          ...collectQuizTexts(theme.quiz),
+        ].map((entry) => ({ path: `${theme.meta.id}.${entry.path}`, text: entry.text.ja })),
       ),
     ]
     expect(texts.length).toBeGreaterThan(100)
