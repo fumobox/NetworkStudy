@@ -24,14 +24,24 @@ const OCTET_SEPARATOR = '.'
 /** 凡例に使うビットの並び */
 const LEGEND_BITS = '1010'
 
+/** 入力中の値。base は入力したときの URL の値 */
+interface Draft<T> {
+  readonly base: T
+  readonly text: string
+}
+
 /** サブネット計算ツール。アドレスとプレフィックス長を URL のクエリ（`?ip=&prefix=`）と同期する */
 export function SubnetCalculator() {
   const t = useText()
   const baseId = useId()
   const [params, setParams] = useSearchParams()
   const query = readSubnetQuery(params)
-  // 入力中の文字列は不正でも残す。URL と計算には、最後に入力した正しいアドレスを使う
-  const [addressText, setAddressText] = useState(query.ip)
+  // 入力中の文字列は、不正でも（プレフィックス長は空でも）残す。URL と計算には、最後に入力した正しい値を使う。
+  // 下書きは、入力したときの URL の値（base）と組にして持つ。サイドバーのリンクなどで URL が外から変わったら、下書きを捨てて URL の値を表示する
+  const [addressDraft, setAddressDraft] = useState<Draft<string> | null>(null)
+  const [prefixDraft, setPrefixDraft] = useState<Draft<number> | null>(null)
+  const addressText = addressDraft?.base === query.ip ? addressDraft.text : query.ip
+  const prefixText = prefixDraft?.base === query.prefix ? prefixDraft.text : String(query.prefix)
   const address = parseIPv4(query.ip) ?? 0
   const addressInvalid = parseIPv4(addressText) === null
   const info = describeSubnet(address, query.prefix)
@@ -77,7 +87,7 @@ export function SubnetCalculator() {
             }
             onChange={(event) => {
               const text = event.target.value
-              setAddressText(text)
+              setAddressDraft({ base: query.ip, text })
               if (parseIPv4(text) !== null) {
                 writeQuery({ ip: text })
               }
@@ -101,11 +111,13 @@ export function SubnetCalculator() {
               type="number"
               min={MIN_PREFIX}
               max={MAX_PREFIX}
-              value={query.prefix}
+              value={prefixText}
               aria-describedby={ids.prefixHint}
               onChange={(event) => {
-                const prefix = Number(event.target.value)
-                if (event.target.value !== '' && isPrefixLength(prefix)) {
+                const text = event.target.value
+                setPrefixDraft({ base: query.prefix, text })
+                const prefix = Number(text)
+                if (text !== '' && isPrefixLength(prefix)) {
                   writeQuery({ prefix })
                 }
               }}

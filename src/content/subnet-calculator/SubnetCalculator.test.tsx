@@ -1,13 +1,19 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter, useLocation } from 'react-router'
+import { Link, MemoryRouter, useLocation } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { LocaleProvider, type Locale } from '@/lib/i18n'
 import { SubnetCalculator } from './SubnetCalculator'
 
 function Location() {
   const location = useLocation()
-  return <output data-testid="location">{location.search}</output>
+  return (
+    <>
+      <output data-testid="location">{location.search}</output>
+      {/* サイドバーと同じく、クエリのないテーマのページへのリンク */}
+      <Link to="/en/themes/subnet-calculator">reset</Link>
+    </>
+  )
 }
 
 function renderAt(search: string, locale: Locale = 'en') {
@@ -91,6 +97,34 @@ describe('SubnetCalculator', () => {
     // URL と結果は最後の正しいアドレスのまま
     expect(location()).toBe('?ip=10.1.2.3&prefix=24')
     expect(results()['Network address']).toBe('10.1.2.0')
+  })
+
+  it('表示したまま URL のクエリが外から変わったら、入力欄も URL の値にそろえる', async () => {
+    const user = userEvent.setup()
+    renderAt('?ip=10.1.2.3&prefix=26')
+    const input = screen.getByRole('textbox', { name: 'IPv4 address' })
+    // 入力途中（不正）のまま、クエリのないリンクで移る
+    await user.type(input, '.')
+    await user.click(screen.getByRole('link', { name: 'reset' }))
+    expect(location()).toBe('')
+    expect(input).toHaveValue('192.168.1.10')
+    expect(input).toHaveAttribute('aria-invalid', 'false')
+    expect(screen.getByRole('spinbutton', { name: 'Prefix length' })).toHaveValue(24)
+    expect(results()['Network address']).toBe('192.168.1.0')
+  })
+
+  it('プレフィックス長の数値入力は、消してから打ち直せる', async () => {
+    const user = userEvent.setup()
+    renderAt('?ip=10.20.30.40&prefix=24')
+    const prefix = screen.getByRole('spinbutton', { name: 'Prefix length' })
+    await user.clear(prefix)
+    expect(prefix).toHaveValue(null)
+    // 空の間は URL と結果を変えない
+    expect(location()).toBe('?ip=10.20.30.40&prefix=24')
+    await user.type(prefix, '8')
+    expect(prefix).toHaveValue(8)
+    expect(location()).toBe('?ip=10.20.30.40&prefix=8')
+    expect(results()['Subnet mask']).toBe('255.0.0.0')
   })
 
   it('プレフィックス長の数値入力とスライダーは連動し、URL に書き戻す', () => {
