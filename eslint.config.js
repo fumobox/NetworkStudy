@@ -8,7 +8,7 @@ import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig([
-  globalIgnores(['dist', 'coverage']),
+  globalIgnores(['dist', 'coverage', 'playwright-report', 'test-results']),
   {
     files: ['**/*.{js,cjs,mjs}'],
     extends: [js.configs.recommended],
@@ -40,8 +40,8 @@ export default defineConfig([
     },
   },
   {
-    // scripts は Node で実行する
-    files: ['scripts/**/*.ts'],
+    // scripts と e2e は Node で実行する
+    files: ['scripts/**/*.ts', 'e2e/**/*.ts', 'playwright.config.ts'],
     languageOptions: { globals: globals.node },
   },
   {

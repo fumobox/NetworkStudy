@@ -1,5 +1,7 @@
 dist
 coverage
+playwright-report
+test-results
 package-lock.json
 # ドキュメントは手で整形した表を崩さないよう対象外にする
 *.md
