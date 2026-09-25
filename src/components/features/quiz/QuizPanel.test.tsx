@@ -73,6 +73,7 @@ describe('QuizPanel', () => {
     expect(within(q2).getByRole('status')).toHaveTextContent('The answer is: Client ISS + 1')
     const chosen = within(q2).getByRole('button', { name: 'Client ISS — your answer' })
     expect(chosen).toHaveAttribute('aria-pressed', 'true')
+    expect(chosen).toHaveAttribute('aria-disabled', 'true')
     const correct = within(q2).getByRole('button', { name: 'Client ISS + 1 — correct answer' })
     // 回答後は選び直せない
     await user.click(correct)
@@ -96,14 +97,41 @@ describe('QuizPanel', () => {
     })
   })
 
-  it('保存された回答が壊れている・今の問題に合わないときは無視する', () => {
+  it('保存された回答のうち、今の問題・選択肢に合わないものは無視する', () => {
     window.localStorage.setItem(
       quizStorageKey(quiz.id),
       JSON.stringify({ answers: { q1: 'nope', gone: 'syn', q2: 'iss1' } }),
     )
     renderQuiz()
     expect(screen.getByText('1 of 2 correct')).toBeInTheDocument()
+  })
+
+  it('保存データが JSON として壊れていれば、回答なしから始める', () => {
     window.localStorage.setItem(quizStorageKey(quiz.id), '{broken')
+    renderQuiz()
+    expect(screen.getByText('0 of 2 correct')).toBeInTheDocument()
+  })
+
+  it('別のクイズに切り替わったら、そのクイズの回答を読み直す', async () => {
+    const user = userEvent.setup()
+    const other: Quiz = { ...quiz, id: 'dns-resolution', questions: quiz.questions.slice(0, 1) }
+    const { rerender } = renderQuiz()
+    await user.click(screen.getByRole('button', { name: /^SYN/ }))
+    rerender(
+      <LocaleProvider locale="en">
+        <QuizPanel quiz={other} />
+      </LocaleProvider>,
+    )
+    expect(screen.getByText('0 of 1 correct')).toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: /^FIN/ }))
+    expect(
+      JSON.parse(window.localStorage.getItem(quizStorageKey('dns-resolution')) ?? '{}'),
+    ).toEqual({
+      answers: { q1: 'fin' },
+    })
+    expect(JSON.parse(window.localStorage.getItem(quizStorageKey(quiz.id)) ?? '{}')).toEqual({
+      answers: { q1: 'syn' },
+    })
   })
 })
 

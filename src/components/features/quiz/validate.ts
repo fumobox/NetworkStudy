@@ -1,5 +1,5 @@
-import { LOCALES } from '@/lib/i18n/locale'
 import type { LocalizedText } from '@/lib/i18n/locale'
+import { findTextProblems } from '@/lib/i18n/textProblems'
 import type { Quiz } from './types'
 
 export interface QuizProblem {
@@ -51,15 +51,6 @@ export function validateQuiz(quiz: Quiz): readonly QuizProblem[] {
       problems.push({ path, message: `answerId "${question.answerId}" is not one of the choices` })
     }
   })
-  for (const { path, text } of collectQuizTexts(quiz)) {
-    for (const locale of LOCALES) {
-      const value = text[locale].trim()
-      if (value === '') {
-        problems.push({ path: `${path}.${locale}`, message: 'text is empty' })
-      } else if (/\bTODO\b|\bFIXME\b/.test(value)) {
-        problems.push({ path: `${path}.${locale}`, message: 'text contains a placeholder' })
-      }
-    }
-  }
+  problems.push(...findTextProblems(collectQuizTexts(quiz)))
   return problems
 }

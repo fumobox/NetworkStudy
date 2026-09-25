@@ -12,6 +12,11 @@ interface QuizPanelProps {
 
 /** 単一選択のクイズ。選択肢を押すと回答が確定し、正誤と解説を表示する */
 export function QuizPanel({ quiz }: QuizPanelProps) {
+  // 別のクイズに切り替わったら、回答の状態と保存先を作り直す
+  return <QuizBody key={quiz.id} quiz={quiz} />
+}
+
+function QuizBody({ quiz }: QuizPanelProps) {
   const m = useMessages()
   const titleId = useId()
   const { answers, score, answer, reset } = useQuizProgress(quiz)
@@ -70,7 +75,7 @@ function QuestionView({ question, index, total, selectedId, onAnswer }: Question
     <div role="group" aria-labelledby={promptId} className="space-y-3 rounded-lg border p-4">
       <div id={promptId}>
         <p className="text-xs text-muted-foreground">{m.quiz.question({ n: index + 1, total })}</p>
-        <p className="font-medium">{t(question.prompt)}</p>
+        <h3 className="font-medium">{t(question.prompt)}</h3>
       </div>
       <ul className="grid gap-2">
         {question.choices.map((choice) => {
@@ -97,7 +102,8 @@ function QuestionView({ question, index, total, selectedId, onAnswer }: Question
                   'h-auto w-full justify-start py-2 text-left whitespace-normal',
                   answered && correct && 'border-primary bg-accent',
                   answered && selected && !correct && 'border-destructive text-destructive',
-                  answered && 'cursor-default',
+                  // 回答後は押せないので、ホバーや押下の見た目も出さない
+                  answered && 'pointer-events-none',
                 )}
               >
                 {answered && correct && <Check aria-hidden className="text-primary" />}
