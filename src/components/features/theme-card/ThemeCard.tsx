@@ -40,9 +40,7 @@ export function ThemeCard({ theme, order, progress }: ThemeCardProps) {
           <span>{m.theme.difficulty[theme.difficulty]}</span>
           <span>{m.theme.minutes({ minutes: theme.minutes })}</span>
           {progress !== undefined && (
-            <span data-progress>
-              {progress === null ? m.home.notStarted : m.home.progress(progress)}
-            </span>
+            <span>{progress === null ? m.home.notStarted : m.home.progress(progress)}</span>
           )}
         </p>
       </div>

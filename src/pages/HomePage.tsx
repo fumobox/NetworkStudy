@@ -24,9 +24,13 @@ export function HomePage() {
             </h2>
             <p className="text-sm text-muted-foreground">{m.home.orderLead}</p>
           </div>
-          {/* THEMES は推奨の学習順に並んでいる */}
-          <ol className="grid gap-4 md:grid-cols-3">
+          {/*
+            THEMES は推奨の学習順に並んでいる。Tailwind の preflight で list-style を消すと
+            Safari（VoiceOver）はリストの意味を落とすので、role="list" で順序を伝える
+          */}
+          <ol role="list" className="grid gap-4 md:grid-cols-3">
             {THEMES.map((theme, i) => {
+              // 表示のたびに localStorage を読む（他のタブの回答は、ホームを開き直すまで反映しない）
               const answers = readQuizAnswers(theme.quiz)
               const score = scoreQuiz(theme.quiz, answers)
               return (
@@ -47,8 +51,8 @@ export function HomePage() {
             {m.home.howToTitle}
           </h2>
           <ol className="list-decimal space-y-1 pl-5 text-sm">
-            {m.home.howTo.map((item) => (
-              <li key={item}>{item}</li>
+            {m.home.howTo.map((item, i) => (
+              <li key={i}>{item}</li>
             ))}
           </ol>
         </section>

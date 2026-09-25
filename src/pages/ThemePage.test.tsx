@@ -218,9 +218,19 @@ describe('テーマへの導線', () => {
       JSON.stringify({ answers: { 'first-segment': 'syn', 'state-after-syn': 'listen' } }),
     )
     renderAt('/en')
-    const progress = [...document.querySelectorAll('[data-progress]')].map(
-      (node) => node.textContent,
+    const cards = within(screen.getByRole('region', { name: 'Where to start' })).getAllByRole(
+      'listitem',
     )
-    expect(progress).toEqual(['Quiz not taken yet', 'Quiz: 1 of 5 correct', 'Quiz not taken yet'])
+    expect(cards.map((card) => within(card).getByText(/^Quiz/).textContent)).toEqual([
+      'Quiz not taken yet',
+      'Quiz: 1 of 5 correct',
+      'Quiz not taken yet',
+    ])
+    // 学習順の番号
+    expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual([
+      '1',
+      '2',
+      '3',
+    ])
   })
 })
