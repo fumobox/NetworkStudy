@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { diagramRows, hasTimers } from './diagram'
+import { diagramRows, estimateTextWidth, hasTimers, rowLayout, sectionStartLabels } from './diagram'
 import type { Message, Step, StepEvent } from './types'
 
 const text = (en: string) => ({ en, ja: en })
@@ -74,5 +74,59 @@ describe('hasTimers', () => {
   it('タイマーがあるか', () => {
     expect(hasTimers(steps)).toBe(true)
     expect(hasTimers(steps.slice(0, 2))).toBe(false)
+  })
+})
+
+describe('estimateTextWidth', () => {
+  it('全角はフォントサイズ、半角は 0.6 倍で数える', () => {
+    expect(estimateTextWidth('ab', 10)).toBe(12)
+    expect(estimateTextWidth('クライアント', 14)).toBe(84)
+  })
+})
+
+describe('sectionStartLabels', () => {
+  const sectionA = { en: 'A', ja: 'A' }
+  const sectionB = { en: 'B', ja: 'B' }
+  const withSections: readonly Step[] = [
+    { ...step('s0', [{ kind: 'message', message: message('m0') }]), section: sectionA },
+    { ...step('s1', [{ kind: 'message', message: message('m1') }]), section: sectionA },
+    {
+      ...step('s2', [
+        { kind: 'message', message: message('m2') },
+        { kind: 'message', message: message('m3') },
+      ]),
+      section: sectionB,
+    },
+    step('s3', [{ kind: 'message', message: message('m4') }]),
+  ]
+
+  it('区間が切り替わる行にだけ名前を返す', () => {
+    const rows = diagramRows(withSections, 3)
+    expect(sectionStartLabels(withSections, rows)).toEqual([sectionA, null, sectionB, null, null])
+  })
+
+  it('区間のない行を挟んで同じ区間に戻ったら、もう一度名前を返す', () => {
+    const back: readonly Step[] = [
+      { ...step('a', [{ kind: 'message', message: message('m0') }]), section: sectionA },
+      step('b', [{ kind: 'message', message: message('m1') }]),
+      { ...step('c', [{ kind: 'message', message: message('m2') }]), section: sectionA },
+    ]
+    expect(sectionStartLabels(back, diagramRows(back, 2))).toEqual([sectionA, null, sectionA])
+  })
+})
+
+describe('rowLayout', () => {
+  it('区間の始まりの行の上に帯の高さを足す', () => {
+    const section = { en: 'A', ja: 'A' }
+    expect(
+      rowLayout([section, null, section], { top: 48, rowHeight: 56, sectionHeight: 24 }),
+    ).toEqual({
+      rowTops: [72, 128, 208],
+      bottom: 264,
+    })
+    expect(rowLayout([], { top: 48, rowHeight: 56, sectionHeight: 24 })).toEqual({
+      rowTops: [],
+      bottom: 48,
+    })
   })
 })

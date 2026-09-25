@@ -84,8 +84,8 @@ describe('tlsHandshakeScenario', () => {
       expect(steps.map((step) => step.section?.en)).toEqual([
         'Not encrypted',
         'Not encrypted',
-        ...Array<string>(6).fill('Encrypted with the handshake traffic keys'),
-        'Encrypted with the application traffic keys',
+        ...Array<string>(6).fill('Encrypted (handshake keys)'),
+        'Encrypted (application keys)',
       ])
     })
 

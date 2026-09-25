@@ -5,7 +5,16 @@ import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatSeconds, useLocale, useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { clampStepIndex } from '../derive'
-import { diagramRows, hasTimers, LANE_WIDTH, TIME_COLUMN_WIDTH, type DiagramRow } from '../diagram'
+import {
+  diagramRows,
+  estimateTextWidth,
+  hasTimers,
+  LANE_WIDTH,
+  rowLayout,
+  sectionStartLabels,
+  TIME_COLUMN_WIDTH,
+  type DiagramRow,
+} from '../diagram'
 import type { Actor, ActorId, Message, MessageId, Step, TimerEvent } from '../types'
 import { useActorName } from './useActorName'
 
@@ -18,6 +27,10 @@ const HEADER_HEIGHT = 48
 const ROW_HEIGHT = 56
 const BOTTOM_PADDING = 16
 const ARROW_SIZE = 8
+/** 区間の名前を入れる帯の高さ */
+const SECTION_HEIGHT = 24
+/** アクター名とレーンの端のあいだに空ける幅 */
+const HEADER_NAME_MARGIN = 20
 const ICON_SIZE = 14
 
 // 図の中の記号（翻訳しない）。意味は aria-label で伝える
@@ -55,14 +68,28 @@ export function SequenceDiagram({
   const laneWidth = compact ? COMPACT_LANE_WIDTH : LANE_WIDTH
   const offsetX = showElapsed ? TIME_COLUMN_WIDTH : 0
   const width = offsetX + actors.length * laneWidth
-  const height = HEADER_HEIGHT + Math.max(rows.length, 1) * ROW_HEIGHT + BOTTOM_PADDING
+  // 区間（TLS の「暗号化なし」「ハンドシェイク用の鍵で暗号化」など）の始まりの行の上に、名前を入れる
+  const sections = sectionStartLabels(steps, rows)
+  const { rowTops, bottom } = rowLayout(sections, {
+    top: HEADER_HEIGHT,
+    rowHeight: ROW_HEIGHT,
+    sectionHeight: SECTION_HEIGHT,
+  })
+  // メッセージがまだなければ、その旨を 1 行分の高さで表示する
+  const height = (rows.length === 0 ? HEADER_HEIGHT + ROW_HEIGHT : bottom) + BOTTOM_PADDING
 
   const laneX = new Map<ActorId, number>(
     actors.map((actor, i) => [actor.id, offsetX + i * laneWidth + laneWidth / 2]),
   )
   const actorName = useActorName(actors)
   // 矢印の上にラベルを置くため、行の中心より少し下に線を引く
-  const rowY = (i: number) => HEADER_HEIGHT + i * ROW_HEIGHT + ROW_HEIGHT / 2 + 8
+  const rowY = (i: number) => (rowTops[i] ?? HEADER_HEIGHT) + ROW_HEIGHT / 2 + 8
+  // 名前がレーンに収まらなければ、短縮名を使う（狭い画面では常に短縮名）
+  const headerName = (actor: Actor): string => {
+    const name = t(actor.name)
+    const fits = estimateTextWidth(name) <= laneWidth - HEADER_NAME_MARGIN
+    return (compact || !fits) && actor.shortName !== undefined ? t(actor.shortName) : name
+  }
 
   return (
     <div className="overflow-x-auto rounded-lg border bg-card">
@@ -79,7 +106,7 @@ export function SequenceDiagram({
           return (
             <g key={actor.id}>
               <text x={x} y={24} textAnchor="middle" className="fill-current text-sm font-semibold">
-                {t(compact ? (actor.shortName ?? actor.name) : actor.name)}
+                {headerName(actor)}
               </text>
               <line
                 x1={x}
@@ -106,8 +133,32 @@ export function SequenceDiagram({
 
         {rows.map((row, i) => {
           const y = rowY(i)
+          const section = sections[i] ?? null
+          const sectionY = (rowTops[i] ?? 0) - SECTION_HEIGHT / 2
           return (
             <g key={rowKey(row, i)}>
+              {section !== null && (
+                <g data-section className="text-muted-foreground">
+                  <line
+                    x1={4}
+                    x2={width - 4}
+                    y1={sectionY}
+                    y2={sectionY}
+                    className="stroke-current opacity-40"
+                    strokeDasharray="2 3"
+                  />
+                  {/* ライフラインの上に文字が重なっても読めるよう、カードの背景色で縁取る */}
+                  <text
+                    x={8}
+                    y={sectionY - 4}
+                    className="fill-current stroke-card text-xs [paint-order:stroke]"
+                    strokeWidth={4}
+                    strokeLinejoin="round"
+                  >
+                    {t(section)}
+                  </text>
+                </g>
+              )}
               {showElapsed && (
                 <text
                   x={8}
@@ -211,8 +262,9 @@ function MessageArrow({
     <>
       {message.encrypted === true && (
         <Lock
-          x={x1 + direction * 8 - (direction < 0 ? ICON_SIZE : 0)}
-          y={y - 8 - ICON_SIZE}
+          // ラベルは中央揃えなので、見積もったラベルの幅から左隣の位置を求める（狭い画面でも重ならない）
+          x={midX - estimateTextWidth(caption, 12) / 2 - ICON_SIZE - 3}
+          y={y - 8 - ICON_SIZE + 2}
           size={ICON_SIZE}
           className="stroke-current"
           aria-hidden

@@ -56,7 +56,7 @@ export interface Actor {
   readonly id: ActorId
   readonly kind: ActorKind
   readonly name: LocalizedText
-  /** 幅が足りないとき（DNS の 5 アクター、モバイル）に使う短い表示名 */
+  /** 幅が足りないときに使う短い表示名（狭い画面、または見積もった名前の幅がレーンに収まらないとき） */
   readonly shortName?: LocalizedText
   /** 状態を持たないアクター（DNS のルート・TLD など）は [] */
   readonly stateSlots: readonly ActorStateSlot[]
@@ -265,7 +265,7 @@ export type PlayerAction =
 - 状態はアクターごとの `Record<StateKey, StateValue>`。キーの枠（key / label / initial）は `Actor.stateSlots` で宣言する
   - TCP: `{ key: 'state', label: { en: 'TCP state', ja: 'TCP 状態' }, initial: 'CLOSED' }`
   - DNS リゾルバ: `{ key: 'cache', initial: { columns: ['NAME', 'TYPE', 'RDATA', 'TTL'], rows: [] } }`
-  - TLS クライアント: `{ key: 'certChain', initial: { columns: ['Certificate', 'Signature', 'Validity', 'SAN'], rows: [...] } }` と `{ key: 'alert', initial: '-' }`（値は RFC 8446 のアラート名）
+  - TLS クライアント: `{ key: 'certChain', initial: { columns: ['subject', 'issuer', 'notAfter', 'subjectAltName', 'signature', 'validity', 'name', 'trust'], rows: [] } }`（検証の結果は ✓ / ✗ / ?（確かめられない）/ -）と `{ key: 'alert', initial: '-' }`（値は RFC 8446 のアラート名）
 - `stateChange` は 1 キーを置き換える。表に行を足すときも、content 側で新しい表全体を作って渡す（行の追加イベントは作らない）
 - スカラー値は ProtocolTerm のみ（RFC の用語で書ける。LocalizedText は許さない）
 - ActorStatePanel: アクターごとのカード。`stateSlots` の順に表示し、スカラーは `<code>`、表は小さな `<table>`。`changedKeys` のキーは、背景の強調に加えて色以外の手段（記号と `sr-only` のテキスト）でも示す。表は前のステップにない行を強調する。前の値も見せたいときは `deriveState(…, stepIndex - 1)` をもう一度呼ぶ
@@ -281,7 +281,7 @@ export type PlayerAction =
 ## 暗号化区間とテーマ固有 UI
 
 - `Message.encrypted` を ServerHello より後の TLS メッセージに付ける。鍵の種類は PacketField（`{ name: 'Protection', value: 'handshake_traffic_secret' }`）で示す。区間の帯は `Step.section` で付ける
-- テーマ固有のデータは、`Step` に型パラメータを持たせず、アクターの状態スロット（`StateTable` など）として steps に載せる。テーマ固有 UI（CertChainPanel）はそれを読み、content 側の静的なデータ（証明書の subject・issuer・notAfter・SAN）と結合して描く
+- テーマ固有のデータは、`Step` に型パラメータを持たせず、アクターの状態スロット（`StateTable` など）として steps に載せる。テーマ固有 UI（CertChainPanel）はそれを読んで描く（証明書の subject・issuer・notAfter・SAN も表に載せ、表示用のラベルはパネルが持つ）
 - 合成: `ScenarioPlayer` は `renderPanels?: (ctx: { derived: DerivedState; options: ScenarioOptions }) => ReactNode` と `hiddenStateKeys?: readonly StateKey[]`（汎用パネルで二重に表示しないため）を受け取る。engine は content の型を知らない
 
 ## シーケンス図（src/engine/diagram.ts、src/engine/ui/SequenceDiagram.tsx）
@@ -290,7 +290,8 @@ export type PlayerAction =
 - 行の単位は「メッセージかタイマー 1 件」（1 ステップに複数のメッセージがありうるため、ステップではない）。行は `diagramRows(steps, index)` で組み立て、各行に stepIndex とその時点の経過時間を付ける
 - 現在のステップ（丸めた stepIndex）の行は強調し、#30 でアニメーションの対象にする
 - メッセージは `role="button"` で、`aria-pressed` のトグル（もう一度押すと選択を解除して null を渡す）
-- `Step.section` の帯は、TLS のシナリオ（Phase 2）で描く
+- `Step.section` が切り替わる行の上に、24px の帯（点線と区間の名前）を入れる（`sectionStartLabels`、`rowLayout`）
+- アクター名は、見積もった幅（`estimateTextWidth`）がレーンに収まらなければ `shortName` を使う
 
 ## 操作 UI（src/engine/ui/StepControls.tsx、src/engine/hooks/useStepKeyboard.ts）
 

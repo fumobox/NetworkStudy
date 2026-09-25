@@ -236,6 +236,54 @@ describe('SequenceDiagram', () => {
     expect(screen.getAllByText('t = 1 秒').length).toBeGreaterThan(0)
   })
 
+  it('区間（Step.section）が変わる行の上に、区間の名前を入れる', () => {
+    const sectioned = steps.map((step, i) => ({
+      ...step,
+      section:
+        i === 0 ? { en: 'Not encrypted', ja: '暗号化なし' } : { en: 'Encrypted', ja: '暗号化' },
+    }))
+    const { container } = render(
+      <LocaleProvider locale="en">
+        <SequenceDiagram
+          actors={actors}
+          steps={sectioned}
+          stepIndex={2}
+          selectedMessageId={null}
+          onSelectMessage={vi.fn()}
+        />
+      </LocaleProvider>,
+    )
+    expect(
+      [...container.querySelectorAll('[data-section] text')].map((node) => node.textContent),
+    ).toEqual(['Not encrypted', 'Encrypted'])
+  })
+
+  it('レーンに収まらない名前は短縮名にする', () => {
+    const longNames = [
+      {
+        ...actors[0],
+        id: 'client',
+        kind: 'client',
+        name: { en: 'A very long client name here', ja: 'x' },
+        shortName: { en: 'Client', ja: 'x' },
+        stateSlots: [],
+      },
+      {
+        ...actors[1],
+        id: 'server',
+        kind: 'server',
+        name: { en: 'Server', ja: 'y' },
+        shortName: { en: 'S', ja: 'y' },
+        stateSlots: [],
+      },
+    ] as const
+    renderDiagram({ actors: longNames })
+    expect(screen.getByText('Client')).toBeInTheDocument()
+    expect(screen.queryByText('A very long client name here')).toBeNull()
+    // 収まる名前はそのまま
+    expect(screen.getByText('Server')).toBeInTheDocument()
+  })
+
   it('メッセージがまだなければその旨を表示する', () => {
     renderDiagram({
       steps: [{ id: 'x', title: text('x'), description: text('x'), events: [] }],

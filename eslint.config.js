@@ -52,6 +52,7 @@ export default defineConfig([
       'src/components/**/*.tsx',
       'src/engine/**/*.tsx',
       'src/app/**/*.tsx',
+      'src/content/**/*.tsx',
     ],
     ignores: ['src/components/ui/**', '**/*.test.tsx', 'src/test/**'],
     plugins: { react },
