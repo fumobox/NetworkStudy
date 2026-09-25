@@ -49,7 +49,7 @@ describe('httpsOverviewScenario', () => {
     const client = derived.actorStates.client?.values
     expect(client?.['tcp.state']).toBe('ESTABLISHED')
     expect(client?.['tls.state']).toBe('CONNECTED')
-    expect(client?.['dns.result']).not.toBe('-')
+    expect(client?.['dns.result']).toMatch(/192\.0\.2\.10/)
     const chain = client?.[HTTPS_CERT_CHAIN]
     expect(typeof chain === 'object' ? chain.rows.length : 0).toBe(3)
   })

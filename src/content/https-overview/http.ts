@@ -23,8 +23,8 @@ const steps: readonly Step[] = [
     id: 'response',
     title: { en: 'The server returns the page', ja: 'サーバーがページを返す' },
     description: {
-      en: 'The server answers the request with status 200 (OK) and the HTML of the page, encrypted with the same application traffic keys.',
-      ja: 'サーバーは要求に、ステータス 200（OK）とページの HTML で応える。これも同じアプリケーション用の鍵で暗号化される。',
+      en: 'The server answers the request with status 200 (OK) and the HTML of the page, encrypted with application traffic keys from the same handshake (each direction has its own keys).',
+      ja: 'サーバーは要求に、ステータス 200（OK）とページの HTML で応える。これも、同じハンドシェイクで導いたアプリケーション用の鍵で暗号化される（鍵は向きごとに別）。',
     },
     events: [
       {
