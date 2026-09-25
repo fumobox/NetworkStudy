@@ -15,6 +15,15 @@ export const en = {
   nav: {
     home: 'Home',
     themes: 'Themes',
+    menu: 'Menu',
+    close: 'Close',
+  },
+  colorScheme: {
+    system: 'System',
+    light: 'Light',
+    dark: 'Dark',
+    toggle: (p: { current: string; next: string }) =>
+      `Color theme: ${p.current}. Switch to ${p.next}`,
   },
   language: {
     label: 'Language',

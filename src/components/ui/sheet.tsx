@@ -44,10 +44,13 @@ function SheetContent({
   children,
   side = 'right',
   showCloseButton = true,
+  closeLabel,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: 'top' | 'right' | 'bottom' | 'left'
   showCloseButton?: boolean
+  /** 閉じるボタンの読み上げ名。生成コードは英語の "Close" を直書きしていたので、辞書から渡す */
+  closeLabel: string
 }) {
   return (
     <SheetPortal>
@@ -66,7 +69,7 @@ function SheetContent({
           <SheetPrimitive.Close data-slot="sheet-close" asChild>
             <Button variant="ghost" className="absolute top-3 right-3" size="icon-sm">
               <XIcon />
-              <span className="sr-only">Close</span>
+              <span className="sr-only">{closeLabel}</span>
             </Button>
           </SheetPrimitive.Close>
         )}
