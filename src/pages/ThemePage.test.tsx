@@ -206,7 +206,7 @@ describe('テーマへの導線', () => {
       '/ja/themes/tcp-handshake',
     )
     expect(within(list).getAllByText('初級').length).toBeGreaterThan(0)
-    // サイトで案内する学習順（DNS → TCP）に並ぶ
+    // サイトで案内する学習順（DNS → TCP → TLS、その後に計算ツール）に並ぶ
     expect(
       within(list)
         .getAllByRole('link')
@@ -216,6 +216,7 @@ describe('テーマへの導線', () => {
       'TCP 3 ウェイハンドシェイク',
       'TLS 1.3 のハンドシェイクと証明書',
       'TCP の接続の終了',
+      'サブネット計算',
     ])
     expect(screen.getByRole('region', { name: 'このサイトの使い方' })).toBeInTheDocument()
   })
@@ -234,6 +235,7 @@ describe('テーマへの導線', () => {
       'Quiz: 1 of 5 correct',
       'Quiz not taken yet',
       'Quiz not taken yet',
+      'Quiz not taken yet',
     ])
     // 学習順の番号
     expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual([
@@ -241,6 +243,7 @@ describe('テーマへの導線', () => {
       '2',
       '3',
       '4',
+      '5',
     ])
   })
 })

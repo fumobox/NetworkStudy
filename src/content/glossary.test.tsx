@@ -5,6 +5,7 @@ import { collectQuizTexts } from '@/components/features/quiz/validate'
 import { collectLocalizedTexts } from '@/engine/validate'
 import { ja } from '@/lib/i18n/messages/ja'
 import { THEMES } from './registry'
+import { binarySplitText, SUBNET_TEXT } from './subnet-calculator/subnetText'
 import { CERT_CHAIN_TEXT } from './tls-handshake/certChainText'
 import { THEME_META } from './themeMeta'
 
@@ -113,6 +114,8 @@ describe('用語集（docs/glossary.md）の表記', () => {
         { path: `${meta.id}.summary`, text: meta.summary.ja },
       ]),
       ...collectJapanese(CERT_CHAIN_TEXT, 'tls-handshake.CertChainPanel'),
+      ...collectJapanese(SUBNET_TEXT, 'subnet-calculator.SubnetCalculator'),
+      ...collectJapanese(binarySplitText(26), 'subnet-calculator.binarySplitText'),
       ...THEMES.flatMap((theme) =>
         [
           ...(theme.kind === 'sequence' ? collectLocalizedTexts(theme.scenario) : []),
