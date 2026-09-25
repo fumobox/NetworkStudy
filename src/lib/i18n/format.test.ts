@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { formatNumber, toBcp47 } from './format'
+import { formatNumber, formatSeconds, toBcp47 } from './format'
 
 afterEach(() => {
   vi.restoreAllMocks()
@@ -16,6 +16,16 @@ describe('formatNumber', () => {
   it('桁区切りした文字列を返す', () => {
     expect(formatNumber('en', 1234567)).toBe('1,234,567')
     expect(formatNumber('en', 0.5, { style: 'percent' })).toBe('50%')
+  })
+})
+
+describe('formatSeconds', () => {
+  it('ミリ秒を秒として整形する', () => {
+    expect(formatSeconds('en', 1500)).toBe('1.5s')
+    expect(formatSeconds('en', 3000)).toBe('3s')
+    expect(formatSeconds('ja', 1000)).toBe('1 秒')
+    expect(formatSeconds('ja', 1500)).toBe('1.5 秒')
+    expect(formatSeconds('en', 250)).toBe('0.3s')
   })
 })
 

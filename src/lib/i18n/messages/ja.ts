@@ -29,6 +29,20 @@ export const ja = {
     pause: '一時停止',
     reset: '最初から',
   },
+  diagram: {
+    label: 'シーケンス図',
+    empty: 'まだメッセージは送られていません。',
+    status: {
+      delivered: '到達',
+      lost: 'ロス',
+      rejected: '拒否',
+    },
+    message: (p) =>
+      `${p.label}、${p.from} から ${p.to} へ、${p.status}${p.retransmission ? '、再送' : ''}${p.encrypted ? '、暗号化' : ''}`,
+    timer: (p) => `${p.name}（${p.duration}）`,
+    timerLabel: (p) => `${p.actor}: ${p.name} タイマーが ${p.duration} で満了`,
+    elapsed: (p) => `t = ${p.time}`,
+  },
   notFound: {
     title: 'ページが見つかりません',
     description: 'お探しのページは存在しません。',
