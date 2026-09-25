@@ -9,15 +9,28 @@ export function localePath(locale: Locale, path = '/'): string {
   return normalized === '/' ? `/${locale}` : `/${locale}${normalized}`
 }
 
+/** 連続するスラッシュを 1 つにまとめ、先頭をスラッシュで始める */
+function normalizeSlashes(pathname: string): string {
+  const collapsed = pathname.replace(/\/{2,}/g, '/')
+  return collapsed.startsWith('/') ? collapsed : `/${collapsed}`
+}
+
+/** パス先頭のセグメントが言語タグらしい形ならそれを返す。`/ja-JP/x` → `ja-JP`、`/themes/x` → null */
+export function leadingLanguageTag(pathname: string): string | null {
+  const [, first = ''] = normalizeSlashes(pathname).split('/')
+  return LANGUAGE_TAG_SEGMENT.test(first) ? first : null
+}
+
 /**
- * パス先頭の言語タグらしいセグメントを取り除く。
+ * パス先頭の言語タグらしいセグメントを取り除く。連続するスラッシュは 1 つにまとめる。
  * `/fr/themes/tcp` → `/themes/tcp`、`/themes/tcp` → `/themes/tcp`（そのまま）
  */
 export function stripLocaleSegment(pathname: string): string {
-  const [, first = '', ...rest] = pathname.split('/')
-  if (!LANGUAGE_TAG_SEGMENT.test(first)) {
-    return pathname === '' ? '/' : pathname
+  const normalized = normalizeSlashes(pathname)
+  if (leadingLanguageTag(normalized) === null) {
+    return normalized
   }
+  const [, , ...rest] = normalized.split('/')
   return `/${rest.join('/')}`
 }
 

@@ -27,7 +27,7 @@ export function LanguageSwitcher() {
                   to={{ pathname: replaceLocale(pathname, locale), search, hash }}
                   lang={locale}
                   hrefLang={locale}
-                  aria-current={isCurrent ? 'true' : undefined}
+                  aria-current={isCurrent ? 'page' : undefined}
                   onClick={() => {
                     savePreferredLocale(locale)
                   }}

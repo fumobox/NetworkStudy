@@ -5,7 +5,7 @@ export const ja = {
   common: {
     siteName: 'NetworkStudy',
     tagline: 'ネットワークプロトコルの動きを、1パケットずつ自分の手で進めて学ぶ。',
-    pageTitle: (p) => `${p.page} | NetworkStudy`,
+    pageTitle: (p) => `${p.page} | ${p.site}`,
   },
   nav: {
     home: 'ホーム',

@@ -11,5 +11,5 @@ export {
   type LocalizedText,
 } from './locale'
 export { LOCALE_NAMES, MESSAGES, type Messages } from './messages'
-export { localePath, replaceLocale, stripLocaleSegment } from './path'
+export { leadingLanguageTag, localePath, replaceLocale, stripLocaleSegment } from './path'
 export { LOCALE_STORAGE_KEY, readPreferredLocale, savePreferredLocale } from './preference'

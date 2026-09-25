@@ -8,7 +8,7 @@ export function NotFoundPage() {
 
   return (
     <>
-      <title>{m.common.pageTitle({ page: m.notFound.title })}</title>
+      <title>{m.common.pageTitle({ page: m.notFound.title, site: m.common.siteName })}</title>
       <meta name="robots" content="noindex" />
       <section className="space-y-4">
         <h1 className="font-heading text-2xl font-bold">{m.notFound.title}</h1>

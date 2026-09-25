@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { localePath, replaceLocale, stripLocaleSegment } from './path'
+import { leadingLanguageTag, localePath, replaceLocale, stripLocaleSegment } from './path'
 
 describe('localePath', () => {
   it.each([
@@ -28,8 +28,25 @@ describe('stripLocaleSegment', () => {
     ['/zh-Hant/x', '/x'],
     ['/themes/tcp', '/themes/tcp'],
     ['/abc/x', '/abc/x'],
+    ['//en', '/'],
+    ['//fr//themes', '/themes'],
+    ['/en//themes', '/themes'],
+    // ロケールなしの 2 文字のパスは言語タグとみなす（正規の URL は必ずロケール付きなので許容する）
+    ['/ip', '/'],
   ])('%j → %j', (pathname, expected) => {
     expect(stripLocaleSegment(pathname)).toBe(expected)
+  })
+})
+
+describe('leadingLanguageTag', () => {
+  it.each([
+    ['/ja-JP/themes', 'ja-JP'],
+    ['/fr', 'fr'],
+    ['//en', 'en'],
+    ['/themes/tcp', null],
+    ['/', null],
+  ])('%j → %j', (pathname, expected) => {
+    expect(leadingLanguageTag(pathname)).toBe(expected)
   })
 })
 

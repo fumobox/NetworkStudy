@@ -13,6 +13,8 @@ export function AppRoutes() {
         <Route index element={<HomePage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
+      {/* `//en` のように先頭セグメントが空のパスは :locale にマッチしないため、ここで受ける */}
+      <Route path="*" element={<LocaleRedirect />} />
     </Routes>
   )
 }

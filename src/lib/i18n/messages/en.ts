@@ -10,7 +10,7 @@ export const en = {
   common: {
     siteName: 'NetworkStudy',
     tagline: 'Learn how network protocols work, one packet at a time.',
-    pageTitle: (p: { page: string }) => `${p.page} | NetworkStudy`,
+    pageTitle: (p: { page: string; site: string }) => `${p.page} | ${p.site}`,
   },
   nav: {
     home: 'Home',
