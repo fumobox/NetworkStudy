@@ -27,5 +27,10 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
+  /*
+   * scripts から import した src のファイルも、この設定（DOM なし、types: node）で型チェックされる。
+   * scripts から import してよいのは、DOM や import.meta.env に依存しないモジュール
+   * （src/content/themeIds.ts、src/lib/i18n/locale.ts、src/lib/i18n/messages/）に限る
+   */
   "include": ["scripts/**/*.ts"]
 }

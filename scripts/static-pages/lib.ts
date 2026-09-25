@@ -30,9 +30,12 @@ export function pageUrl(siteUrl: string, locale: Locale | null, route: string): 
   return path === '' ? siteUrl : `${siteUrl}${path}/`
 }
 
-/** dist からの出力先の相対パス。`outputPath('ja', 'themes/tcp')` → `ja/themes/tcp/index.html` */
-export function outputPath(locale: Locale, route: string): string {
-  return [locale, route, 'index.html'].filter((segment) => segment !== '').join('/')
+/**
+ * dist からの出力先の相対パス。`outputPath('ja', 'themes/tcp')` → `ja/themes/tcp/index.html`、
+ * ロケールなしのリダイレクト用ページは `outputPath(null, 'themes/tcp')` → `themes/tcp/index.html`
+ */
+export function outputPath(locale: Locale | null, route: string): string {
+  return [locale ?? '', route, 'index.html'].filter((segment) => segment !== '').join('/')
 }
 
 export function escapeHtml(text: string): string {
@@ -51,9 +54,27 @@ function replaceOnce(html: string, pattern: RegExp, replacement: string, label: 
   return html.replace(pattern, replacement)
 }
 
+/** 生成時に挿入するタグ。テンプレートにすでに含まれていれば、加工済みの HTML を渡されたとみなす */
+const GENERATED_MARKERS = [
+  'name="description"',
+  'rel="canonical"',
+  'rel="alternate"',
+  'name="robots"',
+]
+
+function assertPristine(template: string): void {
+  const found = GENERATED_MARKERS.filter((marker) => template.includes(marker))
+  if (found.length > 0) {
+    throw new Error(
+      `index.html がすでに加工されています（${found.join(', ')}）。vite build からやり直してください`,
+    )
+  }
+}
+
 /** ビルド済みの index.html をもとに、ロケール・ルートごとの HTML を作る */
 export function renderPage(template: string, options: RenderOptions): string {
   const { siteUrl, locales, locale, route, meta } = options
+  assertPristine(template)
 
   const headTags = [
     `<meta name="description" content="${escapeHtml(meta.description)}" />`,
@@ -85,6 +106,7 @@ export function renderPage(template: string, options: RenderOptions): string {
 
 /** 未知のパス用の 404.html。SPA のエントリと同じ内容に noindex を付ける */
 export function renderNotFound(template: string): string {
+  assertPristine(template)
   return replaceOnce(
     template,
     / *<\/head>/,

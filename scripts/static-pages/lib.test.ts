@@ -38,6 +38,8 @@ describe('outputPath', () => {
   it('ロケールとルートからファイルパスを作る', () => {
     expect(outputPath('en', '')).toBe('en/index.html')
     expect(outputPath('ja', 'themes/tcp')).toBe('ja/themes/tcp/index.html')
+    expect(outputPath(null, '')).toBe('index.html')
+    expect(outputPath(null, 'themes/tcp')).toBe('themes/tcp/index.html')
   })
 })
 
@@ -89,6 +91,19 @@ describe('renderPage', () => {
     })
     expect(root).not.toContain('rel="canonical"')
     expect(root).toContain(`hreflang="x-default" href="${SITE}"`)
+  })
+
+  it('加工済みの HTML をテンプレートに渡すと例外を投げる（再実行でタグが重複しないように）', () => {
+    expect(() =>
+      renderPage(html, {
+        siteUrl: SITE,
+        locales: ['en', 'ja'],
+        locale: 'en',
+        route: '',
+        meta: { lang: 'en', title: 't', description: 'd' },
+      }),
+    ).toThrow(/加工されています/)
+    expect(() => renderNotFound(renderNotFound(TEMPLATE))).toThrow(/加工されています/)
   })
 
   it('テンプレートに必要な要素がなければ例外を投げる', () => {
