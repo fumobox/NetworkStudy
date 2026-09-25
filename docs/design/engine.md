@@ -382,11 +382,30 @@ export const tcpHandshakeScenario: Scenario<TcpOptions> = {
 
 registry には `toScenarioHandle(tcpHandshakeScenario)` を登録する。
 
-## シナリオの合成（HTTPS 全体像、Phase 3）
+## シナリオの合成（src/engine/compose.ts、HTTPS 全体像）
 
-- `ScenarioHandle` のレベルで合成する（`composeScenarios({ parts: [{ prefix: 'dns', handle, actorMap }, …] })`）
-- step id・message id・`retransmitOf`・オプションのキー・状態のキーにプレフィックスを付け、アクターは `actorMap` で寄せる。`section` に各パートのタイトルを入れる
-- すべて文字列の id とキーなので、engine の型の変更は不要。アクター id は全テーマで `client` などを共通に使う
+```ts
+composeScenarios({
+  id: 'https-overview',
+  title,
+  actors: [{ id: 'client', kind: 'client', name }, …], // stateSlots は書かない（各パートから集める）
+  parts: [
+    { prefix: 'dns', handle: dnsHandle, actorMap: { stub: 'client' }, section: { en: '1. Name lookup', ja: '1. 名前解決' } },
+    { prefix: 'tcp', handle: tcpHandle, expose: ['synLoss'] },
+    …
+  ],
+}): ScenarioHandle
+```
+
+- `ScenarioHandle` のレベルで合成する。すべて文字列の id とキーなので、engine の型の変更は不要
+- ステップの id・メッセージの id・`retransmitOf`・状態のキー・オプションのキーに `${prefix}.` を付ける（TCP と TLS の `state` は `tcp.state` と `tls.state` になる）
+- アクター id は `actorMap` で合成先のアクターに寄せる（ないものは同じ id）。状態の枠（`stateSlots`）は、寄せた先のアクターに各パートの順で集める
+- 帯（`section`）: パートに `section` を指定すると、そのパートの全ステップを上書きする。指定しなければパートの帯のまま（TLS の暗号化区間など）
+- オプション: 既定では出さない（`expose: []`）。全部出すと組み合わせが各パートの積になり、`validateScenario` もフォームも大きくなる
+  - `expose` したキーだけを `${prefix}.${key}` でフォームに出し、URL の値（`?opt.tcp.synLoss=once`）をパートに渡す。出していないキーは URL にあっても無視する
+  - `pinned` はパートのキーで値を固定し、URL より優先する
+  - `resolve` が返す `options` も、出したキーだけ
+- 定義の誤り（接頭辞の形式・重複、寄せた先のアクターがない、`expose` / `pinned` のキーがない、`pinned` の値が選択肢にない、同じキーを `expose` と `pinned` の両方に書いた）は例外にする。モジュールの読み込み時（テスト）に気づける。`pinned` の誤りは、パートの `parseOptions` が黙って既定値に戻してしまうので、ここで確かめる
 - TCP の seq と TLS／HTTP のバイト数の連続性まではモデル化しない
 
 ## PLAN §4 からの主な変更点
