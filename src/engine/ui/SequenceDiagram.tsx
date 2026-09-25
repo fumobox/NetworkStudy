@@ -1,5 +1,7 @@
 import { Lock, Timer } from 'lucide-react'
+import { m, useReducedMotionConfig } from 'motion/react'
 import type { KeyboardEvent } from 'react'
+import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatSeconds, useLocale, useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { clampStepIndex } from '../derive'
@@ -7,6 +9,11 @@ import { diagramRows, hasTimers, type DiagramRow } from '../diagram'
 import type { Actor, ActorId, Message, MessageId, Step, TimerEvent } from '../types'
 
 const LANE_WIDTH = 180
+/** 狭い画面ではレーンを詰め、アクターの短縮名を使う */
+const COMPACT_LANE_WIDTH = 112
+const COMPACT_MEDIA_QUERY = '(max-width: 640px)'
+/** 最新のメッセージの線を伸ばす時間 */
+const DRAW_DURATION_S = 0.5
 const TIME_COLUMN_WIDTH = 72
 const HEADER_HEIGHT = 48
 const ROW_HEIGHT = 56
@@ -43,12 +50,16 @@ export function SequenceDiagram({
   const currentStep = clampStepIndex(steps.length, stepIndex)
   const rows = diagramRows(steps, currentStep)
   const showElapsed = hasTimers(steps)
+  const compact = useMediaQuery(COMPACT_MEDIA_QUERY)
+  // OS の「視差効果を減らす」設定と、MotionConfig の reducedMotion を尊重する
+  const animate = useReducedMotionConfig() !== true
+  const laneWidth = compact ? COMPACT_LANE_WIDTH : LANE_WIDTH
   const offsetX = showElapsed ? TIME_COLUMN_WIDTH : 0
-  const width = offsetX + actors.length * LANE_WIDTH
+  const width = offsetX + actors.length * laneWidth
   const height = HEADER_HEIGHT + Math.max(rows.length, 1) * ROW_HEIGHT + BOTTOM_PADDING
 
   const laneX = new Map<ActorId, number>(
-    actors.map((actor, i) => [actor.id, offsetX + i * LANE_WIDTH + LANE_WIDTH / 2]),
+    actors.map((actor, i) => [actor.id, offsetX + i * laneWidth + laneWidth / 2]),
   )
   const actorName = (actorId: ActorId): string => {
     const actor = actors.find((candidate) => candidate.id === actorId)
@@ -72,7 +83,7 @@ export function SequenceDiagram({
           return (
             <g key={actor.id}>
               <text x={x} y={24} textAnchor="middle" className="fill-current text-sm font-semibold">
-                {t(actor.name)}
+                {t(compact ? (actor.shortName ?? actor.name) : actor.name)}
               </text>
               <line
                 x1={x}
@@ -118,6 +129,7 @@ export function SequenceDiagram({
                   x2={laneX.get(row.message.to) ?? 0}
                   y={y}
                   isCurrent={row.stepIndex === currentStep}
+                  animate={animate && row.stepIndex === currentStep}
                   isSelected={row.message.id === selectedMessageId}
                   label={m.diagram.message({
                     label: row.message.label,
@@ -163,6 +175,8 @@ interface MessageArrowProps {
   x2: number
   y: number
   isCurrent: boolean
+  /** 線を送信側から伸ばし、矢先とラベルをフェードインする（現在のステップのみ。reduced motion では false） */
+  animate: boolean
   isSelected: boolean
   label: string
   onSelect: (messageId: MessageId | null) => void
@@ -174,6 +188,7 @@ function MessageArrow({
   x2,
   y,
   isCurrent,
+  animate,
   isSelected,
   label,
   onSelect,
@@ -195,6 +210,56 @@ function MessageArrow({
       toggle()
     }
   }
+
+  const decorations = (
+    <>
+      {message.encrypted === true && (
+        <Lock
+          x={x1 + direction * 8 - (direction < 0 ? ICON_SIZE : 0)}
+          y={y - 8 - ICON_SIZE}
+          size={ICON_SIZE}
+          className="stroke-current"
+          aria-hidden
+        />
+      )}
+      <text
+        x={midX}
+        y={y - 8}
+        textAnchor="middle"
+        className={cn('fill-current font-mono text-xs', isCurrent && 'font-bold')}
+        aria-hidden
+      >
+        {caption}
+      </text>
+      {isLost ? (
+        <text
+          x={midX}
+          y={y + 5}
+          textAnchor="middle"
+          className="fill-current text-base font-bold"
+          aria-hidden
+        >
+          {LOST_MARK}
+        </text>
+      ) : (
+        <path
+          d={`M ${String(x2)} ${String(y)} l ${String(-direction * ARROW_SIZE)} ${String(-ARROW_SIZE / 2)} v ${String(ARROW_SIZE)} z`}
+          className="fill-current"
+        />
+      )}
+      {isRejected && (
+        <text
+          x={x2 - direction * 16}
+          y={y + 18}
+          textAnchor="middle"
+          className="fill-current text-sm font-bold"
+          aria-hidden
+        >
+          {REJECTED_MARK}
+        </text>
+      )}
+    </>
+  )
 
   return (
     <g
@@ -227,59 +292,44 @@ function MessageArrow({
         strokeWidth={3}
         aria-hidden
       />
-      {message.encrypted === true && (
-        <Lock
-          x={x1 + direction * 8 - (direction < 0 ? ICON_SIZE : 0)}
-          y={y - 8 - ICON_SIZE}
-          size={ICON_SIZE}
-          className="stroke-current"
-          aria-hidden
-        />
-      )}
-      <text
-        x={midX}
-        y={y - 8}
-        textAnchor="middle"
-        className={cn('fill-current font-mono text-xs', isCurrent && 'font-bold')}
-        aria-hidden
-      >
-        {caption}
-      </text>
-      <line
-        x1={x1}
-        x2={endX}
-        y1={y}
-        y2={y}
-        className="stroke-current"
-        strokeWidth={isSelected ? 2.5 : 1.5}
-        strokeDasharray={message.retransmitOf === undefined ? undefined : '6 4'}
-      />
-      {isLost ? (
-        <text
-          x={midX}
-          y={y + 5}
-          textAnchor="middle"
-          className="fill-current text-base font-bold"
-          aria-hidden
-        >
-          {LOST_MARK}
-        </text>
+      {/*
+        アニメーションする行だけ Motion の要素にする。Motion は一度管理した値を素の属性で上書きさせないため、
+        アニメーションしない行を Motion の要素のままにすると、レーン幅が変わったときに線の終点が古い位置に残る
+      */}
+      {animate ? (
+        <>
+          <m.line
+            x1={x1}
+            y1={y}
+            y2={y}
+            className="stroke-current"
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            strokeDasharray={message.retransmitOf === undefined ? undefined : '6 4'}
+            initial={{ x2: x1 }}
+            animate={{ x2: endX }}
+            transition={{ duration: DRAW_DURATION_S, ease: 'easeOut' }}
+          />
+          <m.g
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: DRAW_DURATION_S * 0.8, duration: 0.2 }}
+          >
+            {decorations}
+          </m.g>
+        </>
       ) : (
-        <path
-          d={`M ${String(x2)} ${String(y)} l ${String(-direction * ARROW_SIZE)} ${String(-ARROW_SIZE / 2)} v ${String(ARROW_SIZE)} z`}
-          className="fill-current"
-        />
-      )}
-      {isRejected && (
-        <text
-          x={x2 - direction * 16}
-          y={y + 18}
-          textAnchor="middle"
-          className="fill-current text-sm font-bold"
-          aria-hidden
-        >
-          {REJECTED_MARK}
-        </text>
+        <>
+          <line
+            x1={x1}
+            y1={y}
+            y2={y}
+            className="stroke-current"
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            strokeDasharray={message.retransmitOf === undefined ? undefined : '6 4'}
+            x2={endX}
+          />
+          <g>{decorations}</g>
+        </>
       )}
     </g>
   )

@@ -22,7 +22,9 @@ CI（`.github/workflows/ci.yml` の `Check` job）は typecheck → lint → dep
 
 ## 技術スタック
 
-React 19 / Vite 8 / TypeScript 6（strict、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`）/ Tailwind CSS v4 / shadcn/ui（Radix、Nova）/ React Router 8（宣言的モード）/ zod 4 / Vitest 5。Node 24。
+React 19 / Vite 8 / TypeScript 6（strict、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`）/ Tailwind CSS v4 / shadcn/ui（Radix、Nova）/ React Router 8（宣言的モード）/ zod 4 / Motion 13 / Vitest 5。Node 24。
+
+Motion は `LazyMotion`（`domAnimation`、strict）で読み込んでいるので、`motion.*` ではなく `m.*` を使う。
 
 ## ディレクトリとレイヤ
 
@@ -36,7 +38,7 @@ src/
 │   └── features/   クイズ・進捗など（予定）
 ├── content/        テーマごとのシナリオ・クイズ・MDX（themeIds.ts にテーマ ID の一覧）
 ├── engine/         シーケンスエンジン（予定）
-├── lib/            汎用処理（i18n/, storage.ts, utils.ts）
+├── lib/            汎用処理（i18n/, hooks/, storage.ts, utils.ts）
 ├── types/          横断的な型（DeepReadonly など）
 └── test/setup.ts
 scripts/            ビルド後の静的ページ生成・検証（tsx で実行）
