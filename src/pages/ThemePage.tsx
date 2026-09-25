@@ -38,7 +38,15 @@ function ThemeView({ theme }: { theme: ThemeModule }) {
           </p>
         </header>
         <OverviewSection content={theme.overview[locale]} />
-        <ScenarioPlayer scenario={theme.scenario} />
+        <ScenarioPlayer
+          scenario={theme.scenario}
+          {...(theme.panels === undefined
+            ? {}
+            : {
+                renderPanels: theme.panels.render,
+                hiddenStateKeys: theme.panels.hiddenStateKeys,
+              })}
+        />
         <QuizPanel quiz={theme.quiz} />
       </article>
     </>

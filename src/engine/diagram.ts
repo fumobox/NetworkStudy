@@ -1,4 +1,5 @@
 import { clampStepIndex } from './derive'
+import type { LocalizedText } from '@/lib/i18n/locale'
 import type { Message, Step, TimerEvent } from './types'
 
 export type DiagramRow =
@@ -44,6 +45,36 @@ export const TIME_COLUMN_WIDTH = 72
 /** 通常の幅で描いたときのシーケンス図の幅（px） */
 export function diagramWidth(actorCount: number, withTimers: boolean): number {
   return (withTimers ? TIME_COLUMN_WIDTH : 0) + actorCount * LANE_WIDTH
+}
+
+/**
+ * 文字列を描いたときの幅のおおよその見積もり（px）。
+ * CJK などの全角文字は 1 文字がフォントサイズ、それ以外は 0.6 倍として数える
+ */
+export function estimateTextWidth(text: string, fontSize = 14): number {
+  let width = 0
+  for (const char of text) {
+    width += (char.codePointAt(0) ?? 0) >= 0x2e80 ? fontSize : fontSize * 0.6
+  }
+  return width
+}
+
+/**
+ * 各行が区間（Step.section）の始まりなら、その区間の名前を返す（始まりでなければ null）。
+ * 区間のないステップの行は null。直前の行と同じ区間なら null
+ */
+export function sectionStartLabels(
+  steps: readonly Step[],
+  rows: readonly DiagramRow[],
+): (LocalizedText | null)[] {
+  let previous: string | null = null
+  return rows.map((row) => {
+    const section = steps[row.stepIndex]?.section
+    const key = section === undefined ? null : JSON.stringify(section)
+    const isStart = key !== null && key !== previous
+    previous = key
+    return isStart ? (section ?? null) : null
+  })
 }
 
 /** シナリオ全体にタイマーが 1 つでもあるか（経過時間の列を出すかどうか） */

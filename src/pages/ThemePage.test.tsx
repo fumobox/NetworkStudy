@@ -161,6 +161,20 @@ describe('ThemePage', () => {
     expect(within(state).getByText('(negative)')).toBeInTheDocument()
   })
 
+  it('TLS: 証明書チェーンは専用のパネルで見せ、汎用の状態パネルには出さない', () => {
+    renderAt('/en/themes/tls-handshake?opt.certProblem=expired&step=99')
+    const panel = screen.getByRole('region', { name: 'Certificate chain' })
+    expect(
+      within(panel)
+        .getAllByRole('heading', { level: 3 })
+        .map((h) => h.textContent),
+    ).toEqual(['www.example.com', 'Example Intermediate CA', 'Example Root CA'])
+    expect(within(panel).getByText('2026-08-31')).toBeInTheDocument()
+    const state = screen.getByRole('region', { name: 'State of each participant' })
+    expect(within(state).queryByText('Certificate chain check')).toBeNull()
+    expect(within(state).getByText('certificate_expired')).toBeInTheDocument()
+  })
+
   it('未知のテーマは NotFound', () => {
     renderAt('/en/themes/no-such-theme')
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
@@ -190,6 +204,6 @@ describe('テーマへの導線', () => {
       within(list)
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual(['DNS の名前解決', 'TCP 3 ウェイハンドシェイク'])
+    ).toEqual(['DNS の名前解決', 'TCP 3 ウェイハンドシェイク', 'TLS 1.3 のハンドシェイクと証明書'])
   })
 })

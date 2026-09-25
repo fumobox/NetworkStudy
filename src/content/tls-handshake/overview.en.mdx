@@ -1,0 +1,29 @@
+## What TLS protects
+
+When you open an `https://` page, TLS protects the connection in three ways:
+
+- **Confidentiality** — nobody on the network can read the data.
+- **Integrity** — nobody can change it without being noticed.
+- **Authentication** — the client can be sure it is talking to the real server, thanks to a **certificate**.
+
+## The handshake in one round trip
+
+1. **ClientHello** — the client lists what it supports and already sends its half of the key exchange (**key share**).
+2. **ServerHello** — the server picks the parameters and sends its key share. Both sides now compute the same secret and derive the **handshake keys**. Everything after this is encrypted.
+3. **EncryptedExtensions, Certificate, CertificateVerify, Finished** — the server sends its certificates, proves it holds the private key, and confirms the handshake.
+4. **Finished** — the client checks everything and confirms too. Both sides switch to the **application keys**.
+
+## Certificates and the chain of trust
+
+The server’s certificate is signed by an **intermediate CA**, whose certificate is signed by a **root CA**. The client trusts a root only if it is already in its **trust store**. It checks each certificate’s signature and validity period, and that the server certificate is issued for the name it wanted to reach (the **SAN**). If any check fails, the client sends an **alert** and stops.
+
+## What to look for in the walkthrough
+
+- Where the diagram switches from **not encrypted** to **encrypted**.
+- The **certificate chain** panel, and each check turning ✓ or ✗.
+- In the “What if…” options: what an expired certificate, a wrong name, an untrusted CA, or a missing intermediate certificate lead to.
+
+## References
+
+- [RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3](https://www.rfc-editor.org/rfc/rfc8446)
+- [RFC 5280: Internet X.509 Public Key Infrastructure Certificate and CRL Profile](https://www.rfc-editor.org/rfc/rfc5280)

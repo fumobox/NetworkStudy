@@ -39,10 +39,22 @@ export const TCP_HANDSHAKE_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
+export const TLS_HANDSHAKE_META = {
+  id: 'tls-handshake',
+  title: { en: 'TLS 1.3 handshake and certificates', ja: 'TLS 1.3 のハンドシェイクと証明書' },
+  summary: {
+    en: 'How a browser and a server agree on keys in one round trip, and how the browser checks the server’s certificate chain before trusting it.',
+    ja: 'ブラウザとサーバーが 1 往復で鍵を合わせる流れと、ブラウザがサーバーの証明書チェーンを確かめてから信頼するまで。',
+  },
+  difficulty: 'intermediate',
+  minutes: 15,
+} as const satisfies ThemeMeta
+
 /** サイトで案内する学習順（DNS → TCP → TLS）に並べる */
 export const THEME_META = [
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
+  TLS_HANDSHAKE_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']
