@@ -35,6 +35,28 @@ export const en = {
     pause: 'Pause',
     reset: 'Reset',
   },
+  diagram: {
+    label: 'Sequence diagram',
+    empty: 'No messages have been sent yet.',
+    status: {
+      delivered: 'delivered',
+      lost: 'lost',
+      rejected: 'rejected',
+    },
+    message: (p: {
+      label: string
+      from: string
+      to: string
+      status: string
+      retransmission: boolean
+      encrypted: boolean
+    }) =>
+      `${p.label}, from ${p.from} to ${p.to}, ${p.status}${p.retransmission ? ', retransmission' : ''}${p.encrypted ? ', encrypted' : ''}`,
+    timer: (p: { name: string; duration: string }) => `${p.name} (${p.duration})`,
+    timerLabel: (p: { actor: string; name: string; duration: string }) =>
+      `${p.actor}: ${p.name} timer expired after ${p.duration}`,
+    elapsed: (p: { time: string }) => `t = ${p.time}`,
+  },
   notFound: {
     title: 'Page not found',
     description: 'The page you are looking for does not exist.',

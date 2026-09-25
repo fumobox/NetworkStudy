@@ -1,5 +1,5 @@
 export { detectLocale, matchLocale } from './detect'
-export { formatNumber, toBcp47 } from './format'
+export { formatNumber, formatSeconds, toBcp47 } from './format'
 export { useLocale, useMessages, useText } from './hooks'
 export { LocaleProvider } from './LocaleProvider'
 export {
