@@ -92,6 +92,8 @@ pages → content → engine → lib
 
 ### 型スケッチ
 
+> **確定した型と仕様は [docs/design/engine.md](design/engine.md)（#26）を正とする。** 以下は計画時点のスケッチ。
+
 ```ts
 // src/lib/i18n/locale.ts
 export const LOCALES = ["en", "ja"] as const;
