@@ -17,34 +17,46 @@ module.exports = {
       severity: 'error',
       comment: 'lib は汎用処理のみ。他のレイヤに依存しない',
       from: { path: '^src/lib/' },
-      to: { path: '^src/(app|pages|content|engine|components|hooks)/' },
+      to: { path: '^src/', pathNot: '^src/(lib|types)/' },
     },
     {
       name: 'engine-independent-of-content',
       severity: 'error',
-      comment: 'engine は content・pages・アプリ固有のコンポーネントに依存しない',
+      comment:
+        'engine は lib・types・components/ui にのみ依存する（content・pages などには依存しない）',
       from: { path: '^src/engine/' },
-      to: { path: '^src/(app|pages|content|components/(layout|features))/' },
+      to: { path: '^src/', pathNot: '^src/(lib|types|engine|components/ui)/' },
     },
     {
       name: 'content-below-pages',
       severity: 'error',
-      comment: 'content は pages・app・layout に依存しない',
+      comment:
+        'content は engine 以下と共通部品にのみ依存する（pages・app・layout には依存しない）',
       from: { path: '^src/content/' },
-      to: { path: '^src/(app|pages|components/layout)/' },
+      to: {
+        path: '^src/',
+        pathNot: '^src/(lib|types|hooks|engine|content|components/(ui|features))/',
+      },
     },
     {
       name: 'ui-is-primitive',
       severity: 'error',
       comment: 'components/ui は lib 以外のアプリコードに依存しない',
       from: { path: '^src/components/ui/' },
-      to: { path: '^src/(app|pages|content|engine|components/(layout|features))/' },
+      to: { path: '^src/', pathNot: '^src/(lib|components/ui)/' },
     },
     {
       name: 'no-unresolvable',
       severity: 'error',
       from: {},
       to: { couldNotResolve: true },
+    },
+    {
+      name: 'no-non-package-json',
+      severity: 'error',
+      comment: 'package.json に記載のないパッケージ（推移的依存など）を直接 import しない',
+      from: {},
+      to: { dependencyTypes: ['npm-no-pkg', 'npm-unknown'] },
     },
     {
       name: 'no-dev-deps-at-runtime',

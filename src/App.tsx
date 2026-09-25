@@ -1,3 +1,5 @@
+// 仮の Hello 表示。#7 でルーティングと i18n 辞書に置き換えるまで jsx-no-literals を無効にする
+/* eslint-disable react/jsx-no-literals */
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { TooltipProvider } from '@/components/ui/tooltip'

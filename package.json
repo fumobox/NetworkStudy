@@ -11,11 +11,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
-    "lint": "eslint .",
+    "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "depcheck": "depcruise src",
+    "depcruise": "depcruise src",
     "preview": "vite preview"
   },
   "dependencies": {

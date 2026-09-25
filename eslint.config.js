@@ -10,7 +10,7 @@ import tseslint from 'typescript-eslint'
 export default defineConfig([
   globalIgnores(['dist', 'coverage']),
   {
-    files: ['**/*.js'],
+    files: ['**/*.{js,cjs,mjs}'],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },
   },
@@ -42,6 +42,7 @@ export default defineConfig([
   {
     // 多言語対応のため、画面の文言は辞書から取得する（JSX への文字列の直書きを禁止）
     files: [
+      'src/*.tsx',
       'src/pages/**/*.tsx',
       'src/components/**/*.tsx',
       'src/engine/**/*.tsx',
