@@ -24,7 +24,7 @@ CI（`.github/workflows/ci.yml` の `Check` job）は typecheck → lint → dep
 
 React 19 / Vite 8 / TypeScript 6（strict、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`）/ Tailwind CSS v4 / shadcn/ui（Radix、Nova）/ React Router 8（宣言的モード）/ zod 4 / Motion 13 / Vitest 5。Node 24。
 
-Motion は `LazyMotion`（`domAnimation`、strict）で読み込んでいるので、`motion.*` ではなく `m.*` を使う。
+Motion は `LazyMotion`（`domAnimation`、strict）で読み込んでいるので、`motion.*` ではなく `m.*` を使う。`LazyMotion` は ScenarioPlayer にあり、アニメーション機能はテーマのページのチャンクと一緒に同期的に読み込む（動的 import にすると初回のアニメーションが実行されない）。テーマのページ（ThemePage）は遅延読み込みで、ホームはメタ情報とクイズだけの `content/quizzes.ts` を使う
 
 ## ディレクトリとレイヤ
 
@@ -36,7 +36,7 @@ src/
 │   ├── ui/         shadcn/ui の生成コード
 │   ├── layout/     AppLayout, Header, Footer, LanguageSwitcher
 │   └── features/   クイズ（quiz/）、テーマカード（theme-card/）、概要（overview/）
-├── content/        テーマごとのシナリオ・クイズ（themeMeta.ts にメタ情報、registry.ts に登録）
+├── content/        テーマごとのシナリオ・クイズ（themeMeta.ts にメタ情報、registry.ts に登録、quizzes.ts にホーム用のメタ情報とクイズ）
 ├── engine/         シーケンスエンジン（型・導出・検証・プレイヤー・UI）
 ├── lib/            汎用処理（i18n/, hooks/, storage.ts, utils.ts）
 ├── types/          横断的な型（DeepReadonly など）
@@ -91,7 +91,7 @@ scripts/            ビルド後の静的ページ生成・検証（tsx で実�
 ## 静的ページ生成（scripts/）
 
 - GitHub Pages には SPA 用のフォールバックがないため、`build` の最後に「ロケール × ルート」と「ロケールなし × ルート」の `index.html`、および `404.html` を生成する（`lang`・`title`・`description`・`hreflang`、ロケール付きのページには `canonical` も埋め込む）
-- テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ）を足し、`src/content/registry.ts` に登録する。静的ページも自動で増える
+- テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ）を足し、`src/content/registry.ts` に登録し、`src/content/quizzes.ts` の `THEME_QUIZZES` にもメタ情報とクイズを足す（順序は registry と同じ。registry.test.ts で確かめる）。静的ページも自動で増える
 - 各ページに Open Graph と Twitter カードを入れ、`sitemap.xml`（hreflang 付き）も生成する。OG 画像は `public/og.png` で、元の HTML は `scripts/og/og.html`（作り直し方はそのファイルの先頭に書いてある）。robots.txt はプロジェクトサイトでは効かないので置かない
 - scripts は `tsconfig.scripts.json`（DOM なし）で型チェックされる。scripts から import してよい src は、DOM や `import.meta.env` に依存しないモジュール（`content/themeMeta.ts`、`lib/i18n/locale.ts`、`lib/i18n/messages/`）に限る
 

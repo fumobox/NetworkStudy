@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/AppRoutes'
+import { waitForPage } from '@/test/waitForPage'
 
 /** 現在の URL を表示し、外からの遷移（戻る・進むやリンク）を再現するボタンを置く */
 function Probe({ to = '/en/themes/tcp-handshake?step=4' }: { to?: string }) {
@@ -24,8 +25,8 @@ function Probe({ to = '/en/themes/tcp-handshake?step=4' }: { to?: string }) {
 }
 
 // main.tsx と同じく StrictMode で描画し、effect の二重実行でも URL の同期が壊れないことを確かめる
-function renderAt(path: string, externalTarget?: string) {
-  return render(
+async function renderAt(path: string, externalTarget?: string) {
+  const result = render(
     <StrictMode>
       <MemoryRouter initialEntries={[path]}>
         <AppRoutes />
@@ -33,6 +34,8 @@ function renderAt(path: string, externalTarget?: string) {
       </MemoryRouter>
     </StrictMode>,
   )
+  await waitForPage()
+  return result
 }
 
 afterEach(() => {
@@ -43,7 +46,7 @@ const location = () => screen.getByTestId('location').textContent
 
 describe('ThemePage', () => {
   it('テーマのタイトル・ステップ実行・クイズを表示する', async () => {
-    renderAt('/en/themes/tcp-handshake')
+    await renderAt('/en/themes/tcp-handshake')
     expect(
       screen.getByRole('heading', { level: 1, name: 'TCP three-way handshake' }),
     ).toBeInTheDocument()
@@ -57,7 +60,7 @@ describe('ThemePage', () => {
   })
 
   it('表示中のロケールの概要（MDX）を読み込んで表示する', async () => {
-    renderAt('/ja/themes/tcp-handshake')
+    await renderAt('/ja/themes/tcp-handshake')
     expect(
       await screen.findByRole('heading', { level: 2, name: 'なぜハンドシェイクが必要か' }),
     ).toBeInTheDocument()
@@ -68,8 +71,8 @@ describe('ThemePage', () => {
     )
   })
 
-  it('URL の ?step= と opt.* から始める', () => {
-    renderAt('/ja/themes/tcp-handshake?opt.serverPort=closed&step=3')
+  it('URL の ?step= と opt.* から始める', async () => {
+    await renderAt('/ja/themes/tcp-handshake?opt.serverPort=closed&step=3')
     expect(screen.getByText('ステップ 3 / 4')).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { level: 2, name: 'サーバーがリセットを返す' }),
@@ -78,7 +81,7 @@ describe('ThemePage', () => {
   })
 
   it('範囲外の ?step= は丸めて URL に書き戻す', async () => {
-    renderAt('/en/themes/tcp-handshake?step=99')
+    await renderAt('/en/themes/tcp-handshake?step=99')
     expect(screen.getByText('Step 5 of 5')).toBeInTheDocument()
     await waitFor(() => {
       expect(location()).toBe('/en/themes/tcp-handshake?step=5')
@@ -87,7 +90,7 @@ describe('ThemePage', () => {
 
   it('ステップを進めると URL に書き戻し、オプションを変えると最初のステップに戻る', async () => {
     const user = userEvent.setup()
-    renderAt('/en/themes/tcp-handshake')
+    await renderAt('/en/themes/tcp-handshake')
     await user.click(screen.getByRole('button', { name: 'Next' }))
     await user.click(screen.getByRole('button', { name: 'Next' }))
     expect(screen.getByText('Step 3 of 5')).toBeInTheDocument()
@@ -103,7 +106,7 @@ describe('ThemePage', () => {
   })
 
   it('外から ?step= だけが変わったら、そのステップへ移る（URL を古い値で上書きしない）', async () => {
-    renderAt('/en/themes/tcp-handshake?step=2')
+    await renderAt('/en/themes/tcp-handshake?step=2')
     expect(screen.getByText('Step 2 of 5')).toBeInTheDocument()
     fireEvent.click(screen.getByTestId('external-navigation'))
     await waitFor(() => {
@@ -113,7 +116,7 @@ describe('ThemePage', () => {
   })
 
   it('最後のステップで範囲外の ?step= が外から来ても、表示はそのままで URL を正規化する', async () => {
-    renderAt('/en/themes/tcp-handshake?step=5', '/en/themes/tcp-handshake?step=99')
+    await renderAt('/en/themes/tcp-handshake?step=5', '/en/themes/tcp-handshake?step=99')
     fireEvent.click(screen.getByTestId('external-navigation'))
     await waitFor(() => {
       expect(location()).toBe('/en/themes/tcp-handshake?step=5')
@@ -123,7 +126,7 @@ describe('ThemePage', () => {
 
   it('自動再生中はステップが進むたびに URL に書き戻し、最後で止まる', async () => {
     vi.useFakeTimers({ shouldAdvanceTime: true })
-    renderAt('/en/themes/tcp-handshake?step=4')
+    await renderAt('/en/themes/tcp-handshake?step=4')
     fireEvent.click(screen.getByRole('button', { name: 'Play' }))
     await vi.advanceTimersByTimeAsync(2000)
     await waitFor(() => {
@@ -133,7 +136,7 @@ describe('ThemePage', () => {
   })
 
   it('キーボードの → でステップを進める', async () => {
-    renderAt('/en/themes/tcp-handshake')
+    await renderAt('/en/themes/tcp-handshake')
     fireEvent.keyDown(document.body, { key: 'ArrowRight' })
     await waitFor(() => {
       expect(screen.getByText('Step 2 of 5')).toBeInTheDocument()
@@ -142,15 +145,15 @@ describe('ThemePage', () => {
 
   it('図のメッセージを選ぶと、パケットの詳細に表示する', async () => {
     const user = userEvent.setup()
-    renderAt('/en/themes/tcp-handshake?step=4')
+    await renderAt('/en/themes/tcp-handshake?step=4')
     await user.click(screen.getByRole('button', { name: /^SYN, from Client to Server/ }))
     const inspector = screen.getByRole('region', { name: 'Packet details' })
     expect(within(inspector).getByRole('heading', { level: 3, name: 'SYN' })).toBeInTheDocument()
     expect(within(inspector).getByText('1000')).toBeInTheDocument()
   })
 
-  it('DNS の NXDOMAIN の分岐: 否定応答をパケットの詳細とキャッシュ表で見せる', () => {
-    renderAt('/ja/themes/dns-resolution?opt.name=missing&step=7')
+  it('DNS の NXDOMAIN の分岐: 否定応答をパケットの詳細とキャッシュ表で見せる', async () => {
+    await renderAt('/ja/themes/dns-resolution?opt.name=missing&step=7')
     expect(
       screen.getByRole('heading', { level: 2, name: '名前が存在しない（NXDOMAIN）' }),
     ).toBeInTheDocument()
@@ -161,8 +164,8 @@ describe('ThemePage', () => {
     expect(within(state).getByText('(negative)')).toBeInTheDocument()
   })
 
-  it('TLS: 証明書チェーンは専用のパネルで見せ、汎用の状態パネルには出さない', () => {
-    renderAt('/en/themes/tls-handshake?opt.certProblem=expired&step=99')
+  it('TLS: 証明書チェーンは専用のパネルで見せ、汎用の状態パネルには出さない', async () => {
+    await renderAt('/en/themes/tls-handshake?opt.certProblem=expired&step=99')
     const panel = screen.getByRole('region', { name: 'Certificate chain' })
     expect(
       within(panel)
@@ -179,15 +182,15 @@ describe('ThemePage', () => {
     expect(within(state).getByText('certificate_expired')).toBeInTheDocument()
   })
 
-  it('未知のテーマは NotFound', () => {
-    renderAt('/en/themes/no-such-theme')
+  it('未知のテーマは NotFound', async () => {
+    await renderAt('/en/themes/no-such-theme')
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()
   })
 })
 
 describe('テーマへの導線', () => {
-  it('サイドバーとホームのカードからテーマへ行ける。現在のテーマは aria-current', () => {
-    renderAt('/en/themes/tcp-handshake')
+  it('サイドバーとホームのカードからテーマへ行ける。現在のテーマは aria-current', async () => {
+    await renderAt('/en/themes/tcp-handshake')
     const sidebar = screen.getByRole('navigation', { name: 'Themes' })
     expect(within(sidebar).getByRole('link', { name: 'TCP three-way handshake' })).toHaveAttribute(
       'aria-current',
@@ -195,8 +198,8 @@ describe('テーマへの導線', () => {
     )
   })
 
-  it('ホームにテーマのカードを表示する', () => {
-    renderAt('/ja')
+  it('ホームにテーマのカードを表示する', async () => {
+    await renderAt('/ja')
     const list = screen.getByRole('region', { name: 'どこから始めるか' })
     expect(within(list).getByRole('link', { name: 'TCP 3 ウェイハンドシェイク' })).toHaveAttribute(
       'href',
@@ -212,12 +215,12 @@ describe('テーマへの導線', () => {
     expect(screen.getByRole('region', { name: 'このサイトの使い方' })).toBeInTheDocument()
   })
 
-  it('ホームのカードにクイズの進捗を表示する', () => {
+  it('ホームのカードにクイズの進捗を表示する', async () => {
     window.localStorage.setItem(
       'ns.quiz.tcp-handshake',
       JSON.stringify({ answers: { 'first-segment': 'syn', 'state-after-syn': 'listen' } }),
     )
-    renderAt('/en')
+    await renderAt('/en')
     const cards = within(screen.getByRole('region', { name: 'Where to start' })).getAllByRole(
       'listitem',
     )

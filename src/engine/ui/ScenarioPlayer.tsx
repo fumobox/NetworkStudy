@@ -1,3 +1,4 @@
+import { domAnimation, LazyMotion } from 'motion/react'
 import { useEffect, useEffectEvent, useMemo, useRef, type ReactNode } from 'react'
 import { useMessages } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -38,23 +39,28 @@ export function ScenarioPlayer({ scenario, renderPanels, hiddenStateKeys }: Scen
   const m = useMessages()
   const session = useScenarioOptions(scenario)
 
-  // 各パネルの見出し（h2）を束ねる見出しはなく、ランドマークの名前だけを付ける
+  // 各パネルの見出し（h2）を束ねる見出しはなく、ランドマークの名前だけを付ける。
+  // アニメーションを使うのはテーマのページだけなので、LazyMotion はここに置き、アニメーション機能をテーマのページのチャンクに含める
+  // （バンドルを小さくするため m と domAnimation だけを使い、strict で motion.* の混入を防ぐ）。
+  // 機能は同期的に渡す。動的 import にすると、読み込み前にマウントされた要素の初回アニメーションが実行されない（#52）
   return (
-    <section aria-label={m.theme.player} className="space-y-6">
-      <ScenarioOptionsForm
-        optionDefs={scenario.optionDefs}
-        options={session.options}
-        onChange={session.setOption}
-      />
-      {/* オプションが変わったら再マウントして、最初のステップから始める */}
-      <PlayerBody
-        key={session.optionsKey}
-        scenario={scenario}
-        session={session}
-        renderPanels={renderPanels}
-        hiddenStateKeys={hiddenStateKeys}
-      />
-    </section>
+    <LazyMotion features={domAnimation} strict>
+      <section aria-label={m.theme.player} className="space-y-6">
+        <ScenarioOptionsForm
+          optionDefs={scenario.optionDefs}
+          options={session.options}
+          onChange={session.setOption}
+        />
+        {/* オプションが変わったら再マウントして、最初のステップから始める */}
+        <PlayerBody
+          key={session.optionsKey}
+          scenario={scenario}
+          session={session}
+          renderPanels={renderPanels}
+          hiddenStateKeys={hiddenStateKeys}
+        />
+      </section>
+    </LazyMotion>
   )
 }
 
