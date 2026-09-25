@@ -11,6 +11,7 @@ import type {
   Step,
   StepEvent,
 } from './types'
+import { rawValuesOf } from './validate'
 
 /** 合成したシナリオのアクター。状態の枠（stateSlots）は、各パートのアクターの枠を集めて作る */
 export type ComposedActorDef = Omit<Actor, 'stateSlots'>
@@ -75,9 +76,30 @@ export function composeScenarios(input: ComposeScenariosInput): ScenarioHandle {
       }
     }
     for (const key of part.expose ?? []) {
-      if (!(key in part.handle.optionDefs)) {
+      if (!Object.hasOwn(part.handle.optionDefs, key)) {
         throw new Error(
           `composeScenarios(${input.id}): part "${part.prefix}" has no option "${key}"`,
+        )
+      }
+    }
+    // pinned の誤りは、パートの parseOptions（zod の catch）が黙って既定値に戻してしまうので、ここで確かめる
+    for (const [key, value] of Object.entries(part.pinned ?? {})) {
+      const def = Object.hasOwn(part.handle.optionDefs, key)
+        ? part.handle.optionDefs[key]
+        : undefined
+      if (def === undefined) {
+        throw new Error(
+          `composeScenarios(${input.id}): part "${part.prefix}" has no option "${key}"`,
+        )
+      }
+      if (!rawValuesOf(def).includes(value)) {
+        throw new Error(
+          `composeScenarios(${input.id}): option "${key}" of part "${part.prefix}" does not accept "${value}"`,
+        )
+      }
+      if (part.expose?.includes(key) === true) {
+        throw new Error(
+          `composeScenarios(${input.id}): option "${key}" of part "${part.prefix}" is both pinned and exposed`,
         )
       }
     }
@@ -175,12 +197,11 @@ function composeEvent(part: ScenarioPart, event: StepEvent): StepEvent {
 }
 
 function composeStep(part: ScenarioPart, step: Step): Step {
-  const section = part.section ?? step.section
+  // Step に項目が増えても落とさないよう、元のステップを広げてから置き換える
   return {
+    ...step,
     id: prefixed(part.prefix, step.id),
-    title: step.title,
-    description: step.description,
     events: step.events.map((event) => composeEvent(part, event)),
-    ...(section === undefined ? {} : { section }),
+    ...(part.section === undefined ? {} : { section: part.section }),
   }
 }

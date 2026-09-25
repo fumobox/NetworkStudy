@@ -258,11 +258,12 @@ describe('composeScenarios', () => {
     expect(resolved.steps.at(-1)?.description.en).toBe('Connected')
   })
 
-  it('pinned の値は URL より優先する', () => {
-    const handle = compose({ expose: ['loss'], pinned: { port: 'closed', loss: 'none' } })
-    const resolved = handle.resolve({ 'tcp.loss': 'once' })
-    expect(resolved.options).toEqual({ 'tcp.loss': 'none' })
+  it('pinned の値で固定し、URL に同じキーがあっても使わない', () => {
+    const handle = compose({ expose: ['loss'], pinned: { port: 'closed' } })
+    const resolved = handle.resolve({ 'tcp.loss': 'once', 'tcp.port': 'open' })
+    expect(resolved.options).toEqual({ 'tcp.loss': 'once' })
     expect(resolved.steps.at(-1)?.description.en).toBe('Reset')
+    expect(validateScenario(handle)).toEqual([])
   })
 
   it('合成したシナリオは validateScenario を通る（オプションを出した場合も）', () => {
@@ -299,5 +300,18 @@ describe('composeScenarios', () => {
         ],
       }),
     ).toThrow(/has no option "nope"/)
+
+    const connectHandle = toScenarioHandle(connect)
+    const withPinned = (pinned: Record<string, string>, expose: readonly string[] = []) =>
+      composeScenarios({
+        ...base,
+        parts: [{ prefix: 'tcp', handle: connectHandle, pinned, expose }],
+      })
+    expect(() => withPinned({ los: 'once' })).toThrow(/part "tcp" has no option "los"/)
+    expect(() => withPinned({ loss: 'thrice' })).toThrow(
+      /option "loss" of part "tcp" does not accept "thrice"/,
+    )
+    expect(() => withPinned({ loss: 'once' }, ['loss'])).toThrow(/is both pinned and exposed/)
+    expect(() => withPinned({ loss: 'once', port: 'closed' })).not.toThrow()
   })
 })
