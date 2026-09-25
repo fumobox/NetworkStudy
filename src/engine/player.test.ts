@@ -80,6 +80,16 @@ describe('playerReducer', () => {
     expect(playerReducer(last, { type: 'next' })).toBe(last)
   })
 
+  it('togglePlay は再生と一時停止を切り替える', () => {
+    const playing = run(initial, { type: 'togglePlay' })
+    expect(playing.isPlaying).toBe(true)
+    expect(run(playing, { type: 'togglePlay' }).isPlaying).toBe(false)
+    expect(run(createPlayerState(4, 3), { type: 'togglePlay' })).toMatchObject({
+      stepIndex: 0,
+      isPlaying: true,
+    })
+  })
+
   it('停止中の tick では進まない', () => {
     expect(run(initial, { type: 'play' }, { type: 'pause' }, { type: 'tick' }).stepIndex).toBe(0)
   })

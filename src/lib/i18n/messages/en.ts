@@ -33,7 +33,12 @@ export const en = {
     next: 'Next',
     play: 'Play',
     pause: 'Pause',
-    reset: 'Reset',
+    reset: 'Back to start',
+    controls: 'Playback controls',
+    position: 'Step',
+    speed: 'Playback speed',
+    speedValue: (p: { speed: number }) => `${String(p.speed)}×`,
+    keyboardHint: 'Keyboard: ← → to move, Space to play or pause',
   },
   diagram: {
     label: 'Sequence diagram',

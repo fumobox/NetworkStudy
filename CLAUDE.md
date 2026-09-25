@@ -59,7 +59,7 @@ scripts/            ビルド後の静的ページ生成・検証（tsx で実�
 - オブジェクト型は `interface`、ユニオンなどは `type`。`enum` ではなく `as const` とユニオン型
 - 外部入力（localStorage、URL のクエリ）は zod などで検証してから型を付ける。localStorage は `lib/storage.ts` の `readStorage` / `writeStorage` を使う（例外は内部で握りつぶす）
 - `cn` は、自前のコードでは `@/lib/utils` から import する（shadcn の生成コードは `cn` パッケージを直接 import したままでよい）
-- `shadcn add` で追加したコンポーネントは、`exactOptionalPropertyTypes` で型エラーになることがある。そのときは最小限の手修正をし、理由をコメントに残す（例: `slider.tsx`）。生成コードのバグを直した場合も同様にコメントを残す（例: `tabs.tsx` の `orientation`）
+- `shadcn add` で追加したコンポーネントは、`exactOptionalPropertyTypes` で型エラーになることがある。そのときは最小限の手修正をし、理由をコメントに残す（例: `slider.tsx`）。生成コードのバグを直した場合も同様にコメントを残す（例: `tabs.tsx` の `orientation`、`slider.tsx` のつまみの `aria-label`）
 - eslint-plugin-react-hooks v7 の recommended（React Compiler 系のルールを含む）は意図して有効にしている
 
 ## 多言語対応（i18n）
@@ -85,7 +85,7 @@ scripts/            ビルド後の静的ページ生成・検証（tsx で実�
 - `src/test/setup.ts` がテストごとに `cleanup()` と `localStorage.clear()` を行う
 - ルーティングのテストは `MemoryRouter` を使う（Vitest は `base` を `/` に上書きするため）。basename 付きの経路は `BrowserRouter basename="/NetworkStudy/"` で個別に確認する
 - ブラウザの言語は `vi.spyOn(navigator, 'languages', 'get')` で差し替える
-- Radix の Tooltip / Sheet / Slider などを開くテストでは、`ResizeObserver` などの polyfill を `src/test/setup.ts` に追加する必要がある
+- Radix が使う `ResizeObserver`・pointer capture・`scrollIntoView` は `src/test/setup.ts` で補っている。足りない API があればそこに追加する
 
 ## 静的ページ生成（scripts/）
 

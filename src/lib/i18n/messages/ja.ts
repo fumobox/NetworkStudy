@@ -28,6 +28,11 @@ export const ja = {
     play: '再生',
     pause: '一時停止',
     reset: '最初から',
+    controls: '再生の操作',
+    position: 'ステップ',
+    speed: '再生速度',
+    speedValue: (p) => `${String(p.speed)}×`,
+    keyboardHint: 'キーボード: ← → で移動、Space で再生・一時停止',
   },
   diagram: {
     label: 'シーケンス図',

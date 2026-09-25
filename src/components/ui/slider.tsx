@@ -10,6 +10,8 @@ function Slider({
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
   // exactOptionalPropertyTypes 対策: value / defaultValue は props に残したまま Root へ渡す
   const { value, defaultValue } = props
+  // 生成コードは aria-label を Root にしか渡さず、role="slider" のつまみに名前が付かないため、つまみにも渡す
+  const thumbLabel = props['aria-label']
   const _values = React.useMemo(
     () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
     [value, defaultValue, min, max],
@@ -39,6 +41,7 @@ function Slider({
         <SliderPrimitive.Thumb
           data-slot="slider-thumb"
           key={index}
+          {...(thumbLabel === undefined ? {} : { 'aria-label': thumbLabel })}
           className="relative block size-3 shrink-0 rounded-full border border-ring bg-white ring-ring/50 transition-[color,box-shadow] select-none after:absolute after:-inset-2 hover:ring-3 focus-visible:ring-3 focus-visible:outline-hidden active:ring-3 disabled:pointer-events-none disabled:opacity-50"
         />
       ))}

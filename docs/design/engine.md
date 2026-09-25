@@ -250,6 +250,7 @@ export type PlayerAction =
   | { readonly type: 'jump'; readonly stepIndex: number }
   | { readonly type: 'play' }
   | { readonly type: 'pause' }
+  | { readonly type: 'togglePlay' } // 再生ボタンと Space キー
   | { readonly type: 'tick' } // 自動再生のタイマーから。末尾で isPlaying = false
   | { readonly type: 'reset'; readonly stepCount: number } // オプション変更時（最初に戻す）
   | { readonly type: 'setSpeed'; readonly speed: PlaybackSpeed }
