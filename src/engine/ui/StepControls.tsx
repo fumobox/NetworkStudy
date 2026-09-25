@@ -84,15 +84,16 @@ export function StepControls({ state, dispatch }: StepControlsProps) {
       </div>
 
       {stepCount > 1 && (
+        // 読み上げる値を画面のステップ番号（1 始まり）に合わせる
         <Slider
           aria-label={m.stepper.position}
-          min={0}
-          max={stepCount - 1}
+          min={1}
+          max={stepCount}
           step={1}
-          value={[stepIndex]}
+          value={[stepIndex + 1]}
           onValueChange={([value]) => {
             if (value !== undefined) {
-              dispatch({ type: 'jump', stepIndex: value })
+              dispatch({ type: 'jump', stepIndex: value - 1 })
             }
           }}
         />

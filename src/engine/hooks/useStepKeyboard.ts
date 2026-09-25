@@ -1,23 +1,38 @@
 import { useEffect } from 'react'
 import type { PlayerAction } from '../player'
 
-/** フォーカスがこれらの要素にあるときは、その要素自身のキー操作を優先する */
-const INTERACTIVE_SELECTOR =
-  'a[href], button, input, select, textarea, [contenteditable=""], [contenteditable="true"], [role="button"], [role="slider"], [role="tab"], [role="menuitem"], [role="option"]'
+/** 矢印キーを自分で使う要素。ここにフォーカスがあるときは ← / → を横取りしない */
+const ARROW_KEY_CONSUMERS =
+  'input, textarea, select, [contenteditable=""], [contenteditable="true"], [role="slider"], [role="tab"], [role="radio"], [role="option"], [role="menuitem"], [role="combobox"], [role="listbox"], [role="spinbutton"], [role="textbox"], [role="dialog"], [aria-modal="true"]'
 
-function isInteractiveTarget(target: EventTarget | null): boolean {
-  return target instanceof Element && target.closest(INTERACTIVE_SELECTOR) !== null
-}
-
-const KEY_ACTIONS: Readonly<Record<string, PlayerAction>> = {
-  ArrowLeft: { type: 'prev' },
-  ArrowRight: { type: 'next' },
-  ' ': { type: 'togglePlay' },
+function matches(target: EventTarget | null, selector: string): boolean {
+  return target instanceof Element && target.closest(selector) !== null
 }
 
 /**
- * ← / → でステップを移動し、Space で再生・一時停止する。
- * 修飾キー付きのときや、フォーカスがボタン・入力欄などにあるときは何もしない。
+ * Space はボタンやリンクなどの操作にも使うので、フォーカスが本文（body）にあるときだけ再生・一時停止にする。
+ * ボタンをクリックした直後もフォーカスはボタンに残るため、← / → はボタンやリンクの上でも有効にする
+ */
+function actionFor(event: KeyboardEvent): PlayerAction | null {
+  switch (event.key) {
+    case 'ArrowLeft':
+    case 'ArrowRight':
+      if (matches(event.target, ARROW_KEY_CONSUMERS)) {
+        return null
+      }
+      return event.key === 'ArrowLeft' ? { type: 'prev' } : { type: 'next' }
+    case ' ': {
+      const onBody = event.target === document.body || event.target === document.documentElement
+      return onBody && !event.repeat ? { type: 'togglePlay' } : null
+    }
+    default:
+      return null
+  }
+}
+
+/**
+ * ← / → でステップを移動し、Space で再生・一時停止する（ページのスクロールは止める）。
+ * 修飾キー付き・IME 変換中・他の要素が処理済みのときは何もしない。
  */
 export function useStepKeyboard(dispatch: (action: PlayerAction) => void, enabled = true): void {
   useEffect(() => {
@@ -27,16 +42,16 @@ export function useStepKeyboard(dispatch: (action: PlayerAction) => void, enable
     const handleKeyDown = (event: KeyboardEvent) => {
       if (
         event.defaultPrevented ||
+        event.isComposing ||
         event.altKey ||
         event.ctrlKey ||
         event.metaKey ||
-        event.shiftKey ||
-        isInteractiveTarget(event.target)
+        event.shiftKey
       ) {
         return
       }
-      const action = KEY_ACTIONS[event.key]
-      if (action === undefined) {
+      const action = actionFor(event)
+      if (action === null) {
         return
       }
       event.preventDefault()

@@ -6,12 +6,12 @@ function Slider({
   className,
   min = 0,
   max = 100,
+  // 生成コードは aria-label を Root（role のない span）に渡し、role="slider" のつまみに名前が付かないため、つまみに渡す
+  'aria-label': thumbLabel,
   ...props
 }: React.ComponentProps<typeof SliderPrimitive.Root>) {
   // exactOptionalPropertyTypes 対策: value / defaultValue は props に残したまま Root へ渡す
   const { value, defaultValue } = props
-  // 生成コードは aria-label を Root にしか渡さず、role="slider" のつまみに名前が付かないため、つまみにも渡す
-  const thumbLabel = props['aria-label']
   const _values = React.useMemo(
     () => (Array.isArray(value) ? value : Array.isArray(defaultValue) ? defaultValue : [min, max]),
     [value, defaultValue, min, max],

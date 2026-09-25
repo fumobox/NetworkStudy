@@ -65,7 +65,9 @@ describe('StepControls', () => {
     const user = userEvent.setup()
     const { dispatch } = renderControls(createPlayerState(5, 1))
     const slider = screen.getByRole('slider', { name: 'Step' })
-    expect(slider).toHaveAttribute('aria-valuenow', '1')
+    // 画面のステップ番号と同じく 1 始まりで読み上げる
+    expect(slider).toHaveAttribute('aria-valuenow', '2')
+    expect(slider).toHaveAttribute('aria-valuemax', '5')
     slider.focus()
     await user.keyboard('{ArrowRight}')
     expect(dispatch).toHaveBeenLastCalledWith({ type: 'jump', stepIndex: 2 })

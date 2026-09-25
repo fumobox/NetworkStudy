@@ -7,11 +7,26 @@ function press(
   init: KeyboardEventInit = {},
   target: Document | Element = document.body,
 ) {
-  fireEvent.keyDown(target, { key, ...init })
+  return fireEvent.keyDown(target, { key, ...init })
+}
+
+function Harness({ dispatch }: { dispatch: (action: unknown) => void }) {
+  useStepKeyboard(dispatch)
+  return (
+    <>
+      <button type="button">b</button>
+      <a href="#x">link</a>
+      <input aria-label="i" />
+      <div role="slider" aria-valuenow={0} tabIndex={0} />
+      <div role="dialog" aria-label="d">
+        <span>in dialog</span>
+      </div>
+    </>
+  )
 }
 
 describe('useStepKeyboard', () => {
-  it('← / → / Space をアクションに対応付ける', () => {
+  it('本文にフォーカスがあるとき、← / → / Space をアクションに対応付ける', () => {
     const dispatch = vi.fn()
     renderHook(() => {
       useStepKeyboard(dispatch)
@@ -27,7 +42,15 @@ describe('useStepKeyboard', () => {
     ])
   })
 
-  it('修飾キー付きのときは何もしない', () => {
+  it('処理したキーは既定の動作（Space のスクロールなど）を止める', () => {
+    renderHook(() => {
+      useStepKeyboard(vi.fn())
+    })
+    expect(press(' ')).toBe(false)
+    expect(press('a')).toBe(true)
+  })
+
+  it('修飾キー・IME 変換中・処理済み・長押しの Space は無視する', () => {
     const dispatch = vi.fn()
     renderHook(() => {
       useStepKeyboard(dispatch)
@@ -35,29 +58,39 @@ describe('useStepKeyboard', () => {
     press('ArrowRight', { altKey: true })
     press('ArrowRight', { metaKey: true })
     press(' ', { shiftKey: true })
+    press('ArrowRight', { isComposing: true })
+    press(' ', { repeat: true })
+    const handled = new KeyboardEvent('keydown', {
+      key: 'ArrowRight',
+      bubbles: true,
+      cancelable: true,
+    })
+    handled.preventDefault()
+    document.body.dispatchEvent(handled)
     expect(dispatch).not.toHaveBeenCalled()
   })
 
-  it('ボタン・入力欄・スライダーにフォーカスがあるときは、その要素の操作を優先する', () => {
+  it('ボタンやリンクの上では ← / → は効き、Space はその要素に任せる', () => {
     const dispatch = vi.fn()
-    function Harness() {
-      useStepKeyboard(dispatch)
-      return (
-        <>
-          <button type="button">b</button>
-          <input aria-label="i" />
-          <div role="slider" aria-valuenow={0} tabIndex={0} />
-          <p>text</p>
-        </>
-      )
-    }
-    const { getByRole, getByText } = render(<Harness />)
+    const { getByRole } = render(<Harness dispatch={dispatch} />)
+    press('ArrowRight', {}, getByRole('button'))
+    press('ArrowLeft', {}, getByRole('link'))
     press(' ', {}, getByRole('button'))
+    press(' ', {}, getByRole('link'))
+    expect(dispatch.mock.calls.map(([action]: unknown[]) => action)).toEqual([
+      { type: 'next' },
+      { type: 'prev' },
+    ])
+  })
+
+  it('矢印キーを使う要素（入力欄・スライダー）やダイアログの中では何もしない', () => {
+    const dispatch = vi.fn()
+    const { getByRole, getByText } = render(<Harness dispatch={dispatch} />)
     press('ArrowRight', {}, getByRole('textbox'))
     press('ArrowRight', {}, getByRole('slider'))
+    press('ArrowRight', {}, getByText('in dialog'))
+    press(' ', {}, getByRole('textbox'))
     expect(dispatch).not.toHaveBeenCalled()
-    press('ArrowRight', {}, getByText('text'))
-    expect(dispatch).toHaveBeenCalledWith({ type: 'next' })
   })
 
   it('無効化・アンマウントで反応しなくなる', () => {
