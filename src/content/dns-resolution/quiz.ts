@@ -30,12 +30,12 @@ export const dnsResolutionQuiz: Quiz = {
       },
       choices: [
         {
-          id: 'referral',
-          text: { en: 'A referral to the .com servers', ja: '.com のサーバーへの委任' },
-        },
-        {
           id: 'address',
           text: { en: 'The address of www.example.com', ja: 'www.example.com のアドレス' },
+        },
+        {
+          id: 'referral',
+          text: { en: 'A referral to the .com servers', ja: '.com のサーバーへの委任' },
         },
         {
           id: 'nxdomain',
@@ -51,8 +51,8 @@ export const dnsResolutionQuiz: Quiz = {
       ],
       answerId: 'referral',
       explanation: {
-        en: 'The root does not know the address, but it knows who is responsible for com. It returns NS records for com. (plus their addresses as glue), and the resolver asks there next.',
-        ja: 'ルートはアドレスを知らないが、com. の担当は知っている。com. の NS レコード（とそのアドレスの glue）を返し、リゾルバは次にそこへ聞く。',
+        en: 'The root does not know the address, but it knows who is responsible for com. It returns NS records for com. (with their addresses in the Additional section), and the resolver asks there next.',
+        ja: 'ルートはアドレスを知らないが、com. の担当は知っている。com. の NS レコード（と、Additional セクションにそのアドレス）を返し、リゾルバは次にそこへ聞く。',
       },
     },
     {
@@ -63,17 +63,20 @@ export const dnsResolutionQuiz: Quiz = {
       },
       choices: [
         {
+          id: 'faster',
+          text: { en: 'It only makes the lookup faster', ja: '名前解決を速くするためだけ' },
+        },
+        {
+          id: 'encryption',
+          text: { en: 'It is required for encryption', ja: '暗号化に必要だから' },
+        },
+        {
           id: 'circular',
           text: {
             en: 'The server is inside the zone it serves',
             ja: 'そのサーバーが担当するゾーンの中にあるから',
           },
         },
-        {
-          id: 'faster',
-          text: { en: 'It only makes the lookup faster', ja: '名前解決を速くするためだけ' },
-        },
-        { id: 'dnssec', text: { en: 'It is required for encryption', ja: '暗号化に必要だから' } },
         {
           id: 'ttl',
           text: { en: 'It resets the TTL of the cache', ja: 'キャッシュの TTL をリセットするため' },
@@ -92,18 +95,18 @@ export const dnsResolutionQuiz: Quiz = {
         ja: '応答の AA フラグは何を意味する？',
       },
       choices: [
+        { id: 'cache', text: { en: 'It comes from a cache', ja: 'キャッシュからの答え' } },
+        { id: 'recursion', text: { en: 'Recursion is available', ja: '再帰が使える' } },
+        {
+          id: 'encrypted',
+          text: { en: 'The response is encrypted', ja: '応答が暗号化されている' },
+        },
         {
           id: 'authoritative',
           text: {
             en: 'It comes from the zone’s own server',
             ja: 'ゾーンを担当するサーバーからの答え',
           },
-        },
-        { id: 'cache', text: { en: 'It comes from a cache', ja: 'キャッシュからの答え' } },
-        { id: 'recursion', text: { en: 'Recursion is available', ja: '再帰が使える' } },
-        {
-          id: 'encrypted',
-          text: { en: 'The response is encrypted', ja: '応答が暗号化されている' },
         },
       ],
       answerId: 'authoritative',
@@ -120,12 +123,12 @@ export const dnsResolutionQuiz: Quiz = {
       },
       choices: [
         {
-          id: 'negative-cache',
-          text: { en: 'It caches the negative answer', ja: '否定応答をキャッシュするから' },
-        },
-        {
           id: 'blocked',
           text: { en: 'The name is now blocked', ja: 'その名前がブロックされるから' },
+        },
+        {
+          id: 'negative-cache',
+          text: { en: 'It caches the negative answer', ja: '否定応答をキャッシュするから' },
         },
         { id: 'root-forbids', text: { en: 'The root forbids it', ja: 'ルートが禁止するから' } },
         {

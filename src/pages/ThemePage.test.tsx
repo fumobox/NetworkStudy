@@ -149,6 +149,18 @@ describe('ThemePage', () => {
     expect(within(inspector).getByText('1000')).toBeInTheDocument()
   })
 
+  it('DNS の NXDOMAIN の分岐: 否定応答をパケットの詳細とキャッシュ表で見せる', () => {
+    renderAt('/ja/themes/dns-resolution?opt.name=missing&step=7')
+    expect(
+      screen.getByRole('heading', { level: 2, name: '名前が存在しない（NXDOMAIN）' }),
+    ).toBeInTheDocument()
+    const inspector = screen.getByRole('region', { name: 'パケットの詳細' })
+    expect(within(inspector).getAllByText('NXDOMAIN').length).toBeGreaterThan(0)
+    expect(within(inspector).getByText(/example\.com\. SOA/)).toBeInTheDocument()
+    const state = screen.getByRole('region', { name: '各参加者の状態' })
+    expect(within(state).getByText('(negative)')).toBeInTheDocument()
+  })
+
   it('未知のテーマは NotFound', () => {
     renderAt('/en/themes/no-such-theme')
     expect(screen.getByRole('heading', { name: 'Page not found' })).toBeInTheDocument()

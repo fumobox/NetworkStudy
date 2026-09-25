@@ -6,7 +6,7 @@ Computers connect to each other by IP address, but people use names like `www.ex
 
 - **Stub resolver** — a small client in your PC. It asks one question and waits for the final answer.
 - **Full-service resolver** — usually run by your ISP, your company, or a public DNS service. It does the actual work and keeps a **cache**.
-- **Root, TLD, and authoritative servers** — the root knows who runs each top-level domain such as `com.`, the `com.` servers know who runs `example.com.`, and the `example.com.` servers know the answer.
+- **Root, TLD, and example.com servers** — each is the authoritative server for its own zone. The root knows who runs each top-level domain such as `com.`, the `com.` servers know who runs `example.com.`, and the `example.com.` servers know the answer.
 
 ## Recursive and iterative queries
 

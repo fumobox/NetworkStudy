@@ -5,17 +5,15 @@ import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatSeconds, useLocale, useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { clampStepIndex } from '../derive'
-import { diagramRows, hasTimers, type DiagramRow } from '../diagram'
+import { diagramRows, hasTimers, LANE_WIDTH, TIME_COLUMN_WIDTH, type DiagramRow } from '../diagram'
 import type { Actor, ActorId, Message, MessageId, Step, TimerEvent } from '../types'
 import { useActorName } from './useActorName'
 
-const LANE_WIDTH = 180
 /** 狭い画面ではレーンを詰め、アクターの短縮名を使う */
 const COMPACT_LANE_WIDTH = 112
 const COMPACT_MEDIA_QUERY = '(max-width: 640px)'
 /** 最新のメッセージの線を伸ばす時間 */
 const DRAW_DURATION_S = 0.5
-const TIME_COLUMN_WIDTH = 72
 const HEADER_HEIGHT = 48
 const ROW_HEIGHT = 56
 const BOTTOM_PADDING = 16

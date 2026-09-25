@@ -36,6 +36,16 @@ export function diagramRows(steps: readonly Step[], index: number): DiagramRow[]
   )
 }
 
+/** 1 アクター分のレーンの幅（px） */
+export const LANE_WIDTH = 180
+/** 経過時間の列の幅（px） */
+export const TIME_COLUMN_WIDTH = 72
+
+/** 通常の幅で描いたときのシーケンス図の幅（px） */
+export function diagramWidth(actorCount: number, withTimers: boolean): number {
+  return (withTimers ? TIME_COLUMN_WIDTH : 0) + actorCount * LANE_WIDTH
+}
+
 /** シナリオ全体にタイマーが 1 つでもあるか（経過時間の列を出すかどうか） */
 export function hasTimers(steps: readonly Step[]): boolean {
   return steps.some((step) => step.events.some((event) => event.kind === 'timer'))

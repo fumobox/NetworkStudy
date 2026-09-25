@@ -33,6 +33,16 @@ describe('registry', () => {
     },
   )
 
+  it.each(THEMES.map((theme) => [theme.meta.id, theme] as const))(
+    '%s のクイズは、正解の位置がすべて同じではない（位置で当てられない）',
+    (_, theme) => {
+      const positions = theme.quiz.questions.map((question) =>
+        question.choices.findIndex((choice) => choice.id === question.answerId),
+      )
+      expect(new Set(positions).size).toBeGreaterThan(1)
+    },
+  )
+
   it('メタ情報のタイトルと概要に翻訳の空欄がない', () => {
     expect(
       findTextProblems(

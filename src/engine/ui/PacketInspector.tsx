@@ -74,7 +74,7 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
                   key={`${String(i)}:${field.name}`}
                   data-highlight={field.highlight === true}
                   className={cn(
-                    'grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)] gap-x-3 border-t px-1 py-2',
+                    'grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)] items-baseline gap-x-3 border-t px-1 py-2',
                     field.highlight === true && 'bg-accent',
                   )}
                 >
