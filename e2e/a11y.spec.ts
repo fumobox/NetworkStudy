@@ -16,6 +16,7 @@ const WHAT_IF_QUERIES: Readonly<Record<string, string>> = {
   'tcp-handshake': '?opt.synLoss=twice&step=99',
   'dns-resolution': '?opt.name=alias&step=99',
   'tls-handshake': '?opt.certProblem=expired&step=99',
+  'tcp-close': '?opt.lastAckLost=1&step=99',
 }
 
 interface PageCase {

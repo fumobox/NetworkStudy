@@ -8,6 +8,7 @@ An interactive portal for learning how network protocols work, one packet at a t
 - TCP 3-way handshake / TCP 3ウェイハンドシェイク
 - DNS name resolution / DNS 名前解決
 - TLS 1.3 handshake and certificate chain validation / TLS 1.3 ハンドシェイクと証明書チェーン検証
+- Closing a TCP connection (four-way close, TIME-WAIT) / TCP の接続の終了（4 ウェイクローズ、TIME-WAIT）
 
 Available in English and Japanese. / 英語・日本語に対応しています。
 

@@ -139,12 +139,12 @@ export const tcpCloseQuiz: Quiz = {
           id: 'rto',
           text: { en: 'One retransmission timeout (RTO)', ja: '再送タイムアウト（RTO）1 回分' },
         },
-        { id: '1msl', text: { en: '1 MSL (2 minutes)', ja: '1 MSL（2 分）' } },
+        { id: '1msl', text: { en: '1MSL (2 minutes)', ja: '1MSL（2 分）' } },
         {
           id: 'none',
           text: { en: 'It ends as soon as the ACK is sent', ja: 'ACK を送ったらすぐ終わる' },
         },
-        { id: '2msl', text: { en: '2 MSL (4 minutes)', ja: '2 MSL（4 分）' } },
+        { id: '2msl', text: { en: '2MSL (4 minutes)', ja: '2MSL（4 分）' } },
       ],
       answerId: '2msl',
       explanation: {
