@@ -268,7 +268,8 @@ export const ja = {
 
 - `vite.config.ts` に `base: "/NetworkStudy/"` を設定する
 - **直リンク対策**: ビルド後に `scripts/generate-static-pages.ts` で、ロケール × テーマの組み合わせごとに `dist/{en,ja}/index.html` と `dist/{en,ja}/themes/<id>/index.html` を複製する。どの URL も 200 で返るため、検索エンジンにも拾われる
-- 複製時に `<html lang>`、`hreflang`（en / ja / x-default）、OG メタを置換して埋め込む
+- 複製時に `<html lang>`、`<title>`、`description`、`canonical`、`hreflang`（en / ja / x-default）を埋め込む。OG メタは Phase 2（2-12）で追加する
+- ロケールなしのページ（`/`、`/themes/<id>/`）もルートごとに生成する（x-default の参照先。SPA がロケール付きの URL へリダイレクトする）
 - 未知のパス用に `404.html` も置く（中身は SPA のエントリと同じ）
 - デプロイは ci.yml の deploy job で行う。main への push のとき、check job（検証・ビルド）が通った後にだけ実行する
 
@@ -282,7 +283,7 @@ NetworkStudy/
 │   └── pull_request_template.md
 ├── docs/ (PLAN.md, glossary.md)
 ├── public/
-├── scripts/generate-static-pages.ts
+├── scripts/                     # generate-static-pages.ts, verify-static-pages.ts, static-pages/（純関数）
 ├── src/
 │   ├── main.tsx
 │   ├── app/ (AppRoutes.tsx, LocaleLayout.tsx, LocaleRedirect.tsx)
@@ -330,7 +331,7 @@ NetworkStudy/
 | 0-4 | ESLint（strict-type-checked, jsx-no-literals）、Prettier、dependency-cruiser | infra |
 | 0-5 | Vitest と Testing Library のセットアップ | infra |
 | 0-6 | i18n 基盤（`Locale`、`LocalizedText`、辞書、`useMessages`／`useText`）とテスト | i18n |
-| 0-7 | ロケール付きルーティング、`RootRedirect`、`LanguageSwitcher`、AppLayout、Home／NotFound | i18n, enhancement |
+| 0-7 | ロケール付きルーティング、`LocaleRedirect`、`LanguageSwitcher`、AppLayout、Home／NotFound | i18n, enhancement |
 | 0-8 | GitHub Actions の CI（typecheck／lint／test／build） | infra |
 | 0-9 | GitHub Pages へのデプロイ（base 設定、静的ページ生成スクリプト、hreflang、404.html） | infra, i18n |
 | 0-10 | CLAUDE.md（規約、レイヤ依存ルール） | infra |
