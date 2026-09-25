@@ -5,6 +5,8 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      // Vitest はテスト時に base を '/' に上書きする（import.meta.env.BASE_URL === '/'）。
+      // ルーティングのテストは MemoryRouter を使い、basename（/NetworkStudy/）は扱わない
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
       include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
