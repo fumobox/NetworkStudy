@@ -30,4 +30,11 @@ describe('i18n hooks', () => {
     const { result } = renderHook(() => useText(), { wrapper: wrapperFor('en') })
     expect(result.current({ en: 'Handshake', ja: 'ハンドシェイク' })).toBe('Handshake')
   })
+
+  it('useText の戻り値はロケールが同じなら再レンダー後も同一参照', () => {
+    const { result, rerender } = renderHook(() => useText(), { wrapper: wrapperFor('en') })
+    const first = result.current
+    rerender()
+    expect(result.current).toBe(first)
+  })
 })

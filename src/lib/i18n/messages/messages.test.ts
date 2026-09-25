@@ -27,6 +27,8 @@ describe('UI 文言の辞書', () => {
     }
   })
 
+  // 型（satisfies Messages）はオブジェクトリテラルを直書きした余剰キーしか検出できない。
+  // スプレッドや変数経由で混入した余剰キーはこのテストで検出する
   it('全ロケールでキー構成が同じ', () => {
     const paths = LOCALES.map((locale) =>
       collectLeaves(MESSAGES[locale])

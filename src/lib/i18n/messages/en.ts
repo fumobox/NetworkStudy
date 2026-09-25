@@ -1,7 +1,10 @@
+import type { DeepReadonly } from '@/types/utility'
+
 /**
  * UI 文言の辞書（英語）。この辞書を正とし、型 `Messages` はここから導出する。
  * 値は文字列、または引数に型を付けた関数で持つ。
  * `as const` を付けると値がリテラル型になり他言語の辞書が代入できなくなるため、付けない。
+ * 代わりに `Messages` を DeepReadonly にして、辞書の書き換えを型で禁止する。
  */
 export const en = {
   common: {
@@ -31,4 +34,4 @@ export const en = {
   },
 }
 
-export type Messages = typeof en
+export type Messages = DeepReadonly<typeof en>
