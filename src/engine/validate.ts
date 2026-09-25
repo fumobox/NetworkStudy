@@ -2,6 +2,7 @@ import { LOCALES, type LocalizedText } from '@/lib/i18n/locale'
 import type {
   Actor,
   RawOptionValues,
+  ResolvedScenario,
   ScenarioHandle,
   ScenarioOptionDef,
   StateValue,
@@ -44,6 +45,39 @@ function isTable(value: StateValue): boolean {
   return typeof value !== 'string'
 }
 
+/** 不正な値の例。どのオプションでも受け付けないはずの値 */
+const INVALID_RAW_VALUE = '\u0000invalid'
+
+/** resolve を呼び、例外は問題として報告する（validateScenario 自体は throw しない） */
+function safeResolve(
+  handle: ScenarioHandle,
+  raw: RawOptionValues,
+  problems: ScenarioProblem[],
+): ResolvedScenario | null {
+  try {
+    return handle.resolve(raw)
+  } catch (error) {
+    problems.push({
+      path: `options(${describeOptions(raw)})`,
+      message: `resolve threw: ${error instanceof Error ? error.message : String(error)}`,
+    })
+    return null
+  }
+}
+
+function checkNotEmpty(path: string, kind: string, id: string, problems: ScenarioProblem[]): void {
+  if (id === '') {
+    problems.push({ path, message: `${kind} is empty` })
+  }
+}
+
+function sameColumns(a: StateValue, b: StateValue): boolean {
+  if (typeof a === 'string' || typeof b === 'string') {
+    return true
+  }
+  return a.columns.join('\u0000') === b.columns.join('\u0000')
+}
+
 function checkTableShape(path: string, value: StateValue, problems: ScenarioProblem[]): void {
   if (typeof value === 'string') {
     return
@@ -62,9 +96,7 @@ function checkActors(actors: readonly Actor[], problems: ScenarioProblem[]): voi
   const seen = new Set<string>()
   actors.forEach((actor, i) => {
     const path = `actors[${String(i)}]`
-    if (actor.id === '') {
-      problems.push({ path, message: 'actor id is empty' })
-    }
+    checkNotEmpty(path, 'actor id', actor.id, problems)
     if (seen.has(actor.id)) {
       problems.push({ path, message: `duplicate actor id "${actor.id}"` })
     }
@@ -72,6 +104,7 @@ function checkActors(actors: readonly Actor[], problems: ScenarioProblem[]): voi
     const keys = new Set<string>()
     actor.stateSlots.forEach((slot, j) => {
       const slotPath = `${path}.stateSlots[${String(j)}]`
+      checkNotEmpty(slotPath, 'state key', slot.key, problems)
       if (keys.has(slot.key)) {
         problems.push({ path: slotPath, message: `duplicate state key "${slot.key}"` })
       }
@@ -96,6 +129,7 @@ function checkSteps(
 
   steps.forEach((step, i) => {
     const stepPath = `${prefix}.steps[${String(i)}]`
+    checkNotEmpty(stepPath, 'step id', step.id, problems)
     if (stepIds.has(step.id)) {
       problems.push({ path: stepPath, message: `duplicate step id "${step.id}"` })
     }
@@ -106,6 +140,7 @@ function checkSteps(
       switch (event.kind) {
         case 'message': {
           const { message } = event
+          checkNotEmpty(eventPath, 'message id', message.id, problems)
           if (messageIds.has(message.id)) {
             problems.push({ path: eventPath, message: `duplicate message id "${message.id}"` })
           }
@@ -142,6 +177,11 @@ function checkSteps(
               path: eventPath,
               message: `state "${event.key}" must be a ${isTable(slot.initial) ? 'table' : 'scalar'}`,
             })
+          } else if (!sameColumns(slot.initial, event.value)) {
+            problems.push({
+              path: eventPath,
+              message: `table "${event.key}" must keep the columns of its initial value`,
+            })
           }
           checkTableShape(`${eventPath}.value`, event.value, problems)
           break
@@ -150,8 +190,8 @@ function checkSteps(
           if (!actorsById.has(event.actorId)) {
             problems.push({ path: eventPath, message: `unknown actor "${event.actorId}"` })
           }
-          if (!(event.durationMs >= 0)) {
-            problems.push({ path: eventPath, message: 'durationMs must be >= 0' })
+          if (!Number.isFinite(event.durationMs) || event.durationMs < 0) {
+            problems.push({ path: eventPath, message: 'durationMs must be a finite number >= 0' })
           }
           break
       }
@@ -161,9 +201,40 @@ function checkSteps(
 
 /** optionDefs と parseOptions（zod スキーマ）が一致しているか */
 function checkOptions(handle: ScenarioHandle, problems: ScenarioProblem[]): void {
-  const defaults = handle.resolve({}).options
+  const resolved = safeResolve(handle, {}, problems)
+  if (resolved === null) {
+    return
+  }
+  const defaults = resolved.options
+  for (const key of Object.keys(defaults)) {
+    if (!Object.hasOwn(handle.optionDefs, key)) {
+      problems.push({
+        path: `optionDefs.${key}`,
+        message: 'option is returned by parseOptions but not declared in optionDefs',
+      })
+    }
+  }
   for (const [key, def] of Object.entries(handle.optionDefs)) {
     const path = `optionDefs.${key}`
+    if (def.kind === 'select') {
+      const values = def.choices.map((choice) => choice.value)
+      if (!values.includes(def.defaultValue)) {
+        problems.push({
+          path,
+          message: `defaultValue "${def.defaultValue}" is not one of the choices`,
+        })
+      }
+      for (const duplicate of values.filter((value, i) => values.indexOf(value) !== i)) {
+        problems.push({ path, message: `duplicate choice "${duplicate}"` })
+      }
+    }
+    const fallback = safeResolve(handle, { [key]: INVALID_RAW_VALUE }, problems)
+    if (fallback !== null && fallback.options[key] !== def.defaultValue) {
+      problems.push({
+        path,
+        message: `an invalid value gives ${JSON.stringify(fallback.options[key])} instead of falling back to defaultValue`,
+      })
+    }
     if (defaults[key] !== def.defaultValue) {
       problems.push({
         path,
@@ -178,7 +249,7 @@ function checkOptions(handle: ScenarioHandle, problems: ScenarioProblem[]): void
           ]
         : def.choices.map((choice) => [choice.value, choice.value] as const)
     for (const [raw, expected] of expectations) {
-      const actual = handle.resolve({ [key]: raw }).options[key]
+      const actual = safeResolve(handle, { [key]: raw }, problems)?.options[key]
       if (actual !== expected) {
         problems.push({
           path,
@@ -189,7 +260,10 @@ function checkOptions(handle: ScenarioHandle, problems: ScenarioProblem[]): void
   }
 }
 
-/** シナリオに含まれるすべての LocalizedText を、全オプションの組み合わせについて集める */
+/**
+ * シナリオに含まれるすべての LocalizedText を、全オプションの組み合わせについて集める。
+ * resolve が例外を投げた組み合わせは飛ばす（validateScenario が問題として報告する）
+ */
 export function collectLocalizedTexts(handle: ScenarioHandle): LocalizedTextEntry[] {
   const entries: LocalizedTextEntry[] = [{ path: 'title', text: handle.title }]
   const add = (path: string, text: LocalizedText | undefined) => {
@@ -216,7 +290,7 @@ export function collectLocalizedTexts(handle: ScenarioHandle): LocalizedTextEntr
   }
   for (const raw of enumerateOptionCombinations(handle)) {
     const prefix = `options(${describeOptions(raw)})`
-    handle.resolve(raw).steps.forEach((step, i) => {
+    safeResolve(handle, raw, [])?.steps.forEach((step, i) => {
       const stepPath = `${prefix}.steps[${String(i)}]`
       add(`${stepPath}.title`, step.title)
       add(`${stepPath}.description`, step.description)
@@ -261,12 +335,10 @@ export function validateScenario(handle: ScenarioHandle): readonly ScenarioProbl
   checkActors(handle.actors, problems)
   checkOptions(handle, problems)
   for (const raw of enumerateOptionCombinations(handle)) {
-    checkSteps(
-      handle.actors,
-      handle.resolve(raw).steps,
-      `options(${describeOptions(raw)})`,
-      problems,
-    )
+    const resolved = safeResolve(handle, raw, problems)
+    if (resolved !== null) {
+      checkSteps(handle.actors, resolved.steps, `options(${describeOptions(raw)})`, problems)
+    }
   }
   checkLocalizedTexts(handle, problems)
 

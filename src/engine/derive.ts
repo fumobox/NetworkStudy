@@ -79,15 +79,17 @@ export function deriveState(
     }
   })
 
-  const actorStates: Record<ActorId, ActorStateSnapshot> = {}
-  for (const [actorId, values] of states) {
-    const before = beforeLastStep.get(actorId)
-    const changedKeys = [...values].flatMap(([key, value]) => {
-      const previous = before?.get(key)
-      return previous === undefined || isSameStateValue(previous, value) ? [] : [key]
-    })
-    actorStates[actorId] = { values: Object.fromEntries(values), changedKeys }
-  }
+  // Object.fromEntries で組み立てる（id が '__proto__' でもプロトタイプを書き換えない）
+  const actorStates: Readonly<Record<ActorId, ActorStateSnapshot>> = Object.fromEntries(
+    [...states].map(([actorId, values]) => {
+      const before = beforeLastStep.get(actorId)
+      const changedKeys = [...values].flatMap(([key, value]) => {
+        const previous = before?.get(key)
+        return previous === undefined || isSameStateValue(previous, value) ? [] : [key]
+      })
+      return [actorId, { values: Object.fromEntries(values), changedKeys }]
+    }),
+  )
 
   return { stepIndex, messages, timers, actorStates, elapsedMs }
 }

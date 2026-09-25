@@ -165,9 +165,31 @@ describe('deriveState', () => {
   })
 
   it('入力を変更しない純関数である', () => {
-    const frozen = Object.freeze(steps.map((s) => Object.freeze({ ...s })))
-    expect(() => deriveState(Object.freeze([...actors]), frozen, 3)).not.toThrow()
-    expect(deriveState(actors, steps, 3)).toEqual(deriveState(actors, steps, 3))
+    const deepFreeze = <T>(value: T): T => {
+      if (typeof value === 'object' && value !== null) {
+        Object.values(value).forEach(deepFreeze)
+        Object.freeze(value)
+      }
+      return value
+    }
+    const frozenActors = deepFreeze(structuredClone(actors))
+    const frozenSteps = deepFreeze(structuredClone(steps))
+    expect(() => deriveState(frozenActors, frozenSteps, 3)).not.toThrow()
+    expect(deriveState(frozenActors, frozenSteps, 3)).toEqual(deriveState(actors, steps, 3))
+  })
+
+  it('アクター id が __proto__ でも状態を返す', () => {
+    const odd: readonly Actor[] = [
+      {
+        id: '__proto__',
+        kind: 'client',
+        name: text('Odd'),
+        stateSlots: [{ key: 'state', label: text('S'), initial: 'X' }],
+      },
+    ]
+    const derived = deriveState(odd, [step('a', [])], 0)
+    expect(Object.keys(derived.actorStates)).toEqual(['__proto__'])
+    expect(Object.getPrototypeOf(derived.actorStates)).toBe(Object.prototype)
   })
 })
 
