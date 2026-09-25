@@ -62,6 +62,24 @@ export const en = {
       `${p.actor}: ${p.name} timer expired after ${p.duration}`,
     elapsed: (p: { time: string }) => `t = ${p.time}`,
   },
+  inspector: {
+    title: 'Packet details',
+    empty: 'No message to show yet.',
+    route: (p: { from: string; to: string }) => `${p.from} → ${p.to}`,
+    field: 'Field',
+    value: 'Value',
+    description: 'Description',
+    highlighted: 'Key field in this step',
+    retransmitOf: (p: { label: string }) => `Retransmission of ${p.label}`,
+    encrypted:
+      'In reality this message is encrypted. Its contents are shown here for learning purposes.',
+  },
+  actorState: {
+    title: 'State of each participant',
+    changed: 'Changed in this step',
+    added: 'Added in this step',
+    emptyTable: 'Empty',
+  },
   notFound: {
     title: 'Page not found',
     description: 'The page you are looking for does not exist.',

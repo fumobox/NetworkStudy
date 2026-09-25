@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { clampStepIndex } from '../derive'
 import { diagramRows, hasTimers, type DiagramRow } from '../diagram'
 import type { Actor, ActorId, Message, MessageId, Step, TimerEvent } from '../types'
+import { useActorName } from './useActorName'
 
 const LANE_WIDTH = 180
 /** 狭い画面ではレーンを詰め、アクターの短縮名を使う */
@@ -61,10 +62,7 @@ export function SequenceDiagram({
   const laneX = new Map<ActorId, number>(
     actors.map((actor, i) => [actor.id, offsetX + i * laneWidth + laneWidth / 2]),
   )
-  const actorName = (actorId: ActorId): string => {
-    const actor = actors.find((candidate) => candidate.id === actorId)
-    return actor === undefined ? actorId : t(actor.name)
-  }
+  const actorName = useActorName(actors)
   // 矢印の上にラベルを置くため、行の中心より少し下に線を引く
   const rowY = (i: number) => HEADER_HEIGHT + i * ROW_HEIGHT + ROW_HEIGHT / 2 + 8
 
