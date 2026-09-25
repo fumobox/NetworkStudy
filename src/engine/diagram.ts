@@ -77,6 +77,23 @@ export function sectionStartLabels(
   })
 }
 
+/**
+ * 各行の上端の y 座標と、本体の下端を求める。区間の始まりの行の上には sectionHeight の帯を入れる
+ */
+export function rowLayout(
+  sections: readonly (LocalizedText | null)[],
+  options: { top: number; rowHeight: number; sectionHeight: number },
+): { rowTops: number[]; bottom: number } {
+  const rowTops: number[] = []
+  let top = options.top
+  for (const section of sections) {
+    top += section === null ? 0 : options.sectionHeight
+    rowTops.push(top)
+    top += options.rowHeight
+  }
+  return { rowTops, bottom: top }
+}
+
 /** シナリオ全体にタイマーが 1 つでもあるか（経過時間の列を出すかどうか） */
 export function hasTimers(steps: readonly Step[]): boolean {
   return steps.some((step) => step.events.some((event) => event.kind === 'timer'))

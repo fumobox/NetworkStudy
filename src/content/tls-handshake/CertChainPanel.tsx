@@ -10,6 +10,7 @@ import {
   CERT_CHAIN_COLUMNS,
   CHECK_NG,
   CHECK_OK,
+  HOST,
   NOT_SENT,
   VALIDATION_DATE,
 } from './scenario'
@@ -39,7 +40,7 @@ const TEXT = {
   checks: {
     signature: { en: 'Signature by the issuer', ja: '発行元の署名' },
     validity: { en: 'Within the validity period', ja: '有効期間内' },
-    name: { en: 'Issued for www.example.com', ja: 'www.example.com 向け' },
+    name: { en: `Issued for ${HOST}`, ja: `${HOST} 向け` },
     trust: { en: 'In the client’s trust store', ja: 'クライアントの信頼ストアにある' },
   },
   results: {
@@ -98,12 +99,17 @@ export function CertChainPanel({ derived }: ScenarioPanelsContext) {
                     notSent && 'border-dashed text-muted-foreground',
                   )}
                 >
-                  <header className="mb-2">
+                  {/* 見出しに役割も含め、見出しで移動したときに「サーバー証明書」などがわかるようにする */}
+                  <h3 className="mb-2">
                     {role !== undefined && (
-                      <p className="text-xs text-muted-foreground">{t(role)}</p>
+                      <span className="block text-xs font-normal text-muted-foreground">
+                        {t(role)}
+                      </span>
                     )}
-                    <h3 className="font-mono text-sm font-semibold">{cell(row, 'subject')}</h3>
-                  </header>
+                    <span className="block font-mono text-sm font-semibold">
+                      {cell(row, 'subject')}
+                    </span>
+                  </h3>
                   {notSent ? (
                     <p className="text-sm">{t(TEXT.notSent)}</p>
                   ) : (

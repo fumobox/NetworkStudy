@@ -21,8 +21,11 @@ function renderPanel(certProblem: CertProblem, stepId: string, locale: Locale = 
 
 /** 各証明書のカードの検証項目を [ラベル, 結果] で取り出す */
 function checksOf(panel: HTMLElement, subject: string): string[][] {
-  const card = within(panel).getByRole('heading', { level: 3, name: subject }).closest('article')
-  if (card === null) throw new Error(`no card for ${subject}`)
+  const card = within(panel)
+    .getAllByRole('heading', { level: 3 })
+    .find((heading) => heading.querySelector('.font-mono')?.textContent === subject)
+    ?.closest('article')
+  if (card === null || card === undefined) throw new Error(`no card for ${subject}`)
   return [...card.querySelectorAll('li[data-result]')].map((item) => {
     const spans = item.querySelectorAll('span')
     return [spans[0]?.textContent ?? '', spans[1]?.textContent ?? '']
@@ -90,6 +93,19 @@ describe('CertChainPanel', () => {
     expect(checksOf(panel, 'www.example.com')[0]).toEqual([
       'Signature by the issuer',
       'Cannot check',
+    ])
+  })
+
+  it('見出しに役割と証明書の名前を含める', () => {
+    const panel = renderPanel('none', 'last')
+    expect(
+      within(panel)
+        .getAllByRole('heading', { level: 3 })
+        .map((h) => h.textContent),
+    ).toEqual([
+      'Server certificatewww.example.com',
+      'Intermediate CAExample Intermediate CA',
+      'Root CAExample Root CA',
     ])
   })
 

@@ -82,10 +82,7 @@ export const tlsHandshakeQuiz: Quiz = {
         { id: 'client-identity', text: { en: 'Who the client is', ja: 'クライアントがだれか' } },
         {
           id: 'private-key',
-          text: {
-            en: 'The server holds the certificate’s private key',
-            ja: 'サーバーが証明書の秘密鍵を持っている',
-          },
+          text: { en: 'The server holds the private key', ja: 'サーバーが秘密鍵を持っている' },
         },
       ],
       answerId: 'private-key',

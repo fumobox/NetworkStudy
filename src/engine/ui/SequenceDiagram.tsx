@@ -10,6 +10,7 @@ import {
   estimateTextWidth,
   hasTimers,
   LANE_WIDTH,
+  rowLayout,
   sectionStartLabels,
   TIME_COLUMN_WIDTH,
   type DiagramRow,
@@ -69,15 +70,13 @@ export function SequenceDiagram({
   const width = offsetX + actors.length * laneWidth
   // 区間（TLS の「暗号化なし」「ハンドシェイク用の鍵で暗号化」など）の始まりの行の上に、名前を入れる
   const sections = sectionStartLabels(steps, rows)
-  const rowTops: number[] = []
-  sections.reduce((top, section) => {
-    const rowTop = top + (section === null ? 0 : SECTION_HEIGHT)
-    rowTops.push(rowTop)
-    return rowTop + ROW_HEIGHT
-  }, HEADER_HEIGHT)
-  const bodyHeight =
-    rows.length === 0 ? ROW_HEIGHT : (rowTops.at(-1) ?? HEADER_HEIGHT) + ROW_HEIGHT - HEADER_HEIGHT
-  const height = HEADER_HEIGHT + bodyHeight + BOTTOM_PADDING
+  const { rowTops, bottom } = rowLayout(sections, {
+    top: HEADER_HEIGHT,
+    rowHeight: ROW_HEIGHT,
+    sectionHeight: SECTION_HEIGHT,
+  })
+  // メッセージがまだなければ、その旨を 1 行分の高さで表示する
+  const height = (rows.length === 0 ? HEADER_HEIGHT + ROW_HEIGHT : bottom) + BOTTOM_PADDING
 
   const laneX = new Map<ActorId, number>(
     actors.map((actor, i) => [actor.id, offsetX + i * laneWidth + laneWidth / 2]),
@@ -148,7 +147,14 @@ export function SequenceDiagram({
                     className="stroke-current opacity-40"
                     strokeDasharray="2 3"
                   />
-                  <text x={8} y={sectionY - 4} className="fill-current text-xs">
+                  {/* ライフラインの上に文字が重なっても読めるよう、カードの背景色で縁取る */}
+                  <text
+                    x={8}
+                    y={sectionY - 4}
+                    className="fill-current stroke-card text-xs [paint-order:stroke]"
+                    strokeWidth={4}
+                    strokeLinejoin="round"
+                  >
                     {t(section)}
                   </text>
                 </g>
@@ -256,8 +262,9 @@ function MessageArrow({
     <>
       {message.encrypted === true && (
         <Lock
-          x={x1 + direction * 8 - (direction < 0 ? ICON_SIZE : 0)}
-          y={y - 8 - ICON_SIZE}
+          // ラベルは中央揃えなので、見積もったラベルの幅から左隣の位置を求める（狭い画面でも重ならない）
+          x={midX - estimateTextWidth(caption, 12) / 2 - ICON_SIZE - 3}
+          y={y - 8 - ICON_SIZE + 2}
           size={ICON_SIZE}
           className="stroke-current"
           aria-hidden

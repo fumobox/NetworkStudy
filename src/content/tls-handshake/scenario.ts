@@ -40,7 +40,7 @@ const SEND_KEYS: StateKey = 'sendKeys'
 export const CERT_CHAIN: StateKey = 'certChain'
 const ALERT: StateKey = 'alert'
 
-const HOST = 'www.example.com'
+export const HOST = 'www.example.com'
 export const VALIDATION_DATE = '2026-10-01'
 
 /**
@@ -76,11 +76,11 @@ type Checks = readonly [Check, Check, Check, Check]
 const SECTIONS = {
   plaintext: { en: 'Not encrypted', ja: '暗号化なし' },
   handshake: {
-    en: 'Encrypted with the handshake traffic keys',
+    en: 'Encrypted (handshake keys)',
     ja: 'ハンドシェイク用の鍵で暗号化',
   },
   application: {
-    en: 'Encrypted with the application traffic keys',
+    en: 'Encrypted (application keys)',
     ja: 'アプリケーション用の鍵で暗号化',
   },
 } satisfies Record<string, LocalizedText>
@@ -379,7 +379,7 @@ function certificatesFor(problem: CertProblem): CertSet {
       : ([LEAF_ISSUER, root, '2031-06-30', na] as const)
   const rootRow =
     problem === 'missingIntermediate'
-      ? ([ROOT, ROOT, na, na] as const)
+      ? ([ROOT, ROOT, '2036-01-01', na] as const)
       : ([root, root, '2036-01-01', na] as const)
   // [signature, validity, name, trust]。ルートの署名は、自己署名なので確かめない（RFC 5280 §6.1 では信頼の起点）。
   // ルートの有効期間は、多くの実装に合わせて確かめる扱いにしている

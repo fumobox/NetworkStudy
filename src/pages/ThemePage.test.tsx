@@ -168,7 +168,11 @@ describe('ThemePage', () => {
       within(panel)
         .getAllByRole('heading', { level: 3 })
         .map((h) => h.textContent),
-    ).toEqual(['www.example.com', 'Example Intermediate CA', 'Example Root CA'])
+    ).toEqual([
+      'Server certificatewww.example.com',
+      'Intermediate CAExample Intermediate CA',
+      'Root CAExample Root CA',
+    ])
     expect(within(panel).getByText('2026-08-31')).toBeInTheDocument()
     const state = screen.getByRole('region', { name: 'State of each participant' })
     expect(within(state).queryByText('Certificate chain check')).toBeNull()
