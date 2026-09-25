@@ -10,6 +10,14 @@ export const ja = {
   nav: {
     home: 'ホーム',
     themes: 'テーマ一覧',
+    menu: 'メニュー',
+    close: '閉じる',
+  },
+  colorScheme: {
+    system: 'システムに従う',
+    light: 'ライト',
+    dark: 'ダーク',
+    toggle: (p) => `配色: ${p.current}。「${p.next}」に切り替える`,
   },
   language: {
     label: '言語',

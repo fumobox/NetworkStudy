@@ -3,8 +3,13 @@ import { THEME_META } from '@/content/themeMeta'
 import { localePath, useLocale, useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 
-/** テーマの一覧（広い画面で左側に表示する） */
-export function Sidebar() {
+interface SidebarProps {
+  /** リンクを押したときに呼ぶ（スマホのメニューを閉じるため） */
+  onNavigate?: () => void
+}
+
+/** テーマの一覧（広い画面で左側、狭い画面ではメニューの中に表示する） */
+export function Sidebar({ onNavigate }: SidebarProps) {
   const m = useMessages()
   const t = useText()
   const locale = useLocale()
@@ -19,6 +24,7 @@ export function Sidebar() {
           <li key={theme.id}>
             <NavLink
               to={localePath(locale, `/themes/${theme.id}`)}
+              onClick={onNavigate}
               className={({ isActive }) =>
                 cn(
                   'block rounded-md px-2 py-1.5 text-sm hover:bg-muted',
