@@ -1,10 +1,11 @@
 import { useParams } from 'react-router'
+import { OverviewSection } from '@/components/features/overview/OverviewSection'
 import { QuizPanel } from '@/components/features/quiz/QuizPanel'
 import { findTheme } from '@/content/registry'
 import type { ThemeModule } from '@/content/types'
 import { ScenarioPlayer } from '@/engine/ui/ScenarioPlayer'
 import { useDocumentDescription } from '@/lib/hooks/useDocumentDescription'
-import { useMessages, useText } from '@/lib/i18n'
+import { useLocale, useMessages, useText } from '@/lib/i18n'
 import { NotFoundPage } from './NotFoundPage'
 
 export function ThemePage() {
@@ -20,6 +21,7 @@ export function ThemePage() {
 function ThemeView({ theme }: { theme: ThemeModule }) {
   const m = useMessages()
   const t = useText()
+  const locale = useLocale()
   const title = t(theme.meta.title)
   useDocumentDescription(t(theme.meta.summary))
 
@@ -35,6 +37,7 @@ function ThemeView({ theme }: { theme: ThemeModule }) {
             <span>{m.theme.minutes({ minutes: theme.meta.minutes })}</span>
           </p>
         </header>
+        <OverviewSection content={theme.overview[locale]} />
         <ScenarioPlayer scenario={theme.scenario} />
         <QuizPanel quiz={theme.quiz} />
       </article>

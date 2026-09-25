@@ -103,6 +103,8 @@ export const en = {
     },
     minutes: (p: { minutes: number }) => `About ${String(p.minutes)} min`,
     player: 'Interactive walkthrough',
+    overview: 'Overview',
+    loading: 'Loading…',
   },
   notFound: {
     title: 'Page not found',

@@ -1,0 +1,24 @@
+## Why a handshake?
+
+TCP delivers a stream of bytes reliably and in order. To do that, each side numbers the bytes it sends with **sequence numbers**, and the other side reports how far it has received with **acknowledgment numbers**.
+
+Before any data can flow, both sides need to tell each other where their numbering starts. That starting point is the **initial sequence number (ISS)**, and exchanging it is the job of the three-way handshake.
+
+## The three segments
+
+1. **SYN** — the client sends its ISS.
+2. **SYN, ACK** — the server sends its own ISS and acknowledges the client’s (client ISS + 1, because the SYN itself uses one sequence number).
+3. **ACK** — the client acknowledges the server’s ISS.
+
+After step 3, both sides know each other’s starting point and the connection is **ESTABLISHED**.
+
+## What to look for in the walkthrough
+
+- How **Seq** and **Ack** change from segment to segment in the packet details.
+- How each side’s **state** changes (CLOSED → SYN-SENT → ESTABLISHED on the client, LISTEN → SYN-RECEIVED → ESTABLISHED on the server).
+- In the “What if…” options: what the **retransmission timer** does when a segment is lost, and what a closed port answers.
+
+## References
+
+- [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.5 “Establishing a Connection”
+- [RFC 6298: Computing TCP’s Retransmission Timer](https://www.rfc-editor.org/rfc/rfc6298)
