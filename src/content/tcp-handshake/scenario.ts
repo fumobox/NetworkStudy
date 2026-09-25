@@ -79,8 +79,8 @@ const rto = (actorId: ActorId, durationMs: number): StepEvent => ({
 const FIELD_TEXT = {
   ports: { en: 'Source and destination ports', ja: '送信元と宛先のポート番号' },
   seqSyn: {
-    en: 'The initial send sequence number (ISS). The SYN itself uses one sequence number.',
-    ja: '初期送信シーケンス番号（ISS）。SYN 自体がシーケンス番号を 1 つ消費する。',
+    en: 'The initial send sequence number (ISS). Real implementations choose a hard-to-guess value (RFC 9293 §3.4.1); this page uses 1000 for readability. The SYN itself uses one sequence number.',
+    ja: '初期送信シーケンス番号（ISS）。実際の実装は推測されにくい値を選ぶ（RFC 9293 §3.4.1）が、ここでは読みやすさのため 1000 にしている。SYN 自体がシーケンス番号を 1 つ消費する。',
   },
   ackUnused: {
     en: 'Not meaningful because the ACK flag is not set',
@@ -217,7 +217,10 @@ const rstMessage: Message = {
       name: 'Flags',
       value: 'RST, ACK',
       highlight: true,
-      description: { en: 'Reset the connection', ja: '接続のリセット' },
+      description: {
+        en: 'Refuse the connection request with a reset',
+        ja: '接続の要求をリセットで拒否する',
+      },
     },
     {
       name: 'Seq',
@@ -301,16 +304,16 @@ function buildSteps(options: TcpOptions): readonly Step[] {
         id: `syn-rtx-${String(attempt)}`,
         title: lost
           ? {
-              en: `RTO expires; the retransmitted SYN is lost again`,
-              ja: `RTO が満了して SYN を再送するが、また失われる`,
+              en: 'RTO expires; the retransmitted SYN is lost again',
+              ja: 'RTO が満了して SYN を再送するが、また失われる',
             }
           : {
               en: 'RTO expires; the client retransmits the SYN',
               ja: 'RTO が満了し、クライアントが SYN を再送する',
             },
         description: {
-          en: `No SYN-ACK arrived within the retransmission timeout (${seconds} s), so the client sends the same SYN again with the same sequence number. ${attempt === 1 ? 'The timeout starts at 1 second.' : 'Each time the timer expires, the timeout doubles (exponential backoff).'}`,
-          ja: `再送タイムアウト（${seconds} 秒）以内に SYN-ACK が届かなかったので、クライアントは同じシーケンス番号で同じ SYN をもう一度送る。${attempt === 1 ? 'タイムアウトは最初 1 秒。' : 'タイマーが満了するたびにタイムアウトは倍になる（指数バックオフ）。'}`,
+          en: `No SYN, ACK arrived within the retransmission timeout (${seconds} s), so the client sends the same SYN again with the same sequence number. ${attempt === 1 ? 'The timeout starts at 1 second.' : 'Each time the timer expires, the timeout doubles (exponential backoff).'}`,
+          ja: `再送タイムアウト（${seconds} 秒）以内に SYN, ACK が届かなかったので、クライアントは同じシーケンス番号で同じ SYN をもう一度送る。${attempt === 1 ? 'タイムアウトは最初 1 秒。' : 'タイマーが満了するたびにタイムアウトは倍になる（指数バックオフ）。'}`,
         },
         events: [rto(CLIENT, rtoMs), send(message)],
       })
@@ -364,14 +367,14 @@ function buildSteps(options: TcpOptions): readonly Step[] {
   })
   if (options.synAckLost) {
     steps.push({
-      id: 'syn-ack-rtx',
+      id: 'syn-ack-rtx-1',
       title: {
         en: 'RTO expires; the server retransmits the SYN, ACK',
         ja: 'RTO が満了し、サーバーが SYN, ACK を再送する',
       },
       description: {
-        en: 'The server’s SYN is not acknowledged within the retransmission timeout (1 s), so the server sends the SYN, ACK again. (Depending on timing, the client may also retransmit its SYN; the server answers that with a SYN, ACK as well.)',
-        ja: 'サーバーの SYN が再送タイムアウト（1 秒）以内に確認応答されなかったので、サーバーは SYN, ACK をもう一度送る。（タイミングによってはクライアントも SYN を再送することがあり、その場合もサーバーは SYN, ACK で応える。）',
+        en: 'The server’s SYN is not acknowledged within the retransmission timeout (1 s), so the server sends the SYN, ACK again. In practice the client’s own retransmission timer (1 s) expires at about the same time, so the client also retransmits its SYN. Many implementations such as Linux answer that duplicate SYN with another SYN, ACK; following the RFC 9293 procedure literally, the server would reply with a bare ACK, which the client ignores. Either way, the connection is established by the retransmitted SYN, ACK.',
+        ja: 'サーバーの SYN が再送タイムアウト（1 秒）以内に確認応答されなかったので、サーバーは SYN, ACK をもう一度送る。実際にはクライアントの再送タイマー（1 秒）もほぼ同時に満了するので、クライアントも SYN を再送する。Linux など多くの実装は、この重複した SYN にも SYN, ACK を返す（RFC 9293 の手順どおりなら、サーバーは ACK だけを返し、クライアントはそれを無視する）。いずれにしても、再送された SYN, ACK によって接続が確立する。',
       },
       events: [
         rto(SERVER, INITIAL_RTO_MS),

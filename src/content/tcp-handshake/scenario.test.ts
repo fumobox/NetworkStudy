@@ -99,6 +99,19 @@ describe('tcpHandshakeScenario', () => {
         'ESTABLISHED',
       ])
     })
+
+    it('SND.NXT / RCV.NXT が更新されるステップ（RFC 9293 §3.10.1, §3.10.7.2, §3.10.7.3）', () => {
+      const at = (actor: 'client' | 'server', key: string) =>
+        steps.map(
+          (_, i) =>
+            deriveState(tcpHandshakeScenario.actors, steps, i).actorStates[actor]?.values[key],
+        )
+      // ステップ: listen, syn, syn-ack, ack, established
+      expect(at('client', 'SND.NXT')).toEqual(['-', '1001', '1001', '1001', '1001'])
+      expect(at('client', 'RCV.NXT')).toEqual(['-', '-', '-', '5001', '5001'])
+      expect(at('server', 'SND.NXT')).toEqual(['-', '-', '5001', '5001', '5001'])
+      expect(at('server', 'RCV.NXT')).toEqual(['-', '-', '1001', '1001', '1001'])
+    })
   })
 
   describe('SYN のロス（RFC 6298 §2.1, §5.5）', () => {
