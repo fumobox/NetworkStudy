@@ -11,14 +11,15 @@
 | `npm run dev` | 開発サーバー（`http://localhost:5173/NetworkStudy/`） |
 | `npm run build` | 型チェック → vite build → 静的ページ生成（`dist/`） |
 | `npm run preview` | ビルド結果の確認 |
-| `npm run typecheck` | `tsc -b`（app / node / scripts の各 tsconfig） |
+| `npm run typecheck` | `tsc -b`（app / node / scripts / e2e の各 tsconfig） |
 | `npm run lint` / `lint:fix` | ESLint（警告も失敗扱い）/ 自動修正 |
 | `npm run depcruise` | 循環依存とレイヤ違反のチェック |
 | `npm run format` / `format:check` | Prettier |
 | `npm test` / `test:run` / `test:coverage` | Vitest |
 | `npm run pages:verify` | 生成した静的ページの検証（`build` の後に実行） |
+| `npm run e2e` | Playwright のスモークテスト（`build` の後に実行。初回は `npx playwright install chromium`） |
 
-CI（`.github/workflows/ci.yml` の `Check` job）は typecheck → lint → depcruise → format:check → test:run → build → pages:verify の順に実行する。main への push では、その後 `Deploy` job が GitHub Pages へデプロイする。
+CI（`.github/workflows/ci.yml` の `Check` job）は typecheck → lint → depcruise → format:check → test:run → build → pages:verify → e2e の順に実行する。main への push では、その後 `Deploy` job が GitHub Pages へデプロイする。
 
 ## 技術スタック
 
@@ -42,6 +43,7 @@ src/
 ├── types/          横断的な型（DeepReadonly など）
 └── test/setup.ts
 scripts/            ビルド後の静的ページ生成・検証（tsx で実行）
+e2e/                Playwright のスモークテスト
 ```
 
 依存の向きは **`app` / `pages` → `content` → `engine` → `lib`** の一方向。dependency-cruiser（`.dependency-cruiser.cjs`）で強制している。
@@ -87,6 +89,7 @@ scripts/            ビルド後の静的ページ生成・検証（tsx で実�
 - ルーティングのテストは `MemoryRouter` を使う（Vitest は `base` を `/` に上書きするため）。basename 付きの経路は `BrowserRouter basename="/NetworkStudy/"` で個別に確認する
 - ブラウザの言語は `vi.spyOn(navigator, 'languages', 'get')` で差し替える
 - Radix が使う `ResizeObserver`・pointer capture・`scrollIntoView` は `src/test/setup.ts` で補っている。足りない API があればそこに追加する
+- e2e（`e2e/*.spec.ts`）はスモークのみ（各テーマ × 各ロケールで最終ステップまで進める、直リンク、言語切替、404）。挙動の検証は Vitest で行う。ビルド済みの `dist` を `vite preview` で配信して確かめる。テーマ一覧と文言は `themeMeta.ts` と辞書から取り、テーマを足すと自動で対象になる。e2e から import してよい src は scripts と同じ（DOM 非依存のモジュールのみ）
 
 ## 静的ページ生成（scripts/）
 
