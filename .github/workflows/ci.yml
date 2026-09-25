@@ -74,6 +74,7 @@ jobs:
         with:
           name: lighthouse-report
           path: lhci-report
+          if-no-files-found: ignore
           retention-days: 7
       - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
