@@ -4,7 +4,8 @@
  * 根拠:
  * - RFC 1034 §4.3.1（再帰と反復の問い合わせ）, §4.3.2（権威サーバーの動作。委任・CNAME）, §5.3.3（リゾルバの動作）
  * - RFC 1035 §4.1（メッセージの形式: ID、QR / AA / RD / RA、RCODE、各セクション）
- * - RFC 2181 §5.4.1（glue）, RFC 2308 §3, §5（否定応答と、その TTL = min(SOA の TTL, SOA の MINIMUM)）
+ * - RFC 1034 §4.2.1（glue）, RFC 2308 §2.1, §3, §5（否定応答の形と、その TTL = min(SOA の TTL, SOA の MINIMUM)）
+ * - RFC 5452（ID と送信元ポートは推測されにくい値にする。このページの ID は読みやすさのための値）
  * - RFC 9156（QNAME minimisation。多くのリゾルバはルートや TLD に名前の一部しか送らない）
  * IP アドレスは RFC 5737 の文書用アドレス（192.0.2.0/24）を使う（ルートと .com のサーバーは実在のアドレス）
  */
@@ -44,6 +45,8 @@ const WWW = 'www.example.com.'
 const MISSING = 'no-such-host.example.com.'
 const ALIAS = 'shop.example.com.'
 const WWW_ADDRESS = '192.0.2.10'
+/** PC に設定されているリゾルバのアドレス（RFC 5737 の TEST-NET-2） */
+const RESOLVER_ADDRESS = '198.51.100.53'
 const ROOT_ADDRESS = '198.41.0.4'
 const TLD_SERVER = 'a.gtld-servers.net.'
 const TLD_ADDRESS = '192.5.6.30'
@@ -109,7 +112,10 @@ const ROWS = {
   ns2Glue: [NS2, 'A', NS2_ADDRESS, DELEGATION_TTL],
   www: [WWW, 'A', WWW_ADDRESS, ANSWER_TTL],
   alias: [ALIAS, 'CNAME', WWW, ANSWER_TTL],
-  missing: [MISSING, 'NXDOMAIN', 'SOA example.com.', NEGATIVE_TTL],
+  // 否定キャッシュ: 「この名前はどのタイプでも存在しない」。NXDOMAIN はレコードのタイプではなく応答コード
+  missing: [MISSING, '(negative)', 'NXDOMAIN (SOA example.com.)', NEGATIVE_TTL],
+  /** 55 秒前にキャッシュされた www の答え（TTL 300 のうち残り 245 秒） */
+  wwwCached: [WWW, 'A', WWW_ADDRESS, '245'],
 } satisfies Record<string, Row>
 
 const DELEGATION_ROWS: readonly Row[] = [
@@ -121,11 +127,23 @@ const DELEGATION_ROWS: readonly Row[] = [
   ROWS.ns2Glue,
 ]
 
+const SOA_ROW: Row = [
+  'example.com.',
+  'SOA',
+  `${NS1} hostmaster.example.com. (MINIMUM ${NEGATIVE_TTL})`,
+  NEGATIVE_TTL,
+]
+
+const AUTHORITATIVE_FLAGS: LocalizedText = {
+  en: 'QR: a response. AA: the answer comes from the server responsible for example.com.',
+  ja: 'QR: 応答。AA: example.com を担当するサーバーからの答えである。',
+}
+
 const TEXT = {
   transport: { en: 'DNS usually uses UDP port 53', ja: 'DNS はふつう UDP の 53 番ポートを使う' },
   id: {
-    en: 'Chosen by the sender. The response carries the same ID so the sender can match it.',
-    ja: '送信側が選ぶ番号。応答にも同じ ID が入り、送信側はそれで問い合わせと対応づける。',
+    en: 'Chosen by the sender. The response carries the same ID so the sender can match it. Real resolvers pick hard-to-guess random IDs; this page uses readable values.',
+    ja: '送信側が選ぶ番号。応答にも同じ ID が入り、送信側はそれで問い合わせと対応づける。実際のリゾルバは推測されにくい乱数にするが、ここでは読みやすい値にしている。',
   },
   question: { en: 'The name and type being asked for', ja: '問い合わせる名前とタイプ' },
 } satisfies Record<string, LocalizedText>
@@ -266,15 +284,20 @@ function buildSteps(options: DnsOptions): readonly Step[] {
   const qname = NAMES[options.name]
   const steps: Step[] = []
   let cacheRows: Row[] = []
+  /** キャッシュに足す。同じレコード（NAME・TYPE・RDATA が同じ）があれば置き換えて TTL を更新する */
   const addToCache = (...rows: readonly Row[]): StepEvent => {
-    cacheRows = [...cacheRows, ...rows]
+    const sameRecord = (a: Row, b: Row) => a[0] === b[0] && a[1] === b[1] && a[2] === b[2]
+    cacheRows = [
+      ...cacheRows.filter((cached) => !rows.some((row) => sameRecord(cached, row))),
+      ...rows,
+    ]
     return set(RESOLVER, CACHE, cacheOf(cacheRows))
   }
 
   // 以前の名前解決でキャッシュに残っているもの
   if (options.cache !== 'empty') {
     const preloaded =
-      options.cache === 'answer' ? [...DELEGATION_ROWS, ROWS.www] : [...DELEGATION_ROWS]
+      options.cache === 'answer' ? [...DELEGATION_ROWS, ROWS.wwwCached] : [...DELEGATION_ROWS]
     cacheRows = preloaded
     steps.push({
       id: 'cached',
@@ -285,8 +308,8 @@ function buildSteps(options: DnsOptions): readonly Step[] {
       description:
         options.cache === 'answer'
           ? {
-              en: 'An earlier lookup of www.example.com left the delegations for com. and example.com. and the address of www.example.com. in the cache. Each record stays until its TTL runs out.',
-              ja: '以前に www.example.com を解決したので、com. と example.com. の委任と、www.example.com. のアドレスがキャッシュに残っている。各レコードは TTL が切れるまで残る。',
+              en: 'An earlier lookup of www.example.com left the delegations for com. and example.com. and the address of www.example.com. in the cache. Each record stays until its TTL runs out: the www record was cached 55 seconds ago, so 245 of its 300 seconds remain.',
+              ja: '以前に www.example.com を解決したので、com. と example.com. の委任と、www.example.com. のアドレスがキャッシュに残っている。各レコードは TTL が切れるまで残る。www のレコードは 55 秒前にキャッシュしたので、300 秒のうち残りは 245 秒。',
             }
           : {
               en: 'An earlier lookup of another name in example.com left the delegations for com. and example.com. in the cache, so the resolver already knows the example.com servers.',
@@ -312,7 +335,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           dnsId: '0x2c1a',
           qname,
           recursive: true,
-          destination: 'resolver',
+          destination: RESOLVER_ADDRESS,
         }),
       ),
     ],
@@ -413,8 +436,8 @@ function buildSteps(options: DnsOptions): readonly Step[] {
             ja: '.com が example.com のサーバーを紹介する',
           },
           description: {
-            en: 'The .com server replies with another referral: the name servers for example.com. (ns1 and ns2) and their addresses. Because those servers are inside example.com. itself, the glue addresses are needed to reach them.',
-            ja: '.com のサーバーは、example.com. のネームサーバー（ns1 と ns2）とそのアドレスを入れた委任の応答を返す。これらのサーバーは example.com. の中にあるので、たどり着くには glue のアドレスが必要になる。',
+            en: 'The .com server replies with another referral: the name servers for example.com. (ns1 and ns2) and their addresses. Because those servers are inside example.com. itself, the glue addresses are needed to reach them. (The real example.com is served by other name servers; this page puts them inside the zone to show why glue exists.)',
+            ja: '.com のサーバーは、example.com. のネームサーバー（ns1 と ns2）とそのアドレスを入れた委任の応答を返す。これらのサーバーは example.com. の中にあるので、たどり着くには glue のアドレスが必要になる。（実際の example.com は別のネームサーバーが担当している。このページでは glue の役割を見せるため、ゾーンの中に置いている。）',
           },
           events: [
             send(
@@ -493,8 +516,8 @@ function buildSteps(options: DnsOptions): readonly Step[] {
             ja: 'タイムアウトの後、リゾルバが ns2 を試す',
           },
           description: {
-            en: 'The resolver gives up waiting for ns1 and sends the same question to the other name server, ns2.example.com. Having more than one name server per zone is what makes this possible.',
-            ja: 'リゾルバは ns1 の応答を待つのをやめ、もう 1 台のネームサーバー ns2.example.com に同じ質問を送る。ゾーンごとにネームサーバーを複数置くのは、このためでもある。',
+            en: 'The resolver gives up waiting for ns1 and sends the same question to the other name server, ns2.example.com. Having more than one name server per zone is what makes this possible. How long to wait depends on the implementation and on the round-trip times it has measured; this page uses 1.5 seconds as an example.',
+            ja: 'リゾルバは ns1 の応答を待つのをやめ、もう 1 台のネームサーバー ns2.example.com に同じ質問を送る。ゾーンごとにネームサーバーを複数置くのは、このためでもある。どれだけ待つかは、実装や計測した往復時間によって変わる。このページでは例として 1.5 秒にしている。',
           },
           events: [
             { kind: 'timer', actorId: RESOLVER, name: 'timeout', durationMs: QUERY_TIMEOUT_MS },
@@ -545,8 +568,8 @@ function buildSteps(options: DnsOptions): readonly Step[] {
         id: 'auth-answer',
         title: { en: 'The name does not exist (NXDOMAIN)', ja: '名前が存在しない（NXDOMAIN）' },
         description: {
-          en: `The authoritative server answers with RCODE NXDOMAIN and puts the zone’s SOA record in the Authority section. The resolver caches this negative answer for min(SOA TTL, SOA MINIMUM) = ${NEGATIVE_TTL} seconds, so it will not ask again for a while.`,
-          ja: `権威サーバーは RCODE NXDOMAIN で応え、Authority セクションにゾーンの SOA レコードを入れる。リゾルバはこの否定応答を min(SOA の TTL, SOA の MINIMUM) = ${NEGATIVE_TTL} 秒のあいだキャッシュし、しばらくは同じ問い合わせをしない。`,
+          en: `The authoritative server answers with RCODE NXDOMAIN and puts the zone’s SOA record in the Authority section. The resolver caches this negative answer for min(SOA TTL, SOA MINIMUM) = ${NEGATIVE_TTL} seconds, so it will not ask again for a while. The cache entry means “this name does not exist for any type”; NXDOMAIN is a response code, not a record type.`,
+          ja: `権威サーバーは RCODE NXDOMAIN で応え、Authority セクションにゾーンの SOA レコードを入れる。リゾルバはこの否定応答を min(SOA の TTL, SOA の MINIMUM) = ${NEGATIVE_TTL} 秒のあいだキャッシュし、しばらくは同じ問い合わせをしない。キャッシュの行は「この名前はどのタイプでも存在しない」という意味で、NXDOMAIN はレコードのタイプではなく応答コード。`,
         },
         events: [
           send(
@@ -559,22 +582,12 @@ function buildSteps(options: DnsOptions): readonly Step[] {
               qname,
               flags: 'QR AA',
               rcode: 'NXDOMAIN',
-              authority: [
-                [
-                  'example.com.',
-                  'SOA',
-                  `${NS1} hostmaster.example.com. (MINIMUM ${NEGATIVE_TTL})`,
-                  NEGATIVE_TTL,
-                ],
-              ],
+              authority: [SOA_ROW],
               description: {
                 en: 'An authoritative negative answer.',
                 ja: '権威のある否定応答。',
               },
-              flagsDescription: {
-                en: 'QR: a response. AA: the answer comes from the server responsible for example.com.',
-                ja: 'QR: 応答。AA: example.com を担当するサーバーからの答えである。',
-              },
+              flagsDescription: AUTHORITATIVE_FLAGS,
             }),
           ),
           addToCache(ROWS.missing),
@@ -611,16 +624,10 @@ function buildSteps(options: DnsOptions): readonly Step[] {
               rcode: 'NOERROR',
               answer,
               description: { en: 'An authoritative answer.', ja: '権威のある答え。' },
-              flagsDescription: {
-                en: 'QR: a response. AA: the answer comes from the server responsible for example.com.',
-                ja: 'QR: 応答。AA: example.com を担当するサーバーからの答えである。',
-              },
+              flagsDescription: AUTHORITATIVE_FLAGS,
             }),
           ),
-          // 答えのレコードのうち、まだキャッシュにないものだけを足す
-          addToCache(
-            ...answer.filter((row) => !cacheRows.some((cached) => cached.join() === row.join())),
-          ),
+          addToCache(...answer),
         ],
       })
     }
@@ -629,7 +636,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
   // リゾルバからスタブへの応答
   const finalAnswer: readonly Row[] =
     options.name === 'www'
-      ? [cachedAnswer ? [WWW, 'A', WWW_ADDRESS, '245'] : ROWS.www]
+      ? [cachedAnswer ? ROWS.wwwCached : ROWS.www]
       : options.name === 'alias'
         ? [ROWS.alias, ROWS.www]
         : []
@@ -664,23 +671,17 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           from: RESOLVER,
           to: STUB,
           dnsId: '0x2c1a',
-          label: options.name === 'missing' ? 'NXDOMAIN' : `Answer: A ${WWW_ADDRESS}`,
+          label:
+            options.name === 'missing'
+              ? 'NXDOMAIN'
+              : options.name === 'alias'
+                ? `Answer: CNAME ${WWW}`
+                : `Answer: A ${WWW_ADDRESS}`,
           qname,
           flags: 'QR RD RA',
           rcode: options.name === 'missing' ? 'NXDOMAIN' : 'NOERROR',
           answer: finalAnswer,
-          ...(options.name === 'missing'
-            ? {
-                authority: [
-                  [
-                    'example.com.',
-                    'SOA',
-                    `${NS1} hostmaster.example.com. (MINIMUM ${NEGATIVE_TTL})`,
-                    NEGATIVE_TTL,
-                  ],
-                ] as const,
-              }
-            : {}),
+          ...(options.name === 'missing' ? { authority: [SOA_ROW] } : {}),
           description: { en: 'The final answer for your PC.', ja: 'PC への最終的な答え。' },
           flagsDescription: {
             en: 'QR: a response. RD is copied from the query. RA: the resolver offers recursion. No AA: the resolver is not authoritative.',

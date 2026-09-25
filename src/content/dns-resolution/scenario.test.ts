@@ -88,9 +88,27 @@ describe('dnsResolutionScenario', () => {
       expect(field(authAnswer, 'Answer')).toBe('www.example.com. A 192.0.2.10 300')
     })
 
-    it('スタブへの応答は同じ ID で、RA 付き・AA なし', () => {
+    it('応答は問い合わせと同じ ID。スタブへの応答は RA 付き・AA なし', () => {
       const all = messages(steps)
       expect(field(all[0], 'ID')).toBe(field(all.at(-1), 'ID'))
+      for (const [queryId, responseId] of [
+        ['root-query', 'root-referral'],
+        ['tld-query', 'tld-referral'],
+        ['auth-query', 'auth-answer'],
+      ]) {
+        expect(
+          field(
+            all.find((m) => m.id === queryId),
+            'ID',
+          ),
+        ).toBe(
+          field(
+            all.find((m) => m.id === responseId),
+            'ID',
+          ),
+        )
+      }
+      expect(field(all[0], 'Transport')).toBe('UDP → 198.51.100.53:53')
       expect(field(all.at(-1), 'Flags')).toBe('QR RD RA')
     })
 
@@ -121,8 +139,16 @@ describe('dnsResolutionScenario', () => {
       ])
     })
 
-    it('答えを知っていれば、どこにも聞かずに残りの TTL で答える（AA なし）', () => {
+    it('答えを知っていれば、どこにも聞かずに残りの TTL で答える（AA なし）。キャッシュの TTL も同じ', () => {
       const steps = build({ cache: 'answer' })
+      const derived = deriveState(dnsResolutionScenario.actors, steps, 0)
+      const cache = derived.actorStates.resolver?.values.cache
+      expect(typeof cache === 'object' ? cache.rows.at(-1) : undefined).toEqual([
+        'www.example.com.',
+        'A',
+        '192.0.2.10',
+        '245',
+      ])
       expect(route(steps)).toEqual(['stub→resolver', 'resolver→stub'])
       expect(field(messages(steps).at(-1), 'Answer')).toBe('www.example.com. A 192.0.2.10 245')
       expect(field(messages(steps).at(-1), 'Flags')).not.toContain('AA')
@@ -141,8 +167,15 @@ describe('dnsResolutionScenario', () => {
       expect(field(authAnswer, 'RCODE')).toBe('NXDOMAIN')
       expect(field(authAnswer, 'Answer')).toBe('(empty)')
       expect(field(authAnswer, 'Authority')).toContain('example.com. SOA')
-      expect(final(steps).cache.at(-1)).toBe('no-such-host.example.com. NXDOMAIN')
+      expect(final(steps).cache.at(-1)).toBe('no-such-host.example.com. (negative)')
       expect(final(steps).result).toBe('NXDOMAIN')
+    })
+
+    it('スタブへも NXDOMAIN と SOA を伝える（Answer は空）', () => {
+      const stubAnswer = messages(steps).at(-1)
+      expect(field(stubAnswer, 'RCODE')).toBe('NXDOMAIN')
+      expect(field(stubAnswer, 'Answer')).toBe('(empty)')
+      expect(field(stubAnswer, 'Authority')).toContain('example.com. SOA')
     })
 
     it('キャッシュに www の答えがあっても、別の名前は権威サーバーに聞く', () => {
@@ -169,11 +202,26 @@ describe('dnsResolutionScenario', () => {
       ])
     })
 
-    it('行き先の A がすでにキャッシュにあれば、CNAME だけを足す', () => {
+    it('行き先の A がすでにキャッシュにあれば、権威の答えで置き換えて TTL を更新する', () => {
       const steps = build({ name: 'alias', cache: 'answer' })
-      const cache = final(steps).cache
-      expect(cache.filter((row) => row === 'www.example.com. A')).toHaveLength(1)
-      expect(cache.at(-1)).toBe('shop.example.com. CNAME')
+      const derived = deriveState(dnsResolutionScenario.actors, steps, steps.length - 1)
+      const cache = derived.actorStates.resolver?.values.cache
+      const rows = typeof cache === 'object' ? cache.rows : []
+      expect(rows.filter((row) => row[0] === 'www.example.com.')).toEqual([
+        ['www.example.com.', 'A', '192.0.2.10', '300'],
+      ])
+      expect(rows.at(-2)?.[1]).toBe('CNAME')
+    })
+
+    it('反復問い合わせでも、質問する名前は別名のまま', () => {
+      const steps = build({ name: 'alias' })
+      expect(
+        field(
+          messages(steps).find((m) => m.id === 'root-query'),
+          'Question',
+        ),
+      ).toBe('shop.example.com. IN A')
+      expect(messages(steps).at(-1)?.label).toBe('Answer: CNAME www.example.com.')
     })
   })
 
