@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MotionConfig } from 'motion/react'
+import { domAnimation, LazyMotion, MotionConfig } from 'motion/react'
 import type { ReactNode } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LocaleProvider, type Locale } from '@/lib/i18n'
 import type { Actor, Step } from '../types'
 import { SequenceDiagram } from './SequenceDiagram'
@@ -82,9 +82,11 @@ function renderDiagram(
   const onSelectMessage = vi.fn()
   // 座標を確認するため、既定ではアニメーションを止める
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <MotionConfig reducedMotion={reducedMotion}>
-      <LocaleProvider locale={locale}>{children}</LocaleProvider>
-    </MotionConfig>
+    <LazyMotion features={domAnimation} strict>
+      <MotionConfig reducedMotion={reducedMotion}>
+        <LocaleProvider locale={locale}>{children}</LocaleProvider>
+      </MotionConfig>
+    </LazyMotion>
   )
   render(
     <SequenceDiagram
@@ -99,6 +101,10 @@ function renderDiagram(
   )
   return { onSelectMessage }
 }
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 describe('SequenceDiagram', () => {
   it('アクター名と、各メッセージをボタンとして描く（状態・再送・暗号化を名前で伝える）', () => {
@@ -160,7 +166,7 @@ describe('SequenceDiagram', () => {
     renderDiagram({}, 'en', 'never')
     const line = (name: RegExp) => screen.getByRole('button', { name }).querySelector('line')
     const rst = line(/^RST/)
-    // 開始状態では終点が始点と同じ（jsdom ではアニメーションが進まない）
+    // 描画直後は開始状態（終点が始点と同じ）。アニメーションが進む前に同期的に確認する
     expect(rst?.getAttribute('x2')).toBe(rst?.getAttribute('x1'))
     const done = line(/retransmission/)
     expect(done?.getAttribute('x2')).not.toBe(done?.getAttribute('x1'))
@@ -182,7 +188,6 @@ describe('SequenceDiagram', () => {
     expect(screen.queryByText('Client')).toBeNull()
     // 短縮名のないアクターは通常の名前
     expect(screen.getByText('Server')).toBeInTheDocument()
-    vi.unstubAllGlobals()
   })
 
   it('タイマーのないシナリオでは経過時間の列を出さない', () => {

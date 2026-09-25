@@ -1,5 +1,5 @@
 import { Lock, Timer } from 'lucide-react'
-import { motion, useReducedMotionConfig } from 'motion/react'
+import { m, useReducedMotionConfig } from 'motion/react'
 import type { KeyboardEvent } from 'react'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatSeconds, useLocale, useMessages, useText } from '@/lib/i18n'
@@ -193,13 +193,6 @@ function MessageArrow({
   label,
   onSelect,
 }: MessageArrowProps) {
-  const fadeIn = animate
-    ? {
-        initial: { opacity: 0 },
-        animate: { opacity: 1 },
-        transition: { delay: DRAW_DURATION_S * 0.8, duration: 0.2 },
-      }
-    : {}
   const direction = x2 >= x1 ? 1 : -1
   const isLost = message.status === 'lost'
   const isRejected = message.status === 'rejected'
@@ -217,6 +210,56 @@ function MessageArrow({
       toggle()
     }
   }
+
+  const decorations = (
+    <>
+      {message.encrypted === true && (
+        <Lock
+          x={x1 + direction * 8 - (direction < 0 ? ICON_SIZE : 0)}
+          y={y - 8 - ICON_SIZE}
+          size={ICON_SIZE}
+          className="stroke-current"
+          aria-hidden
+        />
+      )}
+      <text
+        x={midX}
+        y={y - 8}
+        textAnchor="middle"
+        className={cn('fill-current font-mono text-xs', isCurrent && 'font-bold')}
+        aria-hidden
+      >
+        {caption}
+      </text>
+      {isLost ? (
+        <text
+          x={midX}
+          y={y + 5}
+          textAnchor="middle"
+          className="fill-current text-base font-bold"
+          aria-hidden
+        >
+          {LOST_MARK}
+        </text>
+      ) : (
+        <path
+          d={`M ${String(x2)} ${String(y)} l ${String(-direction * ARROW_SIZE)} ${String(-ARROW_SIZE / 2)} v ${String(ARROW_SIZE)} z`}
+          className="fill-current"
+        />
+      )}
+      {isRejected && (
+        <text
+          x={x2 - direction * 16}
+          y={y + 18}
+          textAnchor="middle"
+          className="fill-current text-sm font-bold"
+          aria-hidden
+        >
+          {REJECTED_MARK}
+        </text>
+      )}
+    </>
+  )
 
   return (
     <g
@@ -249,68 +292,45 @@ function MessageArrow({
         strokeWidth={3}
         aria-hidden
       />
-      <motion.line
-        x1={x1}
-        {...(animate
-          ? {
-              initial: { x2: x1 },
-              animate: { x2: endX },
-              transition: { duration: DRAW_DURATION_S, ease: 'easeOut' },
-            }
-          : { x2: endX })}
-        y1={y}
-        y2={y}
-        className="stroke-current"
-        strokeWidth={isSelected ? 2.5 : 1.5}
-        strokeDasharray={message.retransmitOf === undefined ? undefined : '6 4'}
-      />
-      <motion.g {...fadeIn}>
-        {message.encrypted === true && (
-          <Lock
-            x={x1 + direction * 8 - (direction < 0 ? ICON_SIZE : 0)}
-            y={y - 8 - ICON_SIZE}
-            size={ICON_SIZE}
+      {/*
+        アニメーションする行だけ Motion の要素にする。Motion は一度管理した値を素の属性で上書きさせないため、
+        アニメーションしない行を Motion の要素のままにすると、レーン幅が変わったときに線の終点が古い位置に残る
+      */}
+      {animate ? (
+        <>
+          <m.line
+            x1={x1}
+            y1={y}
+            y2={y}
             className="stroke-current"
-            aria-hidden
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            strokeDasharray={message.retransmitOf === undefined ? undefined : '6 4'}
+            initial={{ x2: x1 }}
+            animate={{ x2: endX }}
+            transition={{ duration: DRAW_DURATION_S, ease: 'easeOut' }}
           />
-        )}
-        <text
-          x={midX}
-          y={y - 8}
-          textAnchor="middle"
-          className={cn('fill-current font-mono text-xs', isCurrent && 'font-bold')}
-          aria-hidden
-        >
-          {caption}
-        </text>
-        {isLost ? (
-          <text
-            x={midX}
-            y={y + 5}
-            textAnchor="middle"
-            className="fill-current text-base font-bold"
-            aria-hidden
+          <m.g
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: DRAW_DURATION_S * 0.8, duration: 0.2 }}
           >
-            {LOST_MARK}
-          </text>
-        ) : (
-          <path
-            d={`M ${String(x2)} ${String(y)} l ${String(-direction * ARROW_SIZE)} ${String(-ARROW_SIZE / 2)} v ${String(ARROW_SIZE)} z`}
-            className="fill-current"
+            {decorations}
+          </m.g>
+        </>
+      ) : (
+        <>
+          <line
+            x1={x1}
+            y1={y}
+            y2={y}
+            className="stroke-current"
+            strokeWidth={isSelected ? 2.5 : 1.5}
+            strokeDasharray={message.retransmitOf === undefined ? undefined : '6 4'}
+            x2={endX}
           />
-        )}
-        {isRejected && (
-          <text
-            x={x2 - direction * 16}
-            y={y + 18}
-            textAnchor="middle"
-            className="fill-current text-sm font-bold"
-            aria-hidden
-          >
-            {REJECTED_MARK}
-          </text>
-        )}
-      </motion.g>
+          <g>{decorations}</g>
+        </>
+      )}
     </g>
   )
 }
