@@ -1,0 +1,28 @@
+## Why four segments?
+
+A TCP connection carries data in both directions, and **each direction is closed separately**. A side that has nothing more to send sends a **FIN**, and the other side acknowledges it with an **ACK**. Closing both directions therefore takes a FIN and an ACK from each side: four segments.
+
+After the first FIN and its ACK, the connection is **half-closed**. The side that sent the FIN cannot send any more data, but it can still receive. The other side can keep sending until its application also closes.
+
+Like a SYN, a FIN takes one **sequence number**, so it is acknowledged with its Seq + 1.
+
+## The states on the way
+
+- The side that closes first goes **FIN-WAIT-1** → **FIN-WAIT-2** → **TIME-WAIT** → CLOSED.
+- The other side goes **CLOSE-WAIT** → **LAST-ACK** → CLOSED. It stays in CLOSE-WAIT until its application closes the connection, so many connections stuck in CLOSE-WAIT usually mean an application that forgot to close them.
+
+## Why TIME-WAIT?
+
+The side that sends the last ACK waits in TIME-WAIT for **2MSL** (twice the maximum segment lifetime; RFC 9293 sets MSL to 2 minutes) before forgetting the connection. There are two reasons:
+
+1. If the last ACK is lost, the other side retransmits its FIN. A side still in TIME-WAIT can acknowledge it again; one that had already forgotten the connection would answer with a reset.
+2. Old, delayed segments of this connection die out in the network, so they cannot be mistaken for segments of a new connection that reuses the same addresses and ports.
+
+## What to look for in the walkthrough
+
+- How **Seq**, **Ack**, **SND.NXT**, and **RCV.NXT** move by one for each FIN.
+- In the “What if…” options: a **simultaneous close**, where both sides pass through CLOSING; losing the **last ACK**; and an **abort** with RST, which skips TIME-WAIT.
+
+## References
+
+- [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.6 “Closing a Connection”, §3.4.2 “Knowing When to Keep Quiet”

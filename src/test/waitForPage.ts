@@ -6,11 +6,11 @@ const LOADING_TEXTS = new Set(Object.values(MESSAGES).map((messages) => messages
 
 /** 遅延読み込みのページや概要（MDX）の「読み込み中…」が消えるまで待つ */
 export async function waitForPage(): Promise<void> {
-  // 初回はテスト環境での変換（MDX など）に時間がかかるので、既定の 1 秒より長く待つ
+  // 初回はテスト環境での変換（MDX など）に時間がかかるので、既定の 1 秒より長く待つ（testTimeout より短くする）
   await waitFor(
     () => {
       expect(screen.queryAllByText((text) => LOADING_TEXTS.has(text))).toEqual([])
     },
-    { timeout: 5000 },
+    { timeout: 10_000 },
   )
 }

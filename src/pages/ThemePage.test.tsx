@@ -211,7 +211,12 @@ describe('テーマへの導線', () => {
       within(list)
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual(['DNS の名前解決', 'TCP 3 ウェイハンドシェイク', 'TLS 1.3 のハンドシェイクと証明書'])
+    ).toEqual([
+      'DNS の名前解決',
+      'TCP 3 ウェイハンドシェイク',
+      'TLS 1.3 のハンドシェイクと証明書',
+      'TCP の接続の終了',
+    ])
     expect(screen.getByRole('region', { name: 'このサイトの使い方' })).toBeInTheDocument()
   })
 
@@ -228,12 +233,14 @@ describe('テーマへの導線', () => {
       'Quiz not taken yet',
       'Quiz: 1 of 5 correct',
       'Quiz not taken yet',
+      'Quiz not taken yet',
     ])
     // 学習順の番号
     expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual([
       '1',
       '2',
       '3',
+      '4',
     ])
   })
 })

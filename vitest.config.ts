@@ -9,6 +9,8 @@ export default mergeConfig(
       // ルーティングのテストは MemoryRouter を使い、basename（/NetworkStudy/）は扱わない
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
+      // 遅延読み込みのページと MDX の初回の変換は、負荷が高いと数秒かかることがある（waitForPage の待ち時間より長くする）
+      testTimeout: 15_000,
       include: ['src/**/*.test.{ts,tsx}', 'scripts/**/*.test.ts'],
       coverage: {
         provider: 'v8',

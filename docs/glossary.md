@@ -55,6 +55,10 @@
 | handshake | ハンドシェイク | 「ハンドシェーク」としない |
 | three-way handshake | 3 ウェイハンドシェイク | |
 | four-way close | 4 ウェイクローズ | 定着した訳語ではないので、初出で「接続の終了（4 つのセグメントのやり取り）」と説明を添える |
+| half-close | ハーフクローズ（半分だけ閉じた状態） | 片方の向きだけが閉じている |
+| reset (RST) | リセット（RST） | |
+| abort | 中断 | RST で接続を打ち切ること。close（閉じる）と区別する |
+| simultaneous close | 同時クローズ | |
 | segment | セグメント | TCP の単位。IP の単位は「パケット」 |
 | packet | パケット | |
 | sequence number | シーケンス番号 | |

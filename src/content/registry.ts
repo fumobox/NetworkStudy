@@ -1,4 +1,5 @@
 import { dnsResolutionTheme } from './dns-resolution'
+import { tcpCloseTheme } from './tcp-close'
 import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
 import type { ThemeModule } from './types'
@@ -8,6 +9,7 @@ export const THEMES: readonly ThemeModule[] = [
   dnsResolutionTheme,
   tcpHandshakeTheme,
   tlsHandshakeTheme,
+  tcpCloseTheme,
 ]
 
 export function findTheme(id: string | undefined): ThemeModule | undefined {
