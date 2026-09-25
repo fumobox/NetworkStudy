@@ -197,7 +197,7 @@ describe('テーマへの導線', () => {
 
   it('ホームにテーマのカードを表示する', () => {
     renderAt('/ja')
-    const list = screen.getByRole('region', { name: 'テーマ一覧' })
+    const list = screen.getByRole('region', { name: 'どこから始めるか' })
     expect(within(list).getByRole('link', { name: 'TCP 3 ウェイハンドシェイク' })).toHaveAttribute(
       'href',
       '/ja/themes/tcp-handshake',
@@ -209,5 +209,28 @@ describe('テーマへの導線', () => {
         .getAllByRole('link')
         .map((link) => link.textContent),
     ).toEqual(['DNS の名前解決', 'TCP 3 ウェイハンドシェイク', 'TLS 1.3 のハンドシェイクと証明書'])
+    expect(screen.getByRole('region', { name: 'このサイトの使い方' })).toBeInTheDocument()
+  })
+
+  it('ホームのカードにクイズの進捗を表示する', () => {
+    window.localStorage.setItem(
+      'ns.quiz.tcp-handshake',
+      JSON.stringify({ answers: { 'first-segment': 'syn', 'state-after-syn': 'listen' } }),
+    )
+    renderAt('/en')
+    const cards = within(screen.getByRole('region', { name: 'Where to start' })).getAllByRole(
+      'listitem',
+    )
+    expect(cards.map((card) => within(card).getByText(/^Quiz/).textContent)).toEqual([
+      'Quiz not taken yet',
+      'Quiz: 1 of 5 correct',
+      'Quiz not taken yet',
+    ])
+    // 学習順の番号
+    expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual([
+      '1',
+      '2',
+      '3',
+    ])
   })
 })

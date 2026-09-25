@@ -39,15 +39,18 @@ export function scoreQuiz(quiz: Quiz, answers: QuizAnswers): QuizScore {
   }
 }
 
+/** 保存されている回答を読む（今のクイズに合わない回答は捨てる） */
+export function readQuizAnswers(quiz: Quiz): QuizAnswers {
+  return sanitize(quiz, readStorage(quizStorageKey(quiz.id), progressSchema)?.answers ?? {})
+}
+
 /**
  * クイズの回答を localStorage に保存する（ロケールには依存しない）。
  * 1 ページに 1 つのインスタンスで使う前提で、他のインスタンスやタブとは同期しない。
  * quiz が変わったら呼び出し側で再マウントする（QuizPanel は key={quiz.id} で行っている）
  */
 export function useQuizProgress(quiz: Quiz) {
-  const [answers, setAnswers] = useState<QuizAnswers>(() =>
-    sanitize(quiz, readStorage(quizStorageKey(quiz.id), progressSchema)?.answers ?? {}),
-  )
+  const [answers, setAnswers] = useState<QuizAnswers>(() => readQuizAnswers(quiz))
 
   const save = (next: QuizAnswers) => {
     setAnswers(next)
