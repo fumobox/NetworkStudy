@@ -9,7 +9,7 @@ import {
   diagramRows,
   estimateTextWidth,
   hasTimers,
-  LANE_WIDTH,
+  laneWidthFor,
   rowLayout,
   sectionStartLabels,
   TIME_COLUMN_WIDTH,
@@ -65,7 +65,7 @@ export function SequenceDiagram({
   const compact = useMediaQuery(COMPACT_MEDIA_QUERY)
   // OS の「視差効果を減らす」設定と、MotionConfig の reducedMotion を尊重する
   const animate = useReducedMotionConfig() !== true
-  const laneWidth = compact ? COMPACT_LANE_WIDTH : LANE_WIDTH
+  const laneWidth = compact ? COMPACT_LANE_WIDTH : laneWidthFor(actors.length)
   const offsetX = showElapsed ? TIME_COLUMN_WIDTH : 0
   const width = offsetX + actors.length * laneWidth
   // 区間（TLS の「暗号化なし」「ハンドシェイク用の鍵で暗号化」など）の始まりの行の上に、名前を入れる

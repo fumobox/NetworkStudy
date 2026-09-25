@@ -215,6 +215,7 @@ describe('テーマへの導線', () => {
       'DNS の名前解決',
       'TCP 3 ウェイハンドシェイク',
       'TLS 1.3 のハンドシェイクと証明書',
+      'HTTPS の全体像',
       'TCP の接続の終了',
       'サブネット計算',
     ])
@@ -236,6 +237,7 @@ describe('テーマへの導線', () => {
       'Quiz not taken yet',
       'Quiz not taken yet',
       'Quiz not taken yet',
+      'Quiz not taken yet',
     ])
     // 学習順の番号
     expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual([
@@ -244,6 +246,7 @@ describe('テーマへの導線', () => {
       '3',
       '4',
       '5',
+      '6',
     ])
   })
 })

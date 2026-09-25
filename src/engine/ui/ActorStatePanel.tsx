@@ -37,7 +37,8 @@ export function ActorStatePanel({
       <h2 id={titleId} className="font-heading text-base font-semibold">
         {m.actorState.title}
       </h2>
-      <div className="grid gap-3 sm:grid-cols-2">
+      {/* 列の最小幅を 0 にして、表が長くても狭い画面で横にはみ出さない（はみ出す分は表の中でスクロール） */}
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
         {visibleActors.map(({ actor, slots }) => {
           const snapshot = derived.actorStates[actor.id]
           const before = previous?.actorStates[actor.id]

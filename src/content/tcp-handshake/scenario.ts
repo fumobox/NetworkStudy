@@ -38,7 +38,8 @@ const RCV_NXT: StateKey = 'RCV.NXT'
 const CLIENT_ISS = 1000
 const SERVER_ISS = 5000
 const CLIENT_PORT = '49152'
-const SERVER_PORT = '80'
+/** HTTPS のポート。TLS のテーマと HTTPS の全体像は、この接続の上で続く */
+const SERVER_PORT = '443'
 const MSS = '1460'
 /** RFC 6298 §2.1 の初期 RTO（1 秒） */
 const INITIAL_RTO_MS = 1000
@@ -253,8 +254,8 @@ function buildSteps(options: TcpOptions): readonly Step[] {
           id: 'listen',
           title: { en: 'The server waits for connections', ja: 'サーバーが接続を待ち受ける' },
           description: {
-            en: 'An application on the server opens port 80 passively (for example with listen()). The server moves from CLOSED to LISTEN.',
-            ja: 'サーバーのアプリケーションが 80 番ポートを受動的にオープンする（listen() など）。サーバーは CLOSED から LISTEN に移る。',
+            en: 'An application on the server opens port 443 (HTTPS) passively (for example with listen()). The server moves from CLOSED to LISTEN.',
+            ja: 'サーバーのアプリケーションが 443 番ポート（HTTPS）を受動的にオープンする（listen() など）。サーバーは CLOSED から LISTEN に移る。',
           },
           events: [set(SERVER, STATE, 'LISTEN')],
         }
@@ -262,8 +263,8 @@ function buildSteps(options: TcpOptions): readonly Step[] {
           id: 'no-listener',
           title: { en: 'No one is listening on the port', ja: 'ポートで誰も待ち受けていない' },
           description: {
-            en: 'No application has opened port 80 on the server, so the port stays CLOSED.',
-            ja: 'サーバーでは 80 番ポートを開いているアプリケーションがないので、ポートは CLOSED のまま。',
+            en: 'No application has opened port 443 on the server, so the port stays CLOSED.',
+            ja: 'サーバーでは 443 番ポートを開いているアプリケーションがないので、ポートは CLOSED のまま。',
           },
           events: [],
         },
@@ -440,7 +441,7 @@ export const tcpHandshakeScenario: Scenario<TcpOptions> = {
     },
     serverPort: {
       kind: 'select',
-      label: { en: 'Server port 80', ja: 'サーバーの 80 番ポート' },
+      label: { en: 'Server port 443', ja: 'サーバーの 443 番ポート' },
       choices: [
         {
           value: 'open',

@@ -1,6 +1,14 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { diagramRows, estimateTextWidth, hasTimers, rowLayout, sectionStartLabels } from './diagram'
+import {
+  diagramRows,
+  diagramWidth,
+  estimateTextWidth,
+  hasTimers,
+  laneWidthFor,
+  rowLayout,
+  sectionStartLabels,
+} from './diagram'
 import type { Message, Step, StepEvent } from './types'
 
 const text = (en: string) => ({ en, ja: en })
@@ -128,5 +136,14 @@ describe('rowLayout', () => {
       rowTops: [],
       bottom: 48,
     })
+  })
+})
+
+describe('laneWidthFor / diagramWidth', () => {
+  it('5 アクターまでは 180px、6 アクター以上は 150px のレーンで描く', () => {
+    expect([2, 5, 6].map(laneWidthFor)).toEqual([180, 180, 150])
+    expect(diagramWidth(5, false)).toBe(900)
+    expect(diagramWidth(6, false)).toBe(900)
+    expect(diagramWidth(2, true)).toBe(72 + 360)
   })
 })

@@ -1,10 +1,14 @@
 import type { MDXContent } from 'mdx/types'
 import { Suspense, type LazyExoticComponent } from 'react'
 import { useMessages } from '@/lib/i18n'
+import { OverviewLink } from './OverviewLink'
 
 interface OverviewSectionProps {
   content: LazyExoticComponent<MDXContent>
 }
+
+/** MDX の要素を置き換えるコンポーネント */
+const MDX_COMPONENTS = { a: OverviewLink }
 
 /** テーマの概要（MDX）を表示する。読み込み中はその旨を表示する */
 export function OverviewSection({ content: Content }: OverviewSectionProps) {
@@ -16,7 +20,7 @@ export function OverviewSection({ content: Content }: OverviewSectionProps) {
       <Suspense fallback={<p className="text-sm text-muted-foreground">{m.theme.loading}</p>}>
         {/* typography の既定はインラインコードの前後に ` を付け足すので、それを消す */}
         <div className="prose max-w-none prose-headings:font-heading prose-code:before:content-none prose-code:after:content-none">
-          <Content />
+          <Content components={MDX_COMPONENTS} />
         </div>
       </Suspense>
     </section>
