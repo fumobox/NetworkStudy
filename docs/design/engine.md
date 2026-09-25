@@ -256,7 +256,7 @@ export type PlayerAction =
   | { readonly type: 'selectMessage'; readonly messageId: MessageId | null }
 ```
 
-- next / prev / jump は `[0, stepCount - 1]` に丸める。ステップを移動したら `selectedMessageId` を null に戻す
+- next / prev / jump は `[0, stepCount - 1]` に丸める。ステップを移動したら `selectedMessageId` を null に戻す。再生中に next / prev / jump をしたら一時停止する
 - 末尾で play したら先頭から再生する。tick が末尾に達したら `isPlaying = false`
 
 ## アクターの状態

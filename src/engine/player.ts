@@ -61,14 +61,19 @@ function moveTo(state: PlayerState, index: number): PlayerState {
   return { ...state, stepIndex, selectedMessageId: null }
 }
 
+function pause(state: PlayerState): PlayerState {
+  return state.isPlaying ? { ...state, isPlaying: false } : state
+}
+
 export function playerReducer(state: PlayerState, action: PlayerAction): PlayerState {
   switch (action.type) {
+    // 再生中に手動で移動したら一時停止する（タイマーとの競合で 2 段進むのを防ぐ）
     case 'next':
-      return moveTo(state, state.stepIndex + 1)
+      return pause(moveTo(state, state.stepIndex + 1))
     case 'prev':
-      return moveTo(state, state.stepIndex - 1)
+      return pause(moveTo(state, state.stepIndex - 1))
     case 'jump':
-      return moveTo(state, action.stepIndex)
+      return pause(moveTo(state, action.stepIndex))
     case 'play': {
       if (state.stepCount <= 1 || state.isPlaying) {
         return state
@@ -78,7 +83,7 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
       return { ...from, isPlaying: true }
     }
     case 'pause':
-      return state.isPlaying ? { ...state, isPlaying: false } : state
+      return pause(state)
     case 'tick': {
       if (!state.isPlaying) {
         return state

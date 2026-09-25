@@ -65,6 +65,21 @@ describe('playerReducer', () => {
     expect(run(afterTwo, { type: 'tick' })).toMatchObject({ stepIndex: 3, isPlaying: false })
   })
 
+  it('再生中に手動で移動したら一時停止する', () => {
+    const playing = run(initial, { type: 'play' })
+    expect(run(playing, { type: 'next' })).toMatchObject({ stepIndex: 1, isPlaying: false })
+    expect(run(playing, { type: 'prev' }).isPlaying).toBe(false)
+    expect(run(playing, { type: 'jump', stepIndex: 3 })).toMatchObject({
+      stepIndex: 3,
+      isPlaying: false,
+    })
+  })
+
+  it('末尾での next は同じオブジェクトを返す', () => {
+    const last = createPlayerState(4, 3)
+    expect(playerReducer(last, { type: 'next' })).toBe(last)
+  })
+
   it('停止中の tick では進まない', () => {
     expect(run(initial, { type: 'play' }, { type: 'pause' }, { type: 'tick' }).stepIndex).toBe(0)
   })
