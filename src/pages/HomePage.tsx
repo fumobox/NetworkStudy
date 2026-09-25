@@ -1,9 +1,11 @@
 import { ThemeCard } from '@/components/features/theme-card/ThemeCard'
 import { THEME_META } from '@/content/themeMeta'
+import { useDocumentDescription } from '@/lib/hooks/useDocumentDescription'
 import { useMessages } from '@/lib/i18n'
 
 export function HomePage() {
   const m = useMessages()
+  useDocumentDescription(m.common.tagline)
 
   return (
     <>

@@ -35,9 +35,9 @@ src/
 ├── components/
 │   ├── ui/         shadcn/ui の生成コード
 │   ├── layout/     AppLayout, Header, Footer, LanguageSwitcher
-│   └── features/   クイズ・進捗など（予定）
+│   └── features/   クイズ（quiz/）、テーマカード（theme-card/）
 ├── content/        テーマごとのシナリオ・クイズ（themeMeta.ts にメタ情報、registry.ts に登録）
-├── engine/         シーケンスエンジン（予定）
+├── engine/         シーケンスエンジン（型・導出・検証・プレイヤー・UI）
 ├── lib/            汎用処理（i18n/, hooks/, storage.ts, utils.ts）
 ├── types/          横断的な型（DeepReadonly など）
 └── test/setup.ts

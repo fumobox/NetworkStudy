@@ -68,26 +68,26 @@ export const tcpHandshakeQuiz: Quiz = {
         {
           id: 'retransmit',
           text: {
-            en: 'The client resends the SYN when its retransmission timer expires (1 s at first, then doubling)',
-            ja: 'クライアントの再送タイマーが満了すると SYN を再送する（最初は 1 秒、その後は倍に延びる）',
+            en: 'The client resends the SYN after a timeout',
+            ja: 'しばらく待ってクライアントが SYN を再送する',
           },
         },
         {
           id: 'rst',
-          text: { en: 'The server sends a RST', ja: 'サーバーが RST を送る' },
+          text: { en: 'The server replies with a RST', ja: 'サーバーが RST を返してくる' },
         },
         {
           id: 'established',
           text: {
-            en: 'The connection is established anyway',
-            ja: 'それでも接続は確立する',
+            en: 'The connection is established without it',
+            ja: 'SYN なしで接続が確立する',
           },
         },
         {
           id: 'server-retransmit',
           text: {
-            en: 'The server asks the client to resend',
-            ja: 'サーバーがクライアントに再送を求める',
+            en: 'The server asks the client to resend it',
+            ja: 'サーバーが SYN の再送を求める',
           },
         },
       ],

@@ -1,6 +1,6 @@
-import { useEffect, useEffectEvent, useId, useMemo, useRef, type ReactNode } from 'react'
+import { useEffect, useEffectEvent, useMemo, useRef, type ReactNode } from 'react'
 import { useMessages } from '@/lib/i18n'
-import { deriveState } from '../derive'
+import { clampStepIndex, deriveState } from '../derive'
 import { useScenarioOptions, type ScenarioSession } from '../hooks/useScenarioOptions'
 import { useScenarioPlayer } from '../hooks/useScenarioPlayer'
 import { useStepKeyboard } from '../hooks/useStepKeyboard'
@@ -28,14 +28,11 @@ interface ScenarioPlayerProps {
 /** シナリオのステップ実行（オプションのフォーム・操作・図・パケットの詳細・状態）。URL と同期する */
 export function ScenarioPlayer({ scenario, renderPanels, hiddenStateKeys }: ScenarioPlayerProps) {
   const m = useMessages()
-  const titleId = useId()
   const session = useScenarioOptions(scenario)
 
+  // 各パネルの見出し（h2）を束ねる見出しはなく、ランドマークの名前だけを付ける
   return (
-    <section aria-labelledby={titleId} className="space-y-6">
-      <h2 id={titleId} className="sr-only">
-        {m.theme.player}
-      </h2>
+    <section aria-label={m.theme.player} className="space-y-6">
       <ScenarioOptionsForm
         optionDefs={scenario.optionDefs}
         options={session.options}
@@ -77,11 +74,20 @@ function PlayerBody({ scenario, session, renderPanels, hiddenStateKeys }: Player
 
   // URL → プレイヤー: 戻る・進むやリンクで ?step= だけが外から変わったら、そのステップへ移る
   const { urlStepIndex } = session
-  useEffect(() => {
-    if (urlStepIndex !== lastWrittenStep.current) {
-      dispatch({ type: 'jump', stepIndex: urlStepIndex })
+  const followUrl = useEffectEvent((stepIndex: number) => {
+    if (stepIndex === lastWrittenStep.current) {
+      return
     }
-  }, [urlStepIndex, dispatch])
+    if (clampStepIndex(steps.length, stepIndex) === state.stepIndex) {
+      // 範囲外の値が来ても丸めると今のステップのままなら、プレイヤーは変わらないので URL だけ正規化する
+      writeStep(state.stepIndex)
+    } else {
+      dispatch({ type: 'jump', stepIndex })
+    }
+  })
+  useEffect(() => {
+    followUrl(urlStepIndex)
+  }, [urlStepIndex])
 
   const derived = useMemo(
     () => deriveState(scenario.actors, steps, state.stepIndex),

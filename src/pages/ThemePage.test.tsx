@@ -1,11 +1,12 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { StrictMode } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/AppRoutes'
 
 /** 現在の URL を表示し、外からの遷移（戻る・進むやリンク）を再現するボタンを置く */
-function Probe() {
+function Probe({ to = '/en/themes/tcp-handshake?step=4' }: { to?: string }) {
   const location = useLocation()
   const navigate = useNavigate()
   return (
@@ -15,21 +16,28 @@ function Probe() {
         type="button"
         data-testid="external-navigation"
         onClick={() => {
-          void navigate('/en/themes/tcp-handshake?step=4')
+          void navigate(to)
         }}
       />
     </>
   )
 }
 
-function renderAt(path: string) {
+// main.tsx と同じく StrictMode で描画し、effect の二重実行でも URL の同期が壊れないことを確かめる
+function renderAt(path: string, externalTarget?: string) {
   return render(
-    <MemoryRouter initialEntries={[path]}>
-      <AppRoutes />
-      <Probe />
-    </MemoryRouter>,
+    <StrictMode>
+      <MemoryRouter initialEntries={[path]}>
+        <AppRoutes />
+        <Probe {...(externalTarget === undefined ? {} : { to: externalTarget })} />
+      </MemoryRouter>
+    </StrictMode>,
   )
 }
+
+afterEach(() => {
+  vi.useRealTimers()
+})
 
 const location = () => screen.getByTestId('location').textContent
 
@@ -90,6 +98,26 @@ describe('ThemePage', () => {
       expect(screen.getByText('Step 4 of 5')).toBeInTheDocument()
     })
     expect(location()).toBe('/en/themes/tcp-handshake?step=4')
+  })
+
+  it('最後のステップで範囲外の ?step= が外から来ても、表示はそのままで URL を正規化する', async () => {
+    renderAt('/en/themes/tcp-handshake?step=5', '/en/themes/tcp-handshake?step=99')
+    fireEvent.click(screen.getByTestId('external-navigation'))
+    await waitFor(() => {
+      expect(location()).toBe('/en/themes/tcp-handshake?step=5')
+    })
+    expect(screen.getByText('Step 5 of 5')).toBeInTheDocument()
+  })
+
+  it('自動再生中はステップが進むたびに URL に書き戻し、最後で止まる', async () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    renderAt('/en/themes/tcp-handshake?step=4')
+    fireEvent.click(screen.getByRole('button', { name: 'Play' }))
+    await vi.advanceTimersByTimeAsync(2000)
+    await waitFor(() => {
+      expect(location()).toBe('/en/themes/tcp-handshake?step=5')
+    })
+    expect(screen.getByRole('button', { name: 'Play' })).toBeInTheDocument()
   })
 
   it('キーボードの → でステップを進める', async () => {

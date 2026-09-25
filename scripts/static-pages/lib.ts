@@ -16,11 +16,6 @@ interface RenderOptions {
   meta: PageMeta
 }
 
-/** 静的に生成するルート（ロケールより後ろのパス）の一覧 */
-export function routesFor(themeIds: readonly string[]): string[] {
-  return ['', ...themeIds.map((id) => `themes/${id}`)]
-}
-
 /**
  * ページの公開 URL。GitHub Pages のディレクトリの正規形に合わせて末尾スラッシュ付きにする。
  * `pageUrl(site, 'ja', 'themes/tcp')` → `https://…/NetworkStudy/ja/themes/tcp/`
