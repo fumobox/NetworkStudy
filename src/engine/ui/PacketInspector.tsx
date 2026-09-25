@@ -3,7 +3,8 @@ import { useId } from 'react'
 import { useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { resolveSelectedMessage } from '../derive'
-import type { Actor, ActorId, DerivedState, MessageId } from '../types'
+import type { Actor, DerivedState, MessageId } from '../types'
+import { useActorName } from './useActorName'
 
 const HIGHLIGHT_MARK = '●'
 
@@ -20,10 +21,7 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
   const t = useText()
   const titleId = useId()
   const message = resolveSelectedMessage(derived, selectedMessageId)
-  const actorName = (actorId: ActorId): string => {
-    const actor = actors.find((candidate) => candidate.id === actorId)
-    return actor === undefined ? actorId : t(actor.name)
-  }
+  const actorName = useActorName(actors)
   const original =
     message?.retransmitOf === undefined
       ? undefined
@@ -84,9 +82,10 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
                   </tr>
                 </thead>
                 <tbody>
-                  {message.fields.map((field) => (
+                  {message.fields.map((field, i) => (
                     <tr
-                      key={field.name}
+                      // 同じ名前のフィールドが並ぶこともある（DNS の複数の Answer など）
+                      key={`${String(i)}:${field.name}`}
                       data-highlight={field.highlight === true}
                       className={cn(
                         'border-t',
@@ -95,14 +94,14 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
                     >
                       <th scope="row" className="py-1.5 pr-3 align-top font-mono font-medium">
                         {field.highlight === true && (
-                          <>
-                            <span aria-hidden className="mr-1 text-primary">
-                              {HIGHLIGHT_MARK}
-                            </span>
-                            <span className="sr-only">{m.inspector.highlighted}</span>
-                          </>
+                          <span aria-hidden className="mr-1 text-primary">
+                            {HIGHLIGHT_MARK}
+                          </span>
                         )}
                         {field.name}
+                        {field.highlight === true && (
+                          <span className="sr-only">{m.inspector.highlighted}</span>
+                        )}
                       </th>
                       <td className="py-1.5 pr-3 align-top font-mono break-all">{field.value}</td>
                       <td className="py-1.5 align-top text-muted-foreground">

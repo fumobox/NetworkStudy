@@ -24,6 +24,7 @@ export function ActorStatePanel({
   const m = useMessages()
   const t = useText()
   const titleId = useId()
+  const isFirst = previous === null || previous.stepIndex >= derived.stepIndex
   const visibleActors = actors
     .map((actor) => ({
       actor,
@@ -51,24 +52,26 @@ export function ActorStatePanel({
                     <div
                       key={slot.key}
                       data-changed={changed}
-                      className={cn('rounded-md px-2 py-1', changed && 'bg-accent')}
+                      className={cn(
+                        'rounded-md px-2 py-1',
+                        // 表は追加された行を背景で強調するので、スロット全体には背景を付けない
+                        changed && typeof value === 'string' && 'bg-accent',
+                      )}
                     >
                       <dt className="text-xs text-muted-foreground">
                         {changed && (
-                          <>
-                            <span aria-hidden className="mr-1 text-primary">
-                              {CHANGE_MARK}
-                            </span>
-                            <span className="sr-only">{m.actorState.changed}</span>
-                          </>
+                          <span aria-hidden className="mr-1 text-primary">
+                            {CHANGE_MARK}
+                          </span>
                         )}
                         {t(slot.label)}
+                        {changed && <span className="sr-only">{m.actorState.changed}</span>}
                       </dt>
                       <dd>
                         <StateValueView
                           value={value}
-                          // 最初のステップは、枠の初期値と比べる
-                          previous={previous === null ? slot.initial : before?.values[slot.key]}
+                          // 最初のステップ（または前の状態として同じステップが渡されたとき）は、枠の初期値と比べる
+                          previous={isFirst ? slot.initial : before?.values[slot.key]}
                         />
                       </dd>
                     </div>
@@ -96,7 +99,7 @@ function StateValueView({
 }) {
   const m = useMessages()
   if (typeof value === 'string') {
-    return <code className={cn('font-mono text-sm font-semibold')}>{value}</code>
+    return <code className="font-mono text-sm font-semibold">{value}</code>
   }
   if (value.rows.length === 0) {
     return <span className="text-sm text-muted-foreground">{m.actorState.emptyTable}</span>
@@ -133,25 +136,26 @@ function StateTableView({
           </tr>
         </thead>
         <tbody>
-          {table.rows.map((row) => {
+          {table.rows.map((row, rowIndex) => {
             const added = isNew(row)
             return (
               <tr
-                key={rowKey(row)}
+                // 表は丸ごと置き換える設計なので、同じ内容の行があっても index で区別する
+                key={`${String(rowIndex)}:${rowKey(row)}`}
                 data-added={added}
                 className={cn('border-t', added && 'bg-accent')}
               >
                 {row.map((cell, i) => (
-                  <td key={`${String(i)}:${cell}`} className="py-0.5 pr-2">
+                  <td key={i} className="py-0.5 pr-2">
                     {i === 0 && added && (
-                      <>
-                        <span aria-hidden className="mr-1 text-primary">
-                          {CHANGE_MARK}
-                        </span>
-                        <span className="sr-only">{m.actorState.added}</span>
-                      </>
+                      <span aria-hidden className="mr-1 text-primary">
+                        {CHANGE_MARK}
+                      </span>
                     )}
                     {cell}
+                    {i === row.length - 1 && added && (
+                      <span className="sr-only">{m.actorState.added}</span>
+                    )}
                   </td>
                 ))}
               </tr>

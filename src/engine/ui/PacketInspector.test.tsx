@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { LocaleProvider, type Locale } from '@/lib/i18n'
 import { deriveState } from '../derive'
 import type { Actor, Step } from '../types'
@@ -105,6 +105,45 @@ describe('PacketInspector', () => {
       'data-highlight',
       'false',
     )
+  })
+
+  it('同じ名前のフィールドがあっても key が衝突しない', () => {
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const dup: Step[] = [
+      {
+        id: 'a',
+        title: text('a'),
+        description: text('a'),
+        events: [
+          {
+            kind: 'message',
+            message: {
+              id: 'ans',
+              from: 'server',
+              to: 'client',
+              label: 'Response',
+              status: 'delivered',
+              fields: [
+                { name: 'Answer', value: '192.0.2.1' },
+                { name: 'Answer', value: '192.0.2.2' },
+              ],
+            },
+          },
+        ],
+      },
+    ]
+    render(
+      <LocaleProvider locale="en">
+        <PacketInspector
+          actors={actors}
+          derived={deriveState(actors, dup, 0)}
+          selectedMessageId={null}
+        />
+      </LocaleProvider>,
+    )
+    expect(screen.getAllByRole('rowheader', { name: 'Answer' })).toHaveLength(2)
+    expect(errors).not.toHaveBeenCalled()
+    errors.mockRestore()
   })
 
   it('暗号化されたメッセージには学習用に中身を見せている旨の注記を出す', () => {

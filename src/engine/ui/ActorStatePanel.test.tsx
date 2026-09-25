@@ -1,5 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { LocaleProvider } from '@/lib/i18n'
 import { deriveState } from '../derive'
 import type { Actor, Step, StateTable } from '../types'
@@ -103,6 +103,61 @@ describe('ActorStatePanel', () => {
     const rows = screen.getAllByRole('row').filter((row) => row.hasAttribute('data-added'))
     expect(rows.map((row) => row.getAttribute('data-added'))).toEqual(['false', 'true'])
     expect(rows[1]).toHaveTextContent('Added in this step')
+  })
+
+  it('表のスロットには背景を付けず、追加された行だけを背景で強調する', () => {
+    renderPanel(1)
+    const slot = screen.getByText('www.example.com').closest('[data-changed]')
+    expect(slot).toHaveAttribute('data-changed', 'true')
+    expect(slot).not.toHaveClass('bg-accent')
+    expect(screen.getByText('www.example.com').closest('tr')).toHaveClass('bg-accent')
+  })
+
+  it('前の状態として同じステップが渡されても、初期値と比べる', () => {
+    const derived = deriveState(actors, steps, 0)
+    render(
+      <LocaleProvider locale="en">
+        <ActorStatePanel actors={actors} derived={derived} previous={derived} />
+      </LocaleProvider>,
+    )
+    expect(screen.getByText('example.com').closest('tr')).toHaveAttribute('data-added', 'true')
+  })
+
+  it('同じ内容の行があっても key が衝突しない', () => {
+    const duplicated: Step[] = [
+      {
+        id: 'dup',
+        title: text('dup'),
+        description: text('dup'),
+        events: [
+          {
+            kind: 'stateChange',
+            actorId: 'client',
+            key: 'cache',
+            value: {
+              ...EMPTY,
+              rows: [
+                ['a', '1'],
+                ['a', '1'],
+              ],
+            },
+          },
+        ],
+      },
+    ]
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    render(
+      <LocaleProvider locale="en">
+        <ActorStatePanel
+          actors={actors}
+          derived={deriveState(actors, duplicated, 0)}
+          previous={null}
+        />
+      </LocaleProvider>,
+    )
+    expect(screen.getAllByText('a')).toHaveLength(2)
+    expect(errors).not.toHaveBeenCalled()
+    errors.mockRestore()
   })
 
   it('空の表は「Empty」と表示する', () => {
