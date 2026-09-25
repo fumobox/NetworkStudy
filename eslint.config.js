@@ -48,7 +48,7 @@ export default defineConfig([
       'src/engine/**/*.tsx',
       'src/app/**/*.tsx',
     ],
-    ignores: ['src/components/ui/**'],
+    ignores: ['src/components/ui/**', '**/*.test.tsx', 'src/test/**'],
     plugins: { react },
     rules: {
       'react/jsx-no-literals': [
