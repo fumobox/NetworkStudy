@@ -54,7 +54,7 @@
 |---|---|---|
 | 基盤 | React 19 + Vite + TypeScript（strict） | `any` 禁止、`as` は原則禁止（`as const` と `satisfies` は可） |
 | UI | Tailwind CSS v4 + shadcn/ui | Button, Card, Tabs, Tooltip, Slider, Toggle, Collapsible, Sheet |
-| ルーティング | React Router v7（ライブラリモード、BrowserRouter） | `basename={import.meta.env.BASE_URL}` |
+| ルーティング | React Router v8（宣言的モード、BrowserRouter） | `basename={import.meta.env.BASE_URL}` |
 | 可視化 | SVG + Motion（旧 framer-motion） | シーケンス図は決まったレイアウトなので D3 などのレイアウトエンジンは不要 |
 | 多言語対応 | 自前の型安全辞書（`src/lib/i18n`） | 外部ライブラリは使わない。詳細は §5 |
 | 長文コンテンツ | MDX（`@mdx-js/rollup`、Phase 2 から） | ロケールごとにファイルを分ける |
@@ -197,20 +197,20 @@ export type PlayerAction =
 ### URL
 
 - ロケールは常にパスの先頭に置く（例: `/NetworkStudy/ja/themes/tcp-handshake?step=3`）。デフォルト言語でも省略しない
-- `/` やプレフィックスのないパスは `RootRedirect` でリダイレクトする。ロケールの優先順は localStorage（`ns.locale`）→ `navigator.languages`（`ja*` なら `ja`）→ `en`
-- 不正なロケール（`/fr/...`）は `/en/...` へリダイレクトする
+- `/`、プレフィックスのないパス、不正なロケールのパスは、すべて `LocaleRedirect` でリダイレクトする。ロケールの優先順は localStorage（`ns.locale`）→ `navigator.languages`（`ja*` なら `ja`）→ `en`
+- 先頭のセグメントが言語タグらしい形（`fr`、`ja-JP` など）なら差し替え、そうでなければ（`themes` など）先頭にロケールを付け足す。クエリとハッシュは保持する
 - 言語切替では、パス先頭のロケールだけを置き換え、クエリ（`?step=…`）はそのまま残す
 - 進捗のキーにはロケールを含めない（言語を切り替えても進捗は共有される）
 
 ```tsx
 <Routes>
-  <Route path="/" element={<RootRedirect />} />
+  <Route index element={<LocaleRedirect />} />
+  {/* 先頭セグメントが対応ロケールでなければ LocaleLayout が LocaleRedirect を返す */}
   <Route path=":locale" element={<LocaleLayout />}>  {/* 検証 + LocaleProvider + <html lang> 同期 */}
     <Route index element={<HomePage />} />
-    <Route path="themes/:theme" element={<ThemePage />} />
+    <Route path="themes/:theme" element={<ThemePage />} />  {/* Phase 1 で追加 */}
     <Route path="*" element={<NotFoundPage />} />
   </Route>
-  <Route path="*" element={<RootRedirect preservePath />} />
 </Routes>
 ```
 
@@ -219,17 +219,17 @@ export type PlayerAction =
 キーを文字列で指定せず、オブジェクトのプロパティとして参照する。`satisfies` を使うことで、キーの欠落・余剰や関数シグネチャの不一致がコンパイルエラーになる。
 
 ```ts
-// src/lib/i18n/messages.en.ts（英語版を正とする）
+// src/lib/i18n/messages/en.ts（英語版を正とする。as const を付けると ja が代入できないため付けない）
 export const en = {
   stepper: {
     counter: (p: { current: number; total: number }) => `Step ${p.current} of ${p.total}`,
     next: "Next",
     prev: "Back",
   },
-} as const;
-export type Messages = typeof en;
+};
+export type Messages = DeepReadonly<typeof en>;  // 書き換えは型で禁止する
 
-// src/lib/i18n/messages.ja.ts
+// src/lib/i18n/messages/ja.ts
 export const ja = {
   stepper: {
     counter: (p) => `ステップ ${p.current} / ${p.total}`,
@@ -285,10 +285,10 @@ NetworkStudy/
 ├── scripts/generate-static-pages.ts
 ├── src/
 │   ├── main.tsx
-│   ├── app/router.tsx
+│   ├── app/ (AppRoutes.tsx, LocaleLayout.tsx, LocaleRedirect.tsx)
 │   ├── components/
 │   │   ├── ui/                 # shadcn
-│   │   ├── layout/             # AppLayout, Header, LanguageSwitcher, Sidebar
+│   │   ├── layout/             # AppLayout, Header, Footer, LanguageSwitcher（Sidebar はテーマ追加時）
 │   │   └── features/ (quiz/, progress/, theme-card/)
 │   ├── engine/
 │   │   ├── types.ts

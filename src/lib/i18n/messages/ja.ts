@@ -5,6 +5,7 @@ export const ja = {
   common: {
     siteName: 'NetworkStudy',
     tagline: 'ネットワークプロトコルの動きを、1パケットずつ自分の手で進めて学ぶ。',
+    pageTitle: (p) => `${p.page} | ${p.site}`,
   },
   nav: {
     home: 'ホーム',
@@ -12,6 +13,13 @@ export const ja = {
   },
   language: {
     label: '言語',
+  },
+  layout: {
+    skipToContent: '本文へスキップ',
+  },
+  footer: {
+    license: 'MIT ライセンス',
+    source: 'ソースコード',
   },
   stepper: {
     counter: (p) => `ステップ ${String(p.current)} / ${String(p.total)}`,

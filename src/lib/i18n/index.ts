@@ -1,3 +1,4 @@
+export { detectLocale, matchLocale } from './detect'
 export { formatNumber, toBcp47 } from './format'
 export { useLocale, useMessages, useText } from './hooks'
 export { LocaleProvider } from './LocaleProvider'
@@ -10,3 +11,5 @@ export {
   type LocalizedText,
 } from './locale'
 export { LOCALE_NAMES, MESSAGES, type Messages } from './messages'
+export { leadingLanguageTag, localePath, replaceLocale, stripLocaleSegment } from './path'
+export { LOCALE_STORAGE_KEY, readPreferredLocale, savePreferredLocale } from './preference'

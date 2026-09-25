@@ -10,6 +10,7 @@ export const en = {
   common: {
     siteName: 'NetworkStudy',
     tagline: 'Learn how network protocols work, one packet at a time.',
+    pageTitle: (p: { page: string; site: string }) => `${p.page} | ${p.site}`,
   },
   nav: {
     home: 'Home',
@@ -17,6 +18,13 @@ export const en = {
   },
   language: {
     label: 'Language',
+  },
+  layout: {
+    skipToContent: 'Skip to content',
+  },
+  footer: {
+    license: 'MIT License',
+    source: 'Source code',
   },
   stepper: {
     counter: (p: { current: number; total: number }) =>
