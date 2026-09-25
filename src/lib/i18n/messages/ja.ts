@@ -68,6 +68,17 @@ export const ja = {
     added: 'このステップで追加',
     emptyTable: '空',
   },
+  quiz: {
+    title: '理解度チェック',
+    question: (p) => `問題 ${String(p.n)} / ${String(p.total)}`,
+    correct: '正解！',
+    incorrect: '不正解。',
+    answerIs: (p) => `正解は「${p.answer}」`,
+    yourAnswer: '（あなたの回答）',
+    correctAnswer: '（正解）',
+    score: (p) => `${String(p.total)} 問中 ${String(p.correct)} 問正解`,
+    reset: 'もう一度',
+  },
   notFound: {
     title: 'ページが見つかりません',
     description: 'お探しのページは存在しません。',
