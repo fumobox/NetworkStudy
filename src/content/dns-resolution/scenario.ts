@@ -1,12 +1,12 @@
 /**
- * DNS の名前解決（フルサービスリゾルバによる再帰的な解決）
+ * DNS の名前解決（フルサービスリゾルバーによる再帰的な解決）
  *
  * 根拠:
- * - RFC 1034 §4.3.1（再帰と反復の問い合わせ）, §4.3.2（権威サーバーの動作。委任・CNAME）, §5.3.3（リゾルバの動作）
+ * - RFC 1034 §4.3.1（再帰と反復の問い合わせ）, §4.3.2（権威サーバーの動作。委任・CNAME）, §5.3.3（リゾルバーの動作）
  * - RFC 1035 §4.1（メッセージの形式: ID、QR / AA / RD / RA、RCODE、各セクション）
  * - RFC 1034 §4.2.1（glue）, RFC 2308 §2.1, §3, §5（否定応答の形と、その TTL = min(SOA の TTL, SOA の MINIMUM)）
  * - RFC 5452（ID と送信元ポートは推測されにくい値にする。このページの ID は読みやすさのための値）
- * - RFC 9156（QNAME minimisation。多くのリゾルバはルートや TLD に名前の一部しか送らない）
+ * - RFC 9156（QNAME minimisation。多くのリゾルバーはルートや TLD に名前の一部しか送らない）
  * IP アドレスは RFC 5737 の文書用アドレス（192.0.2.0/24）を使う（ルートと .com のサーバーは実在のアドレス）
  */
 import { z } from 'zod'
@@ -45,7 +45,7 @@ const WWW = 'www.example.com.'
 const MISSING = 'no-such-host.example.com.'
 const ALIAS = 'shop.example.com.'
 const WWW_ADDRESS = '192.0.2.10'
-/** PC に設定されているリゾルバのアドレス（RFC 5737 の TEST-NET-2） */
+/** PC に設定されているリゾルバーのアドレス（RFC 5737 の TEST-NET-2） */
 const RESOLVER_ADDRESS = '198.51.100.53'
 const ROOT_ADDRESS = '198.41.0.4'
 const TLD_SERVER = 'a.gtld-servers.net.'
@@ -65,7 +65,7 @@ const actors: readonly Actor[] = [
   {
     id: STUB,
     kind: 'client',
-    name: { en: 'Your PC (stub resolver)', ja: 'PC（スタブリゾルバ）' },
+    name: { en: 'Your PC (stub resolver)', ja: 'PC（スタブリゾルバー）' },
     shortName: { en: 'PC', ja: 'PC' },
     stateSlots: [
       { key: RESULT, label: { en: 'Result of the lookup', ja: '名前解決の結果' }, initial: '-' },
@@ -74,8 +74,8 @@ const actors: readonly Actor[] = [
   {
     id: RESOLVER,
     kind: 'resolver',
-    name: { en: 'Full-service resolver', ja: 'フルサービスリゾルバ' },
-    shortName: { en: 'Resolver', ja: 'リゾルバ' },
+    name: { en: 'Full-service resolver', ja: 'フルサービスリゾルバー' },
+    shortName: { en: 'Resolver', ja: 'リゾルバー' },
     stateSlots: [{ key: CACHE, label: { en: 'Cache', ja: 'キャッシュ' }, initial: EMPTY_CACHE }],
   },
   {
@@ -143,7 +143,7 @@ const TEXT = {
   transport: { en: 'DNS usually uses UDP port 53', ja: 'DNS はふつう UDP の 53 番ポートを使う' },
   id: {
     en: 'Chosen by the sender. The response carries the same ID so the sender can match it. Real resolvers pick hard-to-guess random IDs; this page uses readable values.',
-    ja: '送信側が選ぶ番号。応答にも同じ ID が入り、送信側はそれで問い合わせと対応づける。実際のリゾルバは推測されにくい乱数にするが、ここでは読みやすい値にしている。',
+    ja: '送信側が選ぶ番号。応答にも同じ ID が入り、送信側はそれで問い合わせと対応づける。実際のリゾルバーは推測されにくい乱数にするが、ここでは読みやすい値にしている。',
   },
   question: { en: 'The name and type being asked for', ja: '問い合わせる名前とタイプ' },
 } satisfies Record<string, LocalizedText>
@@ -181,7 +181,7 @@ function query(options: {
           }
         : {
             en: 'No RD: the resolver asks iteratively and follows referrals itself',
-            ja: 'RD なし: リゾルバは反復問い合わせをし、委任を自分でたどる',
+            ja: 'RD なし: リゾルバーは反復問い合わせをし、委任を自分でたどる',
           },
     },
     {
@@ -198,7 +198,7 @@ function query(options: {
     label: `Query A ${options.qname}`,
     status: options.lost === true ? 'lost' : 'delivered',
     description: options.recursive
-      ? { en: 'A recursive query to the resolver.', ja: 'リゾルバへの再帰問い合わせ。' }
+      ? { en: 'A recursive query to the resolver.', ja: 'リゾルバーへの再帰問い合わせ。' }
       : { en: 'An iterative query to a name server.', ja: 'ネームサーバーへの反復問い合わせ。' },
     fields,
   }
@@ -303,7 +303,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
       id: 'cached',
       title: {
         en: 'The resolver already has some records cached',
-        ja: 'リゾルバのキャッシュにはすでにレコードがある',
+        ja: 'リゾルバーのキャッシュにはすでにレコードがある',
       },
       description:
         options.cache === 'answer'
@@ -313,7 +313,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
             }
           : {
               en: 'An earlier lookup of another name in example.com left the delegations for com. and example.com. in the cache, so the resolver already knows the example.com servers.',
-              ja: '以前に example.com の別の名前を解決したので、com. と example.com. の委任がキャッシュに残っている。リゾルバは example.com のサーバーをすでに知っている。',
+              ja: '以前に example.com の別の名前を解決したので、com. と example.com. の委任がキャッシュに残っている。リゾルバーは example.com のサーバーをすでに知っている。',
             },
       events: [set(RESOLVER, CACHE, cacheOf(preloaded))],
     })
@@ -321,10 +321,10 @@ function buildSteps(options: DnsOptions): readonly Step[] {
 
   steps.push({
     id: 'stub-query',
-    title: { en: 'Your PC asks the resolver', ja: 'PC がリゾルバに問い合わせる' },
+    title: { en: 'Your PC asks the resolver', ja: 'PC がリゾルバーに問い合わせる' },
     description: {
       en: `An application wants the address of ${qname}. The stub resolver in your PC sends a recursive query (RD set) to the full-service resolver it is configured to use, and waits for the final answer.`,
-      ja: `アプリケーションが ${qname} のアドレスを必要としている。PC のスタブリゾルバは、設定されているフルサービスリゾルバに再帰問い合わせ（RD あり）を送り、最終的な答えを待つ。`,
+      ja: `アプリケーションが ${qname} のアドレスを必要としている。PC のスタブリゾルバーは、設定されているフルサービスリゾルバーに再帰問い合わせ（RD あり）を送り、最終的な答えを待つ。`,
     },
     events: [
       send(
@@ -349,11 +349,11 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           id: 'root-query',
           title: {
             en: 'The resolver asks a root server',
-            ja: 'リゾルバがルートサーバーに問い合わせる',
+            ja: 'リゾルバーがルートサーバーに問い合わせる',
           },
           description: {
             en: 'The cache is empty, so the resolver starts from the root. It knows the root servers’ addresses from its built-in list (root hints). (Many resolvers send only “com.” here to reveal less, known as QNAME minimisation; this page sends the full name for simplicity.)',
-            ja: 'キャッシュが空なので、リゾルバはルートから始める。ルートサーバーのアドレスは、あらかじめ持っている一覧（ルートヒント）で知っている。（多くのリゾルバは、ここで「com.」だけを送って余計な情報を渡さない。QNAME minimisation と呼ぶ。このページでは簡単のため名前全体を送っている。）',
+            ja: 'キャッシュが空なので、リゾルバーはルートから始める。ルートサーバーのアドレスは、あらかじめ持っている一覧（ルートヒント）で知っている。（多くのリゾルバーは、ここで「com.」だけを送って余計な情報を渡さない。QNAME minimisation と呼ぶ。このページでは簡単のため名前全体を送っている。）',
           },
           events: [
             send(
@@ -377,7 +377,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           },
           description: {
             en: 'The root does not know the answer, but it knows who is responsible for com. It replies with a referral: NS records for com. in the Authority section and their addresses (glue) in the Additional section. The resolver caches them.',
-            ja: 'ルートは答えを知らないが、com. を担当するサーバーは知っている。Authority セクションに com. の NS レコード、Additional セクションにそのアドレス（glue）を入れた委任の応答を返す。リゾルバはそれをキャッシュする。',
+            ja: 'ルートは答えを知らないが、com. を担当するサーバーは知っている。Authority セクションに com. の NS レコード、Additional セクションにそのアドレス（glue）を入れた委任の応答を返す。リゾルバーはそれをキャッシュする。',
           },
           events: [
             send(
@@ -409,11 +409,11 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           id: 'tld-query',
           title: {
             en: 'The resolver asks the .com server',
-            ja: 'リゾルバが .com のサーバーに問い合わせる',
+            ja: 'リゾルバーが .com のサーバーに問い合わせる',
           },
           description: {
             en: `The resolver sends the same question to ${TLD_SERVER} (${TLD_ADDRESS}), the address it just learned from the glue.`,
-            ja: `リゾルバは、glue で知ったばかりのアドレス ${TLD_ADDRESS}（${TLD_SERVER}）に同じ質問を送る。`,
+            ja: `リゾルバーは、glue で知ったばかりのアドレス ${TLD_ADDRESS}（${TLD_SERVER}）に同じ質問を送る。`,
           },
           events: [
             send(
@@ -475,7 +475,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
         },
         description: {
           en: 'The delegation for example.com. is still in the cache, so the resolver skips the root and .com and goes straight to the example.com servers.',
-          ja: 'example.com. の委任がまだキャッシュにあるので、リゾルバはルートと .com を飛ばして、example.com のサーバーに直接問い合わせる。',
+          ja: 'example.com. の委任がまだキャッシュにあるので、リゾルバーはルートと .com を飛ばして、example.com のサーバーに直接問い合わせる。',
         },
         events: [],
       })
@@ -488,11 +488,11 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           id: 'auth-query-ns1',
           title: {
             en: 'The resolver asks ns1, but gets no reply',
-            ja: 'リゾルバが ns1 に問い合わせるが、応答がない',
+            ja: 'リゾルバーが ns1 に問い合わせるが、応答がない',
           },
           description: {
             en: 'The resolver sends the question to ns1.example.com. The server is down (or the packet is lost), so no reply comes back.',
-            ja: 'リゾルバは ns1.example.com に質問を送る。サーバーが止まっている（またはパケットが失われた）ので、応答は返ってこない。',
+            ja: 'リゾルバーは ns1.example.com に質問を送る。サーバーが止まっている（またはパケットが失われた）ので、応答は返ってこない。',
           },
           events: [
             send(
@@ -513,11 +513,11 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           id: 'auth-query-ns2',
           title: {
             en: 'After a timeout, the resolver tries ns2',
-            ja: 'タイムアウトの後、リゾルバが ns2 を試す',
+            ja: 'タイムアウトの後、リゾルバーが ns2 を試す',
           },
           description: {
             en: 'The resolver gives up waiting for ns1 and sends the same question to the other name server, ns2.example.com. Having more than one name server per zone is what makes this possible. How long to wait depends on the implementation and on the round-trip times it has measured; this page uses 1.5 seconds as an example.',
-            ja: 'リゾルバは ns1 の応答を待つのをやめ、もう 1 台のネームサーバー ns2.example.com に同じ質問を送る。ゾーンごとにネームサーバーを複数置くのは、このためでもある。どれだけ待つかは、実装や計測した往復時間によって変わる。このページでは例として 1.5 秒にしている。',
+            ja: 'リゾルバーは ns1 の応答を待つのをやめ、もう 1 台のネームサーバー ns2.example.com に同じ質問を送る。ゾーンごとにネームサーバーを複数置くのは、このためでもある。どれだけ待つかは、実装や計測した往復時間によって変わる。このページでは例として 1.5 秒にしている。',
           },
           events: [
             { kind: 'timer', actorId: RESOLVER, name: 'timeout', durationMs: QUERY_TIMEOUT_MS },
@@ -540,11 +540,11 @@ function buildSteps(options: DnsOptions): readonly Step[] {
         id: 'auth-query',
         title: {
           en: 'The resolver asks the example.com server',
-          ja: 'リゾルバが example.com のサーバーに問い合わせる',
+          ja: 'リゾルバーが example.com のサーバーに問い合わせる',
         },
         description: {
           en: `The resolver sends the question to ${NS1} (${NS1_ADDRESS}), one of the authoritative servers for example.com.`,
-          ja: `リゾルバは example.com の権威サーバーの 1 つ、${NS1}（${NS1_ADDRESS}）に質問を送る。`,
+          ja: `リゾルバーは example.com の権威サーバーの 1 つ、${NS1}（${NS1_ADDRESS}）に質問を送る。`,
         },
         events: [
           send(
@@ -569,7 +569,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
         title: { en: 'The name does not exist (NXDOMAIN)', ja: '名前が存在しない（NXDOMAIN）' },
         description: {
           en: `The authoritative server answers with RCODE NXDOMAIN and puts the zone’s SOA record in the Authority section. The resolver caches this negative answer for min(SOA TTL, SOA MINIMUM) = ${NEGATIVE_TTL} seconds, so it will not ask again for a while. The cache entry means “this name does not exist for any type”; NXDOMAIN is a response code, not a record type.`,
-          ja: `権威サーバーは RCODE NXDOMAIN で応え、Authority セクションにゾーンの SOA レコードを入れる。リゾルバはこの否定応答を min(SOA の TTL, SOA の MINIMUM) = ${NEGATIVE_TTL} 秒のあいだキャッシュし、しばらくは同じ問い合わせをしない。キャッシュの行は「この名前はどのタイプでも存在しない」という意味で、NXDOMAIN はレコードのタイプではなく応答コード。`,
+          ja: `権威サーバーは RCODE NXDOMAIN で応え、Authority セクションにゾーンの SOA レコードを入れる。リゾルバーはこの否定応答を min(SOA の TTL, SOA の MINIMUM) = ${NEGATIVE_TTL} 秒のあいだキャッシュし、しばらくは同じ問い合わせをしない。キャッシュの行は「この名前はどのタイプでも存在しない」という意味で、NXDOMAIN はレコードのタイプではなく応答コード。`,
         },
         events: [
           send(
@@ -605,11 +605,11 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           options.name === 'alias'
             ? {
                 en: `${ALIAS} is an alias: its CNAME points to ${WWW}. Because that name is in the same zone, the server also includes its A record, so the resolver does not need to ask again. Both records are cached.`,
-                ja: `${ALIAS} は別名で、CNAME が ${WWW} を指している。その名前は同じゾーンにあるので、サーバーは A レコードも一緒に返し、リゾルバは改めて問い合わせなくて済む。両方のレコードがキャッシュされる。`,
+                ja: `${ALIAS} は別名で、CNAME が ${WWW} を指している。その名前は同じゾーンにあるので、サーバーは A レコードも一緒に返し、リゾルバーは改めて問い合わせなくて済む。両方のレコードがキャッシュされる。`,
               }
             : {
                 en: `The authoritative server knows the answer: ${WWW} A ${WWW_ADDRESS}. The AA flag says this comes from the server responsible for the zone. The resolver caches it for its TTL (${ANSWER_TTL} seconds).`,
-                ja: `権威サーバーは答えを知っている: ${WWW} A ${WWW_ADDRESS}。AA フラグは、ゾーンを担当するサーバーからの答えであることを示す。リゾルバはこれを TTL（${ANSWER_TTL} 秒）のあいだキャッシュする。`,
+                ja: `権威サーバーは答えを知っている: ${WWW} A ${WWW_ADDRESS}。AA フラグは、ゾーンを担当するサーバーからの答えであることを示す。リゾルバーはこれを TTL（${ANSWER_TTL} 秒）のあいだキャッシュする。`,
               },
         events: [
           send(
@@ -633,7 +633,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
     }
   }
 
-  // リゾルバからスタブへの応答
+  // リゾルバーからスタブへの応答
   const finalAnswer: readonly Row[] =
     options.name === 'www'
       ? [cachedAnswer ? ROWS.wwwCached : ROWS.www]
@@ -643,26 +643,26 @@ function buildSteps(options: DnsOptions): readonly Step[] {
   steps.push({
     id: 'stub-answer',
     title: cachedAnswer
-      ? { en: 'The resolver answers from its cache', ja: 'リゾルバがキャッシュから答える' }
+      ? { en: 'The resolver answers from its cache', ja: 'リゾルバーがキャッシュから答える' }
       : options.name === 'missing'
         ? {
             en: 'The resolver reports that the name does not exist',
-            ja: 'リゾルバが名前がないことを伝える',
+            ja: 'リゾルバーが名前がないことを伝える',
           }
-        : { en: 'The resolver returns the answer', ja: 'リゾルバが答えを返す' },
+        : { en: 'The resolver returns the answer', ja: 'リゾルバーが答えを返す' },
     description: cachedAnswer
       ? {
           en: 'The answer is still in the cache, so the resolver replies immediately without asking any other server. The TTL it passes on is the time remaining (245 of the original 300 seconds). No AA flag: the answer comes from a cache, not from the zone’s own server.',
-          ja: '答えがまだキャッシュにあるので、リゾルバは他のサーバーに聞かずにすぐ応答する。渡す TTL は残り時間（元の 300 秒のうち 245 秒）。AA フラグはない: ゾーンのサーバーではなく、キャッシュからの答えだから。',
+          ja: '答えがまだキャッシュにあるので、リゾルバーは他のサーバーに聞かずにすぐ応答する。渡す TTL は残り時間（元の 300 秒のうち 245 秒）。AA フラグはない: ゾーンのサーバーではなく、キャッシュからの答えだから。',
         }
       : options.name === 'missing'
         ? {
             en: 'The resolver passes NXDOMAIN on to your PC. The application sees an error such as “host not found”.',
-            ja: 'リゾルバは NXDOMAIN を PC に伝える。アプリケーションには「ホストが見つからない」などのエラーとして見える。',
+            ja: 'リゾルバーは NXDOMAIN を PC に伝える。アプリケーションには「ホストが見つからない」などのエラーとして見える。',
           }
         : {
             en: 'The resolver sends the final answer to your PC (RA: recursion available). The application can now connect to the address.',
-            ja: 'リゾルバは最終的な答えを PC に送る（RA: 再帰が使える）。アプリケーションは、そのアドレスに接続できるようになる。',
+            ja: 'リゾルバーは最終的な答えを PC に送る（RA: 再帰が使える）。アプリケーションは、そのアドレスに接続できるようになる。',
           },
     events: [
       send(
@@ -685,7 +685,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
           description: { en: 'The final answer for your PC.', ja: 'PC への最終的な答え。' },
           flagsDescription: {
             en: 'QR: a response. RD is copied from the query. RA: the resolver offers recursion. No AA: the resolver is not authoritative.',
-            ja: 'QR: 応答。RD は問い合わせからそのまま写す。RA: リゾルバが再帰を引き受ける。AA なし: リゾルバは権威を持たない。',
+            ja: 'QR: 応答。RD は問い合わせからそのまま写す。RA: リゾルバーが再帰を引き受ける。AA なし: リゾルバーは権威を持たない。',
           },
         }),
       ),
@@ -702,10 +702,10 @@ export const dnsResolutionScenario: Scenario<DnsOptions> = {
   optionDefs: {
     cache: {
       kind: 'select',
-      label: { en: 'Resolver cache', ja: 'リゾルバのキャッシュ' },
+      label: { en: 'Resolver cache', ja: 'リゾルバーのキャッシュ' },
       description: {
         en: 'What the resolver already remembers from earlier lookups.',
-        ja: '以前の名前解決で、リゾルバがすでに覚えているもの。',
+        ja: '以前の名前解決で、リゾルバーがすでに覚えているもの。',
       },
       choices: [
         { value: 'empty', label: { en: 'Empty', ja: '空' } },

@@ -1,0 +1,126 @@
+import { render, screen } from '@testing-library/react'
+import { Suspense } from 'react'
+import { describe, expect, it } from 'vitest'
+import { collectQuizTexts } from '@/components/features/quiz/validate'
+import { collectLocalizedTexts } from '@/engine/validate'
+import { ja } from '@/lib/i18n/messages/ja'
+import { THEMES } from './registry'
+import { THEME_META } from './themeMeta'
+
+// docs/glossary.md の表記の規則のうち、機械的に確かめられるものを日本語の文章すべてについて検査する
+
+/** 使わない表記（docs/glossary.md の「表記の規則」と「訳語の対応表」） */
+const FORBIDDEN: readonly { readonly pattern: RegExp; readonly use: string }[] = [
+  { pattern: /サーバ(?!ー)/, use: 'サーバー' },
+  { pattern: /リゾルバ(?!ー)/, use: 'リゾルバー' },
+  { pattern: /ブラウザ(?!ー)/, use: 'ブラウザー' },
+  { pattern: /タイマ(?!ー)/, use: 'タイマー' },
+  { pattern: /ヘッダ(?!ー)/, use: 'ヘッダー' },
+  { pattern: /ルータ(?!ー)/, use: 'ルーター' },
+  { pattern: /ユーザ(?!ー)/, use: 'ユーザー' },
+  { pattern: /コンピュータ(?!ー)/, use: 'コンピューター' },
+  { pattern: /ハンドシェーク/, use: 'ハンドシェイク' },
+  { pattern: /アクノリッジ/, use: '確認応答' },
+  { pattern: /[Ａ-Ｚａ-ｚ０-９]/, use: '半角英数字' },
+]
+
+// かな・漢字（「・」と「ー」は含めない）と半角英数字が、スペースなしで隣り合っている
+const JAPANESE = '[\\u3041-\\u3096\\u30A1-\\u30FA\\u4E00-\\u9FFF]'
+const MISSING_SPACE = new RegExp(`${JAPANESE}[A-Za-z0-9]|[A-Za-z0-9]${JAPANESE}`)
+
+interface JapaneseText {
+  readonly path: string
+  readonly text: string
+}
+
+function findGlossaryProblems(texts: readonly JapaneseText[]): string[] {
+  return texts.flatMap(({ path, text }) => {
+    const variants = FORBIDDEN.flatMap(({ pattern, use }) => {
+      const found = pattern.exec(text)
+      return found === null ? [] : [`${path}: ${found[0]} → ${use}`]
+    })
+    const missingSpace = MISSING_SPACE.exec(text)
+    return missingSpace === null
+      ? variants
+      : [...variants, `${path}: 日本語と英数字の間にスペースがない（${missingSpace[0]}）`]
+  })
+}
+
+/** 辞書の文字列を集める（引数を取る関数の文言は、埋め込みの前後が固定の文字列なので対象外） */
+function collectMessageTexts(value: unknown, path: string): JapaneseText[] {
+  if (typeof value === 'string') {
+    return [{ path, text: value }]
+  }
+  if (Array.isArray(value)) {
+    return value.flatMap((item, i) => collectMessageTexts(item, `${path}[${String(i)}]`))
+  }
+  if (typeof value === 'object' && value !== null) {
+    return Object.entries(value).flatMap(([key, item]) =>
+      collectMessageTexts(item, `${path}.${key}`),
+    )
+  }
+  return []
+}
+
+describe('用語集（docs/glossary.md）の表記', () => {
+  it('検査の規則そのもの', () => {
+    expect(
+      findGlossaryProblems([
+        {
+          path: 'ok',
+          text: 'サーバーが TCP の 3 ウェイハンドシェイクで SYN, ACK を返す・NXDOMAIN（否定応答）',
+        },
+        { path: 'variant', text: 'サーバがリゾルバに問い合わせる' },
+        { path: 'space', text: 'TCPの接続' },
+        { path: 'fullwidth', text: 'ＳＹＮ を送る' },
+      ]),
+    ).toEqual([
+      'variant: サーバ → サーバー',
+      'variant: リゾルバ → リゾルバー',
+      'space: 日本語と英数字の間にスペースがない（Pの）',
+      'fullwidth: Ｓ → 半角英数字',
+    ])
+  })
+
+  it('シナリオ・クイズ・メタ情報', () => {
+    const texts = [
+      ...THEME_META.flatMap((meta) => [
+        { path: `${meta.id}.title`, text: meta.title.ja },
+        { path: `${meta.id}.summary`, text: meta.summary.ja },
+      ]),
+      ...THEMES.flatMap((theme) =>
+        [...collectLocalizedTexts(theme.scenario), ...collectQuizTexts(theme.quiz)].map(
+          (entry) => ({ path: `${theme.meta.id}.${entry.path}`, text: entry.text.ja }),
+        ),
+      ),
+    ]
+    expect(texts.length).toBeGreaterThan(100)
+    expect(findGlossaryProblems(texts)).toEqual([])
+  })
+
+  it('UI の辞書', () => {
+    const texts = collectMessageTexts(ja, 'ja')
+    expect(texts.length).toBeGreaterThan(50)
+    expect(findGlossaryProblems(texts)).toEqual([])
+  })
+
+  it.each(THEMES.map((theme) => [theme.meta.id, theme] as const))(
+    '%s の概要（MDX）',
+    async (id, theme) => {
+      const Overview = theme.overview.ja
+      const { container } = render(
+        <Suspense fallback={null}>
+          <Overview />
+        </Suspense>,
+      )
+      await screen.findAllByRole('heading', { level: 2 })
+      // 段落・見出し・リストの項目ごとに検査する（要素の境目で文字がつながらないように）
+      const texts = [...container.querySelectorAll('h2, h3, p, li, td, th')].map((element, i) => ({
+        path: `${id}.overview[${String(i)}]`,
+        text: element.textContent,
+      }))
+      expect(texts.length).toBeGreaterThan(5)
+      expect(findGlossaryProblems(texts)).toEqual([])
+    },
+  )
+})

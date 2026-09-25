@@ -22,7 +22,7 @@ export const DNS_RESOLUTION_META = {
   title: { en: 'DNS name resolution', ja: 'DNS の名前解決' },
   summary: {
     en: 'How a name like www.example.com becomes an IP address: a resolver follows referrals from the root to the right server, and caches what it learns.',
-    ja: 'www.example.com のような名前が IP アドレスになるまで。リゾルバがルートから委任をたどって担当のサーバーにたどり着き、わかったことをキャッシュする流れ。',
+    ja: 'www.example.com のような名前が IP アドレスになるまで。リゾルバーがルートから委任をたどって担当のサーバーにたどり着き、わかったことをキャッシュする流れ。',
   },
   difficulty: 'beginner',
   minutes: 12,
@@ -44,7 +44,7 @@ export const TLS_HANDSHAKE_META = {
   title: { en: 'TLS 1.3 handshake and certificates', ja: 'TLS 1.3 のハンドシェイクと証明書' },
   summary: {
     en: 'How a browser and a server agree on keys in one round trip, and how the browser checks the server’s certificate chain before trusting it.',
-    ja: 'ブラウザとサーバーが 1 往復で鍵を合わせる流れと、ブラウザがサーバーの証明書チェーンを確かめてから信頼するまで。',
+    ja: 'ブラウザーとサーバーが 1 往復で鍵を合わせる流れと、ブラウザーがサーバーの証明書チェーンを確かめてから信頼するまで。',
   },
   difficulty: 'intermediate',
   minutes: 15,

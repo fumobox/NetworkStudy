@@ -89,7 +89,7 @@ const actors: readonly Actor[] = [
   {
     id: CLIENT,
     kind: 'client',
-    name: { en: 'Client (browser)', ja: 'クライアント（ブラウザ）' },
+    name: { en: 'Client (browser)', ja: 'クライアント（ブラウザー）' },
     shortName: { en: 'Client', ja: 'クライアント' },
     stateSlots: [
       {
@@ -467,7 +467,7 @@ const VALIDATION_TEXT = {
     title: { en: 'The intermediate certificate is missing', ja: '中間証明書が送られてこない' },
     description: {
       en: 'The server sent only its own certificate. The client does not have “Example Intermediate CA”, so it cannot check the signature on the server certificate or build a path to a trusted root. (Some browsers try to fetch the missing certificate on their own, but many clients simply fail.)',
-      ja: 'サーバーは自分の証明書しか送ってこなかった。クライアントは「Example Intermediate CA」を持っていないので、サーバー証明書の署名を確かめられず、信頼できるルートへの道筋も組み立てられない。（足りない証明書を自分で取りに行くブラウザもあるが、多くのクライアントはそのまま失敗する。）',
+      ja: 'サーバーは自分の証明書しか送ってこなかった。クライアントは「Example Intermediate CA」を持っていないので、サーバー証明書の署名を確かめられず、信頼できるルートへの道筋も組み立てられない。（足りない証明書を自分で取りに行くブラウザーもあるが、多くのクライアントはそのまま失敗する。）',
     },
   },
 } satisfies Record<CertProblem, { title: LocalizedText; description: LocalizedText }>
@@ -604,7 +604,7 @@ function buildSteps(options: TlsOptions): readonly Step[] {
         },
         description: {
           en: `The client sends a fatal alert and closes the connection. It does not process the CertificateVerify and Finished that have already arrived.${problem === 'nameMismatch' ? ' (Which alert is sent for a name mismatch varies between implementations; browsers show an error such as NET::ERR_CERT_COMMON_NAME_INVALID.)' : ''}`,
-          ja: `クライアントは致命的なアラートを送って接続を閉じる。すでに届いている CertificateVerify と Finished は処理しない。${problem === 'nameMismatch' ? '（名前の不一致でどのアラートを送るかは実装によって違う。ブラウザは NET::ERR_CERT_COMMON_NAME_INVALID のようなエラーを表示する。）' : ''}`,
+          ja: `クライアントは致命的なアラートを送って接続を閉じる。すでに届いている CertificateVerify と Finished は処理しない。${problem === 'nameMismatch' ? '（名前の不一致でどのアラートを送るかは実装によって違う。ブラウザーは NET::ERR_CERT_COMMON_NAME_INVALID のようなエラーを表示する。）' : ''}`,
         },
         events: [
           send(
@@ -642,7 +642,7 @@ function buildSteps(options: TlsOptions): readonly Step[] {
         title: { en: 'The connection is closed', ja: '接続が閉じられる' },
         description: {
           en: 'The server receives the alert and closes the connection too. No application data was exchanged, and the browser shows a certificate error instead of the page.',
-          ja: 'サーバーもアラートを受け取って接続を閉じる。アプリケーションのデータは一切やり取りされず、ブラウザはページの代わりに証明書のエラーを表示する。',
+          ja: 'サーバーもアラートを受け取って接続を閉じる。アプリケーションのデータは一切やり取りされず、ブラウザーはページの代わりに証明書のエラーを表示する。',
         },
         events: [set(SERVER, STATE, 'CLOSED')],
       },
@@ -702,7 +702,7 @@ function buildSteps(options: TlsOptions): readonly Step[] {
       },
       description: {
         en: 'The server checks the client’s Finished and is CONNECTED too. The browser’s HTTP request now travels encrypted with the application traffic keys.',
-        ja: 'サーバーもクライアントの Finished を確かめて CONNECTED になる。ブラウザの HTTP の要求は、アプリケーション用の鍵で暗号化されて送られる。',
+        ja: 'サーバーもクライアントの Finished を確かめて CONNECTED になる。ブラウザーの HTTP の要求は、アプリケーション用の鍵で暗号化されて送られる。',
       },
       events: [
         set(SERVER, STATE, 'CONNECTED'),

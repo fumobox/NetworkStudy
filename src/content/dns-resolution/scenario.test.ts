@@ -55,7 +55,7 @@ describe('dnsResolutionScenario', () => {
   describe('正常系（RFC 1034 §4.3.1, §5.3.3）', () => {
     const steps = build()
 
-    it('スタブ → リゾルバ → ルート → .com → 権威 → リゾルバ → スタブの順にたどる', () => {
+    it('スタブ → リゾルバー → ルート → .com → 権威 → リゾルバー → スタブの順にたどる', () => {
       expect(route(steps)).toEqual([
         'stub→resolver',
         'resolver→root',
@@ -68,7 +68,7 @@ describe('dnsResolutionScenario', () => {
       ])
     })
 
-    it('スタブは再帰問い合わせ（RD）、リゾルバは反復問い合わせ（RD なし）', () => {
+    it('スタブは再帰問い合わせ（RD）、リゾルバーは反復問い合わせ（RD なし）', () => {
       const [stubQuery, rootQuery] = messages(steps)
       expect(field(stubQuery, 'Flags')).toBe('RD')
       expect(field(rootQuery, 'Flags')).toBe('(none)')
@@ -112,7 +112,7 @@ describe('dnsResolutionScenario', () => {
       expect(field(all.at(-1), 'Flags')).toBe('QR RD RA')
     })
 
-    it('リゾルバは委任と答えをキャッシュし、スタブは答えを得る', () => {
+    it('リゾルバーは委任と答えをキャッシュし、スタブは答えを得る', () => {
       expect(final(steps)).toEqual({
         result: '192.0.2.10',
         cache: [
@@ -162,7 +162,7 @@ describe('dnsResolutionScenario', () => {
   describe('NXDOMAIN（RFC 2308）', () => {
     const steps = build({ name: 'missing' })
 
-    it('権威サーバーは NXDOMAIN と SOA を返し、リゾルバは否定応答をキャッシュする', () => {
+    it('権威サーバーは NXDOMAIN と SOA を返し、リゾルバーは否定応答をキャッシュする', () => {
       const authAnswer = messages(steps).find((m) => m.id === 'auth-answer')
       expect(field(authAnswer, 'RCODE')).toBe('NXDOMAIN')
       expect(field(authAnswer, 'Answer')).toBe('(empty)')

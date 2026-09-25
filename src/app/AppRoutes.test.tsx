@@ -38,12 +38,12 @@ afterEach(() => {
 })
 
 describe('ルートのリダイレクト', () => {
-  it('ブラウザの言語が日本語なら / から /ja へ', async () => {
+  it('ブラウザーの言語が日本語なら / から /ja へ', async () => {
     mockBrowserLanguages(['ja-JP', 'en'])
     renderAt('/')
     await expectLocation('/ja')
     expect(screen.getByRole('heading', { level: 1, name: 'NetworkStudy' })).toBeInTheDocument()
-    expect(screen.getByText(/1パケットずつ/)).toBeInTheDocument()
+    expect(screen.getByText(/1 パケットずつ/)).toBeInTheDocument()
   })
 
   it('対応していない言語なら / から /en へ', async () => {
@@ -52,7 +52,7 @@ describe('ルートのリダイレクト', () => {
     await expectLocation('/en')
   })
 
-  it('保存済みの設定をブラウザの言語より優先する', async () => {
+  it('保存済みの設定をブラウザーの言語より優先する', async () => {
     window.localStorage.setItem(LOCALE_STORAGE_KEY, JSON.stringify('ja'))
     renderAt('/')
     await expectLocation('/ja')

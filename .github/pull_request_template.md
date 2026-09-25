@@ -10,3 +10,4 @@ Closes #
 - [ ] `npm run typecheck` / `lint` / `depcruise` / `format:check` / `test:run` / `build` / `e2e`
 - [ ] 画面を変更した場合は en / ja の両方で表示を確認した
 - [ ] 学習コンテンツを変更した場合は RFC などの根拠を確認した
+- [ ] 日本語の文言を変更した場合は用語集（`docs/glossary.md`）に従った

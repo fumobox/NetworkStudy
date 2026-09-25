@@ -3,7 +3,7 @@ import { detectLocale, leadingLanguageTag, readPreferredLocale, replaceLocale } 
 
 /**
  * ロケールのない（または対応外のロケールの）パスを、ロケール付きのパスへリダイレクトする。
- * ロケールは URL の言語タグ（`/ja-JP/...` など）→ 保存済みの設定 → ブラウザの言語 → デフォルトの順で決め、
+ * ロケールは URL の言語タグ（`/ja-JP/...` など）→ 保存済みの設定 → ブラウザーの言語 → デフォルトの順で決め、
  * クエリとハッシュは保持する。
  */
 export function LocaleRedirect() {

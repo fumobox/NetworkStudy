@@ -30,7 +30,7 @@ describe('plannedPages', () => {
   it('ページごとに辞書のタイトルと説明を使う', () => {
     const ja = plannedPages([]).find((page) => page.file === 'ja/index.html')
     expect(ja?.meta.title).toBe('NetworkStudy')
-    expect(ja?.meta.description).toMatch(/1パケットずつ/)
+    expect(ja?.meta.description).toMatch(/1 パケットずつ/)
   })
 
   it('テーマページのタイトルと説明にテーマ名と概要を使う', () => {
