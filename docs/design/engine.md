@@ -299,7 +299,7 @@ export type PlayerAction =
   - ← / → は、矢印キーを自分で使う要素（入力欄・スライダー・タブ・ラジオ・リスト・ダイアログなど）にフォーカスがあるときだけ無視する。ボタンの上でも効く
   - 修飾キー付き・IME 変換中・他の要素が `preventDefault` 済みのときは無視する
   - 同じページに置く UI（クイズ、オプションのフォームなど）は、矢印キーを使うなら上の要素（native の input / Radix の role 付き要素）で作る
-- 読み上げ（`aria-live`）は StepDescription の 1 か所だけにする（PacketInspector などには付けない）
+- プレイヤー部分の読み上げ（`aria-live`）は StepDescription の 1 か所だけにする（PacketInspector などには付けない）。クイズの正誤のように、利用者の操作への応答は `role="status"` で読み上げてよい
 - スライダーは画面のステップ番号に合わせて 1 始まり
 
 ## deriveState（src/engine/derive.ts）

@@ -1,4 +1,5 @@
-import { LOCALES, type LocalizedText } from '@/lib/i18n/locale'
+import type { LocalizedText } from '@/lib/i18n/locale'
+import { findTextProblems, type LocalizedTextEntry } from '@/lib/i18n/textProblems'
 import type {
   Actor,
   RawOptionValues,
@@ -15,10 +16,7 @@ export interface ScenarioProblem {
   readonly message: string
 }
 
-export interface LocalizedTextEntry {
-  readonly path: string
-  readonly text: LocalizedText
-}
+export type { LocalizedTextEntry } from '@/lib/i18n/textProblems'
 
 /** toggle は '1' / '0'、select は各 choice を URL の値として列挙する */
 function rawValuesOf(def: ScenarioOptionDef): readonly string[] {
@@ -311,16 +309,7 @@ export function collectLocalizedTexts(handle: ScenarioHandle): LocalizedTextEntr
 }
 
 function checkLocalizedTexts(handle: ScenarioHandle, problems: ScenarioProblem[]): void {
-  for (const { path, text } of collectLocalizedTexts(handle)) {
-    for (const locale of LOCALES) {
-      const value = text[locale].trim()
-      if (value === '') {
-        problems.push({ path: `${path}.${locale}`, message: 'text is empty' })
-      } else if (/\bTODO\b|\bFIXME\b/.test(value)) {
-        problems.push({ path: `${path}.${locale}`, message: 'text contains a placeholder' })
-      }
-    }
-  }
+  problems.push(...findTextProblems(collectLocalizedTexts(handle)))
 }
 
 /**

@@ -83,6 +83,19 @@ export const en = {
     added: 'Added in this step',
     emptyTable: 'Empty',
   },
+  quiz: {
+    title: 'Check your understanding',
+    question: (p: { n: number; total: number }) => `Question ${String(p.n)} of ${String(p.total)}`,
+    correct: 'Correct!',
+    incorrect: 'Not quite.',
+    answerIs: (p: { answer: string }) => `The answer is: ${p.answer}`,
+    // 選択肢の文言に続けて読み上げるので、区切りを含める
+    yourAnswer: ' — your answer',
+    correctAnswer: ' — correct answer',
+    score: (p: { correct: number; total: number }) =>
+      `${String(p.correct)} of ${String(p.total)} correct`,
+    reset: 'Try again',
+  },
   notFound: {
     title: 'Page not found',
     description: 'The page you are looking for does not exist.',
