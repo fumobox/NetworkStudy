@@ -61,6 +61,11 @@ const steps: readonly Step[] = [
   },
 ]
 
+/** dt（role="term"）は中身から名前が計算されないので、テキストで探す */
+function terms(pattern: RegExp): HTMLElement[] {
+  return screen.getAllByRole('term').filter((term) => pattern.test(term.textContent))
+}
+
 function renderInspector(
   stepIndex: number,
   selectedMessageId: string | null,
@@ -90,18 +95,20 @@ describe('PacketInspector', () => {
     expect(within(section).getByText('Client → Server')).toBeInTheDocument()
     expect(within(section).getByText('lost')).toBeInTheDocument()
     expect(within(section).getByText('Request to open a connection')).toBeInTheDocument()
-    const rows = within(section).getAllByRole('row')
-    expect(rows).toHaveLength(3)
-    expect(within(section).getByRole('rowheader', { name: /Seq/ })).toBeInTheDocument()
+    expect(
+      within(section)
+        .getAllByRole('term')
+        .map((term) => term.textContent),
+    ).toEqual([expect.stringContaining('Flags'), 'Seq'])
     expect(within(section).getByText('1000')).toBeInTheDocument()
   })
 
   it('注目するフィールドは記号と読み上げ用のテキストでも示す', () => {
     renderInspector(0, null)
-    const flags = screen.getByRole('rowheader', { name: /Flags/ })
+    const flags = terms(/Flags/)[0]
     expect(flags).toHaveTextContent('Key field in this step')
-    expect(flags.closest('tr')).toHaveAttribute('data-highlight', 'true')
-    expect(screen.getByRole('rowheader', { name: 'Seq' }).closest('tr')).toHaveAttribute(
+    expect(flags?.closest('[data-highlight]')).toHaveAttribute('data-highlight', 'true')
+    expect(terms(/^Seq$/)[0]?.closest('[data-highlight]')).toHaveAttribute(
       'data-highlight',
       'false',
     )
@@ -141,7 +148,7 @@ describe('PacketInspector', () => {
         />
       </LocaleProvider>,
     )
-    expect(screen.getAllByRole('rowheader', { name: 'Answer' })).toHaveLength(2)
+    expect(terms(/^Answer$/)).toHaveLength(2)
     expect(errors).not.toHaveBeenCalled()
     errors.mockRestore()
   })

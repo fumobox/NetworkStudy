@@ -172,6 +172,12 @@ describe('テーマへの導線', () => {
       'href',
       '/ja/themes/tcp-handshake',
     )
-    expect(within(list).getByText('初級')).toBeInTheDocument()
+    expect(within(list).getAllByText('初級').length).toBeGreaterThan(0)
+    // サイトで案内する学習順（DNS → TCP）に並ぶ
+    expect(
+      within(list)
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['DNS の名前解決', 'TCP 3 ウェイハンドシェイク'])
   })
 })

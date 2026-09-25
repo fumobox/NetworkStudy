@@ -1,0 +1,31 @@
+## What DNS does
+
+Computers connect to each other by IP address, but people use names like `www.example.com`. DNS (the Domain Name System) turns names into addresses. Nobody holds the whole list: the name space is split into **zones**, and each zone is managed by its own **authoritative servers**.
+
+## Who takes part
+
+- **Stub resolver** — a small client in your PC. It asks one question and waits for the final answer.
+- **Full-service resolver** — usually run by your ISP, your company, or a public DNS service. It does the actual work and keeps a **cache**.
+- **Root, TLD, and authoritative servers** — the root knows who runs each top-level domain such as `com.`, the `com.` servers know who runs `example.com.`, and the `example.com.` servers know the answer.
+
+## Recursive and iterative queries
+
+The stub sends a **recursive** query (the RD flag): “please find the answer for me.” The resolver then sends **iterative** queries: each server either answers or **refers** the resolver to a server closer to the answer (NS records, plus their addresses as **glue** when needed).
+
+## Caching and TTL
+
+Every record comes with a **TTL** (time to live). The resolver keeps records until their TTL runs out, so later lookups can skip steps — or skip the servers entirely. Even “this name does not exist” (NXDOMAIN) is cached for a while.
+
+## What to look for in the walkthrough
+
+- The **Flags** in each message: RD on the recursive query, AA on the authoritative answer, and no AA on referrals or cached answers.
+- The resolver’s **cache** growing with each referral and answer.
+- In the “What if…” options: how a warm cache shortens the path, and what NXDOMAIN, a CNAME, or an unresponsive server look like.
+
+Records on this page are written as `NAME TYPE RDATA TTL` to match the cache table. Tools like `dig` show them as `NAME TTL CLASS TYPE RDATA`.
+
+## References
+
+- [RFC 1034: Domain Names — Concepts and Facilities](https://www.rfc-editor.org/rfc/rfc1034)
+- [RFC 1035: Domain Names — Implementation and Specification](https://www.rfc-editor.org/rfc/rfc1035)
+- [RFC 2308: Negative Caching of DNS Queries](https://www.rfc-editor.org/rfc/rfc2308)

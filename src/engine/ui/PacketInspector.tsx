@@ -66,52 +66,45 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
             </p>
           )}
           {message.fields.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-xs text-muted-foreground">
-                  <tr>
-                    <th scope="col" className="py-1 pr-3 font-medium">
-                      {m.inspector.field}
-                    </th>
-                    <th scope="col" className="py-1 pr-3 font-medium">
-                      {m.inspector.value}
-                    </th>
-                    <th scope="col" className="py-1 font-medium">
-                      {m.inspector.description}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {message.fields.map((field, i) => (
-                    <tr
-                      // 同じ名前のフィールドが並ぶこともある（DNS の複数の Answer など）
-                      key={`${String(i)}:${field.name}`}
-                      data-highlight={field.highlight === true}
-                      className={cn(
-                        'border-t',
-                        field.highlight === true && 'bg-accent font-semibold',
-                      )}
-                    >
-                      <th scope="row" className="py-1.5 pr-3 align-top font-mono font-medium">
-                        {field.highlight === true && (
-                          <span aria-hidden className="mr-1 text-primary">
-                            {HIGHLIGHT_MARK}
-                          </span>
-                        )}
-                        {field.name}
-                        {field.highlight === true && (
-                          <span className="sr-only">{m.inspector.highlighted}</span>
-                        )}
-                      </th>
-                      <td className="py-1.5 pr-3 align-top font-mono break-words">{field.value}</td>
-                      <td className="py-1.5 align-top text-muted-foreground">
-                        {field.description === undefined ? null : t(field.description)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            // 説明の列が細くならないよう、表ではなく「名前と値」の下に説明を置く
+            <dl className="text-sm">
+              {message.fields.map((field, i) => (
+                <div
+                  // 同じ名前のフィールドが並ぶこともある（DNS の複数の Answer など）
+                  key={`${String(i)}:${field.name}`}
+                  data-highlight={field.highlight === true}
+                  className={cn(
+                    'grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)] gap-x-3 border-t px-1 py-2',
+                    field.highlight === true && 'bg-accent',
+                  )}
+                >
+                  <dt className="font-mono text-xs text-muted-foreground">
+                    {field.highlight === true && (
+                      <span aria-hidden className="mr-1 text-primary">
+                        {HIGHLIGHT_MARK}
+                      </span>
+                    )}
+                    {field.name}
+                    {field.highlight === true && (
+                      <span className="sr-only">{m.inspector.highlighted}</span>
+                    )}
+                  </dt>
+                  <dd
+                    className={cn(
+                      'font-mono break-words whitespace-pre-line',
+                      field.highlight === true && 'font-semibold',
+                    )}
+                  >
+                    {field.value}
+                  </dd>
+                  {field.description !== undefined && (
+                    <dd className="col-start-2 mt-0.5 text-xs text-muted-foreground">
+                      {t(field.description)}
+                    </dd>
+                  )}
+                </div>
+              ))}
+            </dl>
           )}
         </div>
       )}

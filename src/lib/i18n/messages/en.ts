@@ -69,9 +69,6 @@ export const en = {
     title: 'Packet details',
     empty: 'No message to show yet.',
     route: (p: { from: string; to: string }) => `${p.from} → ${p.to}`,
-    field: 'Field',
-    value: 'Value',
-    description: 'Description',
     highlighted: 'Key field in this step',
     retransmitOf: (p: { label: string }) => `Retransmission of ${p.label}`,
     encrypted:

@@ -1,5 +1,6 @@
 import { useEffect, useEffectEvent, useMemo, useRef, type ReactNode } from 'react'
 import { useMessages } from '@/lib/i18n'
+import { cn } from '@/lib/utils'
 import { clampStepIndex, deriveState } from '../derive'
 import { useScenarioOptions, type ScenarioSession } from '../hooks/useScenarioOptions'
 import { useScenarioPlayer } from '../hooks/useScenarioPlayer'
@@ -11,6 +12,9 @@ import { ScenarioOptionsForm } from './ScenarioOptionsForm'
 import { SequenceDiagram } from './SequenceDiagram'
 import { StepControls } from './StepControls'
 import { StepDescription } from './StepDescription'
+
+/** これより多いアクターの図は、パケットの詳細と横に並べず全幅にする */
+const WIDE_DIAGRAM_ACTORS = 3
 
 export interface ScenarioPanelsContext {
   readonly derived: DerivedState
@@ -102,8 +106,17 @@ function PlayerBody({ scenario, session, renderPanels, hiddenStateKeys }: Player
     <div className="space-y-6">
       <StepControls state={state} dispatch={dispatch} />
       <StepDescription step={steps[state.stepIndex]} />
-      {/* 列の最小幅を 0 にして、図や表が長くても狭い画面で横にはみ出さない（はみ出す分は各パネル内でスクロール） */}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      {/*
+        列の最小幅を 0 にして、図や表が長くても狭い画面で横にはみ出さない（はみ出す分は各パネル内でスクロール）。
+        アクターが多い図（DNS など）は横に並べると収まらないので、図を全幅にしてパケットの詳細を下に置く
+      */}
+      <div
+        className={cn(
+          'grid grid-cols-[minmax(0,1fr)] gap-6',
+          scenario.actors.length <= WIDE_DIAGRAM_ACTORS &&
+            'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
+        )}
+      >
         <SequenceDiagram
           actors={scenario.actors}
           steps={steps}
