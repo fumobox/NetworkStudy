@@ -1,6 +1,8 @@
 import { useEffect, useEffectEvent, useMemo, useRef, type ReactNode } from 'react'
 import { useMessages } from '@/lib/i18n'
+import { cn } from '@/lib/utils'
 import { clampStepIndex, deriveState } from '../derive'
+import { diagramWidth, hasTimers } from '../diagram'
 import { useScenarioOptions, type ScenarioSession } from '../hooks/useScenarioOptions'
 import { useScenarioPlayer } from '../hooks/useScenarioPlayer'
 import { useStepKeyboard } from '../hooks/useStepKeyboard'
@@ -11,6 +13,12 @@ import { ScenarioOptionsForm } from './ScenarioOptionsForm'
 import { SequenceDiagram } from './SequenceDiagram'
 import { StepControls } from './StepControls'
 import { StepDescription } from './StepDescription'
+
+/**
+ * 図をパケットの詳細と横に並べるときの、図の列の幅の目安（px）。
+ * 広い画面（max-w-7xl − サイドバー）で 3:2 に分けたときの図の列が約 580px なので、それに収まる図だけ横に並べる
+ */
+const SIDE_BY_SIDE_MAX_DIAGRAM_WIDTH = 560
 
 export interface ScenarioPanelsContext {
   readonly derived: DerivedState
@@ -102,8 +110,17 @@ function PlayerBody({ scenario, session, renderPanels, hiddenStateKeys }: Player
     <div className="space-y-6">
       <StepControls state={state} dispatch={dispatch} />
       <StepDescription step={steps[state.stepIndex]} />
-      {/* 列の最小幅を 0 にして、図や表が長くても狭い画面で横にはみ出さない（はみ出す分は各パネル内でスクロール） */}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      {/*
+        列の最小幅を 0 にして、図や表が長くても狭い画面で横にはみ出さない（はみ出す分は各パネル内でスクロール）。
+        図が広い（DNS のようにアクターが多い）ときは横に並べると収まらないので、図を全幅にしてパケットの詳細を下に置く
+      */}
+      <div
+        className={cn(
+          'grid grid-cols-[minmax(0,1fr)] gap-6',
+          diagramWidth(scenario.actors.length, hasTimers(steps)) <=
+            SIDE_BY_SIDE_MAX_DIAGRAM_WIDTH && 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
+        )}
+      >
         <SequenceDiagram
           actors={scenario.actors}
           steps={steps}

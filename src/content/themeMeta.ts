@@ -17,6 +17,17 @@ export interface ThemeMeta {
   readonly minutes: number
 }
 
+export const DNS_RESOLUTION_META = {
+  id: 'dns-resolution',
+  title: { en: 'DNS name resolution', ja: 'DNS の名前解決' },
+  summary: {
+    en: 'How a name like www.example.com becomes an IP address: a resolver follows referrals from the root to the right server, and caches what it learns.',
+    ja: 'www.example.com のような名前が IP アドレスになるまで。リゾルバがルートから委任をたどって担当のサーバーにたどり着き、わかったことをキャッシュする流れ。',
+  },
+  difficulty: 'beginner',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
 export const TCP_HANDSHAKE_META = {
   id: 'tcp-handshake',
   title: { en: 'TCP three-way handshake', ja: 'TCP 3 ウェイハンドシェイク' },
@@ -28,7 +39,11 @@ export const TCP_HANDSHAKE_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
-export const THEME_META = [TCP_HANDSHAKE_META] as const satisfies readonly ThemeMeta[]
+/** サイトで案内する学習順（DNS → TCP → TLS）に並べる */
+export const THEME_META = [
+  DNS_RESOLUTION_META,
+  TCP_HANDSHAKE_META,
+] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']
 

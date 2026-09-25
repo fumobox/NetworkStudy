@@ -14,7 +14,8 @@ export function OverviewSection({ content: Content }: OverviewSectionProps) {
   return (
     <section aria-label={m.theme.overview} className="space-y-3">
       <Suspense fallback={<p className="text-sm text-muted-foreground">{m.theme.loading}</p>}>
-        <div className="prose max-w-none prose-headings:font-heading">
+        {/* typography の既定はインラインコードの前後に ` を付け足すので、それを消す */}
+        <div className="prose max-w-none prose-headings:font-heading prose-code:before:content-none prose-code:after:content-none">
           <Content />
         </div>
       </Suspense>
