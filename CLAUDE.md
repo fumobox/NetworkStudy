@@ -2,7 +2,7 @@
 
 ネットワークプロトコル（TCP、DNS、TLS 1.3 など）の動きを、1 パケットずつ進めて学ぶインタラクティブな学習サイト。英語と日本語に対応した静的 SPA で、GitHub Pages（https://fumobox.github.io/NetworkStudy/）で配信する。
 
-計画・設計・ロードマップは [docs/PLAN.md](docs/PLAN.md) を参照。
+計画・ロードマップは [docs/PLAN.md](docs/PLAN.md)、シーケンスエンジンの設計は [docs/design/engine.md](docs/design/engine.md) を参照。
 
 ## コマンド
 
