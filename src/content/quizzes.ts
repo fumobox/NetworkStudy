@@ -1,11 +1,13 @@
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
 import { httpsOverviewQuiz } from './https-overview/quiz'
+import { osiModelQuiz } from './osi-model/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
 import { tcpCloseQuiz } from './tcp-close/quiz'
 import { tcpHandshakeQuiz } from './tcp-handshake/quiz'
 import {
   DNS_RESOLUTION_META,
   HTTPS_OVERVIEW_META,
+  OSI_MODEL_META,
   SUBNET_CALCULATOR_META,
   TCP_CLOSE_META,
   TCP_HANDSHAKE_META,
@@ -26,4 +28,5 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: HTTPS_OVERVIEW_META, quiz: httpsOverviewQuiz },
   { meta: TCP_CLOSE_META, quiz: tcpCloseQuiz },
   { meta: SUBNET_CALCULATOR_META, quiz: subnetCalculatorQuiz },
+  { meta: OSI_MODEL_META, quiz: osiModelQuiz },
 ]

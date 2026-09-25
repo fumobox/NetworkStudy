@@ -1,0 +1,32 @@
+## Why layers?
+
+Sending a web page across the Internet involves many separate problems: what the application wants to say, which application on the other host gets it, how to find that host across many networks, and how to get bits to the next device on the cable. The **OSI reference model** splits these problems into seven **layers**. Each layer solves one problem and uses the layer below it as a service.
+
+| Layer | Name | Role | Unit (PDU) | TCP/IP |
+|---|---|---|---|---|
+| 7 | Application | The protocol the application speaks (HTTP, DNS) | Data | Application |
+| 6 | Presentation | How data is represented (encoding, compression, encryption) | Data | Application |
+| 5 | Session | Starting, keeping, and ending a conversation | Data | Application |
+| 4 | Transport | Delivery between applications (ports), reliability (TCP, UDP) | Segment | Transport |
+| 3 | Network | Delivery between hosts across networks (IP) | Packet | Internet |
+| 2 | Data link | Delivery to the next device on the same link (Ethernet, Wi-Fi) | Frame | Link |
+| 1 | Physical | Bits as signals on the cable or radio | Bits | Link |
+
+The Internet actually uses the **TCP/IP model**, which has four layers. Its application layer covers OSI layers 5 to 7, and its link layer covers layers 1 and 2. The OSI numbers are still used everywhere, as in “an L3 switch” or “an L7 load balancer”.
+
+## Encapsulation
+
+On the sending side, data goes down the layers, and each layer adds its own **header** in front of what it received from above (Ethernet also adds a **trailer**). This is called **encapsulation**. On the receiving side, the data goes up, and each layer checks and removes its own header, in the reverse order.
+
+Each layer only reads its own header. TCP on the server reads the header written by TCP on the PC, and IP reads the IP header. That is why a layer can be replaced (for example, Wi-Fi instead of Ethernet) without changing the others.
+
+## What to look for in the walkthrough
+
+- How the name of what is carried changes: data → segment → packet → frame → bits.
+- The order of the headers in the frame: Ethernet, IP, TCP, then the data, then the FCS.
+- On the receiving side, each layer removes exactly the header that the same layer added on the sending side.
+
+## References
+
+- ISO/IEC 7498-1: The Basic Reference Model (OSI)
+- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §1.1.3 “Internet Protocol Suite”
