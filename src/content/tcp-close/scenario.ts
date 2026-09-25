@@ -125,10 +125,15 @@ function finMessage(
     to: other(from),
     label: 'FIN, ACK',
     status: 'delivered',
-    description: {
-      en: 'Says “I have no more data to send.” The sender can still receive data until the other side closes too.',
-      ja: '「もう送るデータはない」と伝える。送った側も、相手が閉じるまではデータを受け取れる。',
-    },
+    description: ackOfFin
+      ? {
+          en: 'Says “I have no more data to send.” The other side has already closed its direction, so this closes the connection in both directions.',
+          ja: '「もう送るデータはない」と伝える。相手はすでに自分の向きを閉じているので、これで両方の向きが閉じる。',
+        }
+      : {
+          en: 'Says “I have no more data to send.” The sender can still receive data until the other side closes too.',
+          ja: '「もう送るデータはない」と伝える。送った側も、相手が閉じるまではデータを受け取れる。',
+        },
     fields: [
       ports(from),
       {

@@ -1,6 +1,12 @@
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
+import { tcpCloseQuiz } from './tcp-close/quiz'
 import { tcpHandshakeQuiz } from './tcp-handshake/quiz'
-import { DNS_RESOLUTION_META, TCP_HANDSHAKE_META, TLS_HANDSHAKE_META } from './themeMeta'
+import {
+  DNS_RESOLUTION_META,
+  TCP_CLOSE_META,
+  TCP_HANDSHAKE_META,
+  TLS_HANDSHAKE_META,
+} from './themeMeta'
 import { tlsHandshakeQuiz } from './tls-handshake/quiz'
 import type { ThemeModule } from './types'
 
@@ -13,4 +19,5 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: DNS_RESOLUTION_META, quiz: dnsResolutionQuiz },
   { meta: TCP_HANDSHAKE_META, quiz: tcpHandshakeQuiz },
   { meta: TLS_HANDSHAKE_META, quiz: tlsHandshakeQuiz },
+  { meta: TCP_CLOSE_META, quiz: tcpCloseQuiz },
 ]

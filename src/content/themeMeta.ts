@@ -61,11 +61,24 @@ export const TLS_HANDSHAKE_META = {
   minutes: 15,
 } as const satisfies ThemeMeta
 
-/** サイトで案内する学習順（DNS → TCP → TLS）に並べる */
+export const TCP_CLOSE_META = {
+  id: 'tcp-close',
+  kind: 'sequence',
+  title: { en: 'Closing a TCP connection', ja: 'TCP の接続の終了' },
+  summary: {
+    en: 'How the two sides close a TCP connection with four segments, one direction at a time, and why the side that closes first waits in TIME-WAIT.',
+    ja: '両者が 4 つのセグメントで、向きごとに TCP の接続を閉じる流れと、先に閉じた側が TIME-WAIT で待つ理由。',
+  },
+  difficulty: 'intermediate',
+  minutes: 10,
+} as const satisfies ThemeMeta
+
+/** サイトで案内する学習順（DNS → TCP → TLS、その後に TCP の接続の終了）に並べる */
 export const THEME_META = [
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
+  TCP_CLOSE_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']

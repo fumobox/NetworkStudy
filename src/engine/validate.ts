@@ -18,7 +18,6 @@ export interface ScenarioProblem {
 
 export type { LocalizedTextEntry } from '@/lib/i18n/textProblems'
 
-/** toggle は '1' / '0'、select は各 choice を URL の値として列挙する */
 /** URL（`opt.<key>=<value>`）で指定できる値の一覧（toggle は 1 / 0、select は choices の値） */
 export function rawValuesOf(def: ScenarioOptionDef): readonly string[] {
   return def.kind === 'toggle' ? ['1', '0'] : def.choices.map((choice) => choice.value)
