@@ -40,7 +40,7 @@ const RCV_NXT: StateKey = 'RCV.NXT'
 const CLIENT_SEQ = 1001
 const SERVER_SEQ = 5001
 const CLIENT_PORT = '49152'
-const SERVER_PORT = '80'
+const SERVER_PORT = '443'
 /** RFC 9293 §3.4.2 の MSL（2 分）の 2 倍 */
 const TWO_MSL_MS = 2 * 2 * 60 * 1000
 /** RFC 6298 §2.4 の下限（1 秒） */

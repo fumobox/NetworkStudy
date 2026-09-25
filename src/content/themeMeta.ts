@@ -85,11 +85,24 @@ export const SUBNET_CALCULATOR_META = {
   minutes: 8,
 } as const satisfies ThemeMeta
 
-/** サイトで案内する学習順（DNS → TCP → TLS → TCP の接続の終了、その後に計算ツール）に並べる */
+export const HTTPS_OVERVIEW_META = {
+  id: 'https-overview',
+  kind: 'sequence',
+  title: { en: 'HTTPS from start to finish', ja: 'HTTPS の全体像' },
+  summary: {
+    en: 'Everything that happens when a browser opens an https:// page, in one walkthrough: DNS lookup, TCP connection, TLS handshake, and the HTTP request and response.',
+    ja: 'ブラウザーが https:// のページを開くときに起きることを、1 本のステップ実行で。名前解決、TCP の接続、TLS のハンドシェイク、HTTP の要求と応答。',
+  },
+  difficulty: 'intermediate',
+  minutes: 15,
+} as const satisfies ThemeMeta
+
+/** サイトで案内する学習順（DNS → TCP → TLS → それらをつなげた HTTPS の全体像 → TCP の接続の終了、その後に計算ツール）に並べる */
 export const THEME_META = [
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
+  HTTPS_OVERVIEW_META,
   TCP_CLOSE_META,
   SUBNET_CALCULATOR_META,
 ] as const satisfies readonly ThemeMeta[]

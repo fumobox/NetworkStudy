@@ -291,6 +291,7 @@ export type PlayerAction =
 - 現在のステップ（丸めた stepIndex）の行は強調し、#30 でアニメーションの対象にする
 - メッセージは `role="button"` で、`aria-pressed` のトグル（もう一度押すと選択を解除して null を渡す）
 - `Step.section` が切り替わる行の上に、24px の帯（点線と区間の名前）を入れる（`sectionStartLabels`、`rowLayout`）
+- レーンの幅は 180px。アクターが 6 以上の図（HTTPS の全体像）は 150px にして、広い画面の本文の幅に収める（`laneWidthFor`）。スマホ向けの狭い表示では 112px
 - アクター名は、見積もった幅（`estimateTextWidth`）がレーンに収まらなければ `shortName` を使う
 
 ## 操作 UI（src/engine/ui/StepControls.tsx、src/engine/hooks/useStepKeyboard.ts）

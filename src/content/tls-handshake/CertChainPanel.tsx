@@ -1,5 +1,6 @@
 import { ArrowDown, Check, CircleHelp, Minus, X } from 'lucide-react'
 import { useId } from 'react'
+import type { StateKey } from '@/engine/types'
 import type { ScenarioPanelsContext } from '@/engine/ui/ScenarioPlayer'
 import { useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
@@ -27,11 +28,16 @@ function columnIndex(column: Column): number {
   return CERT_CHAIN_COLUMNS.indexOf(column)
 }
 
+interface CertChainPanelProps extends ScenarioPanelsContext {
+  /** 検証結果を持つ状態のキー。合成したシナリオ（HTTPS の全体像）では接頭辞が付く（`tls.certChain`） */
+  readonly stateKey?: StateKey
+}
+
 /** TLS のクライアントの証明書チェーンの検証結果を、証明書ごとに順に見せる */
-export function CertChainPanel({ derived }: ScenarioPanelsContext) {
+export function CertChainPanel({ derived, stateKey = CERT_CHAIN }: CertChainPanelProps) {
   const t = useText()
   const titleId = useId()
-  const chain = derived.actorStates.client?.values[CERT_CHAIN]
+  const chain = derived.actorStates.client?.values[stateKey]
   const rows = typeof chain === 'object' ? chain.rows : []
   const cell = (row: readonly string[], column: Column) => row[columnIndex(column)] ?? ''
 

@@ -39,12 +39,21 @@ export function diagramRows(steps: readonly Step[], index: number): DiagramRow[]
 
 /** 1 アクター分のレーンの幅（px） */
 export const LANE_WIDTH = 180
+/** アクターが多い図（HTTPS の全体像の 6 アクターなど）のレーンの幅（px）。広い画面の本文の幅に収める */
+export const NARROW_LANE_WIDTH = 150
+/** この数を超えるアクターの図は、NARROW_LANE_WIDTH で描く */
+const MAX_ACTORS_AT_FULL_WIDTH = 5
 /** 経過時間の列の幅（px） */
 export const TIME_COLUMN_WIDTH = 72
 
+/** 通常の幅（スマホ向けの狭い表示でないとき）のレーンの幅 */
+export function laneWidthFor(actorCount: number): number {
+  return actorCount > MAX_ACTORS_AT_FULL_WIDTH ? NARROW_LANE_WIDTH : LANE_WIDTH
+}
+
 /** 通常の幅で描いたときのシーケンス図の幅（px） */
 export function diagramWidth(actorCount: number, withTimers: boolean): number {
-  return (withTimers ? TIME_COLUMN_WIDTH : 0) + actorCount * LANE_WIDTH
+  return (withTimers ? TIME_COLUMN_WIDTH : 0) + actorCount * laneWidthFor(actorCount)
 }
 
 /**

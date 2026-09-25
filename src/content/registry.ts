@@ -1,4 +1,5 @@
 import { dnsResolutionTheme } from './dns-resolution'
+import { httpsOverviewTheme } from './https-overview'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { tcpCloseTheme } from './tcp-close'
 import { tcpHandshakeTheme } from './tcp-handshake'
@@ -10,6 +11,7 @@ export const THEMES: readonly ThemeModule[] = [
   dnsResolutionTheme,
   tcpHandshakeTheme,
   tlsHandshakeTheme,
+  httpsOverviewTheme,
   tcpCloseTheme,
   subnetCalculatorTheme,
 ]

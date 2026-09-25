@@ -1,0 +1,27 @@
+## What happens when you open a page
+
+When you type `https://www.example.com/` into a browser, four protocols work one after another before the page appears. Each has its own theme on this site; this page puts them together in one walkthrough.
+
+1. **DNS** — the browser asks a resolver for the IP address of `www.example.com`. See [DNS name resolution](/themes/dns-resolution).
+2. **TCP** — the browser opens a connection to port 443 of that address with the three-way handshake. See [TCP three-way handshake](/themes/tcp-handshake).
+3. **TLS** — over that connection, the browser and the server agree on keys, and the browser checks the server’s certificate chain. The request `GET /` is sent at the end, already encrypted. See [TLS 1.3 handshake and certificates](/themes/tls-handshake).
+4. **HTTP** — the server answers with the page, encrypted with application traffic keys from the same handshake.
+
+## Round trips add up
+
+Before the first byte of the page arrives, the browser waits for several round trips: the DNS lookup (unless the answer is cached), one for TCP, one for TLS 1.3, and one more for the request and response themselves. This is why caching DNS answers and reusing connections make pages load faster.
+
+## What to look for in the walkthrough
+
+- The labeled bands in the diagram show which of the four stages each message belongs to.
+- In the state panel, the browser keeps the result of each stage: the looked-up address, the TCP state, and the TLS state.
+- The lock mark shows which messages are encrypted. Everything up to and including ServerHello, including the DNS lookup, is visible to anyone on the network.
+
+The “What if…” options are left out on this page to keep it short. Try them in each theme.
+
+## References
+
+- [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034) and [RFC 1035](https://www.rfc-editor.org/rfc/rfc1035): Domain names
+- [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293)
+- [RFC 8446: The Transport Layer Security (TLS) Protocol Version 1.3](https://www.rfc-editor.org/rfc/rfc8446)
+- [RFC 9113: HTTP/2](https://www.rfc-editor.org/rfc/rfc9113)
