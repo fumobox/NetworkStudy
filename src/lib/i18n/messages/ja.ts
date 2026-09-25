@@ -48,6 +48,23 @@ export const ja = {
     timerLabel: (p) => `${p.actor}: ${p.name} タイマーが ${p.duration} で満了`,
     elapsed: (p) => `t = ${p.time}`,
   },
+  inspector: {
+    title: 'パケットの詳細',
+    empty: 'まだ表示するメッセージはありません。',
+    route: (p) => `${p.from} → ${p.to}`,
+    field: 'フィールド',
+    value: '値',
+    description: '説明',
+    highlighted: 'このステップで注目するフィールド',
+    retransmitOf: (p) => `${p.label} の再送`,
+    encrypted: '実際にはこのメッセージは暗号化されています。学習のために中身を表示しています。',
+  },
+  actorState: {
+    title: '各参加者の状態',
+    changed: 'このステップで変化',
+    added: 'このステップで追加',
+    emptyTable: '空',
+  },
   notFound: {
     title: 'ページが見つかりません',
     description: 'お探しのページは存在しません。',
