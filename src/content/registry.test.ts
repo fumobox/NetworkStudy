@@ -3,12 +3,19 @@ import { describe, expect, it } from 'vitest'
 import { validateQuiz } from '@/components/features/quiz/validate'
 import { validateScenario } from '@/engine/validate'
 import { findTextProblems } from '@/lib/i18n/textProblems'
+import { THEME_QUIZZES } from './quizzes'
 import { findTheme, THEMES } from './registry'
 import { THEME_IDS, THEME_META } from './themeMeta'
 
 describe('registry', () => {
   it('themeMeta と同じ順・同じ id のテーマを持つ', () => {
     expect(THEMES.map((theme) => theme.meta.id)).toEqual(THEME_IDS)
+  })
+
+  it('ホーム用の軽い一覧（THEME_QUIZZES）は registry と同じ順・同じメタ情報とクイズ', () => {
+    expect(THEME_QUIZZES.map((theme) => [theme.meta, theme.quiz])).toEqual(
+      THEMES.map((theme) => [theme.meta, theme.quiz]),
+    )
   })
 
   it('テーマ・シナリオ・クイズの id がそろっている', () => {

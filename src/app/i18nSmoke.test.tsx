@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { THEME_IDS } from '@/content/themeMeta'
 import { LOCALES, MESSAGES, type Locale } from '@/lib/i18n'
+import { waitForPage } from '@/test/waitForPage'
 import { AppRoutes } from './AppRoutes'
 
 /**
@@ -65,12 +66,13 @@ function otherLocales(locale: Locale): Locale[] {
 describe('各ページを各ロケールで表示する', () => {
   it.each(LOCALES.flatMap((locale) => ROUTES.map((route) => [locale, route] as const)))(
     '%s%s に、他のロケールの UI 文言が混ざらない',
-    (locale, route) => {
+    async (locale, route) => {
       const { container } = render(
         <MemoryRouter initialEntries={[`/${locale}${route}`]}>
           <AppRoutes />
         </MemoryRouter>,
       )
+      await waitForPage()
       const texts = visibleTexts(container)
       expect(texts.length).toBeGreaterThan(0)
       const foreign = new Set(

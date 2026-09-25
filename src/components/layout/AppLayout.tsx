@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { Outlet } from 'react-router'
 import { useMessages } from '@/lib/i18n'
 import { Footer } from './Footer'
@@ -23,7 +24,10 @@ export function AppLayout() {
           <Sidebar />
         </aside>
         <main id={MAIN_ID} tabIndex={-1} className="min-w-0 flex-1">
-          <Outlet />
+          {/* 遅延読み込みのページ（テーマ）を開くあいだの表示 */}
+          <Suspense fallback={<p className="text-sm text-muted-foreground">{m.theme.loading}</p>}>
+            <Outlet />
+          </Suspense>
         </main>
       </div>
       <Footer />

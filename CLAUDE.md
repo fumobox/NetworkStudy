@@ -24,7 +24,7 @@ CI（`.github/workflows/ci.yml` の `Check` job）は typecheck → lint → dep
 
 React 19 / Vite 8 / TypeScript 6（strict、`noUncheckedIndexedAccess`、`exactOptionalPropertyTypes`）/ Tailwind CSS v4 / shadcn/ui（Radix、Nova）/ React Router 8（宣言的モード）/ zod 4 / Motion 13 / Vitest 5。Node 24。
 
-Motion は `LazyMotion`（`domAnimation`、strict）で読み込んでいるので、`motion.*` ではなく `m.*` を使う。
+Motion は `LazyMotion`（`domAnimation`、strict）で読み込んでいるので、`motion.*` ではなく `m.*` を使う。`LazyMotion` は ScenarioPlayer にあり、アニメーション機能はテーマのページのチャンクと一緒に同期的に読み込む（動的 import にすると初回のアニメーションが実行されない）。テーマのページ（ThemePage）は遅延読み込みで、ホームはメタ情報とクイズだけの `content/quizzes.ts` を使う
 
 ## ディレクトリとレイヤ
 

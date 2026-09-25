@@ -1,7 +1,11 @@
+import { lazy } from 'react'
 import { Route, Routes } from 'react-router'
 import { HomePage } from '@/pages/HomePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
-import { ThemePage } from '@/pages/ThemePage'
+// テーマのページ（シナリオエンジン・Radix の部品・アニメーション）は、開いたときに読み込む
+const ThemePage = lazy(() =>
+  import('@/pages/ThemePage').then((module) => ({ default: module.ThemePage })),
+)
 import { LocaleLayout } from './LocaleLayout'
 import { LocaleRedirect } from './LocaleRedirect'
 

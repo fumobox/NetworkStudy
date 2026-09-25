@@ -1,6 +1,6 @@
 import { ThemeCard } from '@/components/features/theme-card/ThemeCard'
 import { readQuizAnswers, scoreQuiz } from '@/components/features/quiz/useQuizProgress'
-import { THEMES } from '@/content/registry'
+import { THEME_QUIZZES } from '@/content/quizzes'
 import { useDocumentDescription } from '@/lib/hooks/useDocumentDescription'
 import { useMessages } from '@/lib/i18n'
 
@@ -25,11 +25,11 @@ export function HomePage() {
             <p className="text-sm text-muted-foreground">{m.home.orderLead}</p>
           </div>
           {/*
-            THEMES は推奨の学習順に並んでいる。Tailwind の preflight で list-style を消すと
+            THEME_QUIZZES は推奨の学習順に並んでいる。Tailwind の preflight で list-style を消すと
             Safari（VoiceOver）はリストの意味を落とすので、role="list" で順序を伝える
           */}
           <ol role="list" className="grid gap-4 md:grid-cols-3">
-            {THEMES.map((theme, i) => {
+            {THEME_QUIZZES.map((theme, i) => {
               // 表示のたびに localStorage を読む（他のタブの回答は、ホームを開き直すまで反映しない）
               const answers = readQuizAnswers(theme.quiz)
               const score = scoreQuiz(theme.quiz, answers)
