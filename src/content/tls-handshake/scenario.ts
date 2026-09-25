@@ -8,6 +8,8 @@
  *   §6.2（エラーのアラート）, §7.1（鍵の階層）, 付録 A（状態機械）
  * - RFC 5280 §6（証明書パスの検証）, RFC 9525（サーバーの名前の確認）
  * 日付・名前・鍵は学習用の値。検証する時刻は 2026-10-01 とする
+ * 状態機械のうち、サーバーの RECVD_CH（ClientHello の受信直後）と WAIT_FLIGHT2（クライアント認証がなければすぐ WAIT_FINISHED に移る）は省いている。
+ * RFC 8446 の状態機械には終了状態がないので、アラートで中断した後は CLOSED と表示する
  */
 import { z } from 'zod'
 import type {
@@ -23,12 +25,12 @@ import type {
 } from '@/engine/types'
 import type { LocalizedText } from '@/lib/i18n/locale'
 
-export const tlsOptionsSchema = z.object({
+const optionsSchema = z.object({
   certProblem: z
     .enum(['none', 'expired', 'nameMismatch', 'unknownCa', 'missingIntermediate'])
     .catch('none'),
 })
-export type TlsOptions = z.infer<typeof tlsOptionsSchema>
+export type TlsOptions = z.infer<typeof optionsSchema>
 export type CertProblem = TlsOptions['certProblem']
 
 const CLIENT: ActorId = 'client'
@@ -41,23 +43,35 @@ const ALERT: StateKey = 'alert'
 const HOST = 'www.example.com'
 export const VALIDATION_DATE = '2026-10-01'
 
-/** 証明書チェーンの表の列。CertChainPanel はこの列名で値を読む */
+/**
+ * 証明書チェーンの表の列（RFC 5280 のフィールド名と、検証の項目）。CertChainPanel はこの列名で値を読み、
+ * 表示するラベルは辞書から引く
+ */
 export const CERT_CHAIN_COLUMNS = [
-  'Certificate',
-  'Issuer',
-  'Not after',
-  'SAN',
-  'Signature',
-  'Validity',
-  'Name',
-  'Trust',
+  'subject',
+  'issuer',
+  'notAfter',
+  'subjectAltName',
+  'signature',
+  'validity',
+  'name',
+  'trust',
 ] as const
+/** 検証の結果: 合格 */
 export const CHECK_OK = '✓'
+/** 検証の結果: 不合格 */
 export const CHECK_NG = '✗'
+/** 検証の結果: 確かめられない（必要な証明書がない） */
+export const CANNOT_CHECK = '?'
+/** 検証の対象外、またはまだ確かめていない */
 export const NOT_CHECKED = '-'
+/** 送られてこなかった証明書の欄 */
 export const NOT_SENT = '(not sent)'
 
-type ChainRow = readonly [string, string, string, string, string, string, string, string]
+type Check = string
+/** [subject, issuer, notAfter, subjectAltName, signature, validity, name, trust]（CERT_CHAIN_COLUMNS と同じ順） */
+type ChainRow = readonly [string, string, string, string, Check, Check, Check, Check]
+type Checks = readonly [Check, Check, Check, Check]
 
 const SECTIONS = {
   plaintext: { en: 'Not encrypted', ja: '暗号化なし' },
@@ -179,11 +193,27 @@ const clientHello: Message = {
       },
     },
     {
+      name: 'supported_groups',
+      value: 'x25519\nsecp256r1',
+      description: {
+        en: 'Key exchange groups the client supports. key_share contains a public key for one of them.',
+        ja: 'クライアントが使える鍵交換のグループ。key_share には、そのうちの 1 つの公開鍵が入っている。',
+      },
+    },
+    {
       name: 'signature_algorithms',
       value: 'ecdsa_secp256r1_sha256\nrsa_pss_rsae_sha256',
       description: {
         en: 'Signature algorithms the client accepts for the server’s CertificateVerify and certificates',
         ja: 'サーバーの CertificateVerify や証明書で受け入れられる署名の方式',
+      },
+    },
+    {
+      name: 'application_layer_protocol_negotiation',
+      value: 'h2\nhttp/1.1',
+      description: {
+        en: 'ALPN: application protocols the client can speak (HTTP/2 or HTTP/1.1)',
+        ja: 'ALPN: クライアントが話せるアプリケーションのプロトコル（HTTP/2 か HTTP/1.1）',
       },
     },
     {
@@ -259,8 +289,8 @@ const encryptedExtensions = encrypted({
       name: 'application_layer_protocol_negotiation',
       value: 'h2',
       description: {
-        en: 'The application protocol to use over this connection (HTTP/2)',
-        ja: 'この接続で使うアプリケーションのプロトコル（HTTP/2）',
+        en: 'The protocol the server chose from the client’s ALPN list (HTTP/2)',
+        ja: 'クライアントが ALPN で示した候補から、サーバーが選んだプロトコル（HTTP/2）',
       },
     },
   ],
@@ -329,54 +359,56 @@ interface CertSet {
 
 const LEAF_ISSUER = 'Example Intermediate CA'
 const ROOT = 'Example Root CA'
+const UNKNOWN_ROOT = 'Unknown Root CA'
 
 /** 問題の種類ごとの証明書と検証結果（RFC 5280 §6 のパス検証と、名前の確認） */
 function certificatesFor(problem: CertProblem): CertSet {
-  const leafNotAfter = problem === 'expired' ? '2026-08-31' : '2027-03-31'
-  const leafSan = problem === 'nameMismatch' ? 'other.example.net' : HOST
-  const intermediateIssuer = problem === 'unknownCa' ? 'Unknown Root CA' : ROOT
-  const root = problem === 'unknownCa' ? 'Unknown Root CA' : ROOT
-  const pending = [NOT_CHECKED, NOT_CHECKED, NOT_CHECKED, NOT_CHECKED] as const
-  const leaf = [HOST, LEAF_ISSUER, leafNotAfter, leafSan] as const
-  const intermediate =
-    problem === 'missingIntermediate'
-      ? ([LEAF_ISSUER, NOT_SENT, NOT_SENT, NOT_CHECKED] as const)
-      : ([LEAF_ISSUER, intermediateIssuer, '2031-06-30', NOT_CHECKED] as const)
-  const rootRow = [root, root, '2036-01-01', NOT_CHECKED] as const
   const ok = CHECK_OK
   const ng = CHECK_NG
   const na = NOT_CHECKED
-  // [Signature, Validity, Name, Trust]
-  const leafChecks =
+  const unknown = CANNOT_CHECK
+  const pending: Checks = [na, na, na, na]
+  const leafNotAfter = problem === 'expired' ? '2026-08-31' : '2027-03-31'
+  const leafSan = problem === 'nameMismatch' ? 'other.example.net' : HOST
+  // 未知の CA: 自前の CA（信頼ストアにない）が発行し、サーバーはそのルートまで送ってくる
+  const root = problem === 'unknownCa' ? UNKNOWN_ROOT : ROOT
+  const leaf = [HOST, LEAF_ISSUER, leafNotAfter, leafSan] as const
+  const intermediate =
+    problem === 'missingIntermediate'
+      ? ([LEAF_ISSUER, NOT_SENT, NOT_SENT, na] as const)
+      : ([LEAF_ISSUER, root, '2031-06-30', na] as const)
+  const rootRow =
+    problem === 'missingIntermediate'
+      ? ([ROOT, ROOT, na, na] as const)
+      : ([root, root, '2036-01-01', na] as const)
+  // [signature, validity, name, trust]。ルートの署名は、自己署名なので確かめない（RFC 5280 §6.1 では信頼の起点）。
+  // ルートの有効期間は、多くの実装に合わせて確かめる扱いにしている
+  const leafChecks: Checks =
     problem === 'expired'
       ? [ok, ng, ok, na]
       : problem === 'nameMismatch'
         ? [ok, ok, ng, na]
         : problem === 'missingIntermediate'
-          ? [ng, ok, ok, na]
+          ? [unknown, ok, ok, na]
           : [ok, ok, ok, na]
-  const intermediateChecks = problem === 'missingIntermediate' ? [na, na, na, na] : [ok, ok, na, na]
-  const rootChecks =
+  const intermediateChecks: Checks = problem === 'missingIntermediate' ? pending : [ok, ok, na, na]
+  const rootChecks: Checks =
     problem === 'unknownCa'
       ? [na, ok, na, ng]
       : problem === 'missingIntermediate'
-        ? [na, na, na, na]
+        ? pending
         : [na, ok, na, ok]
-  const row = (
-    base: readonly [string, string, string, string],
-    checks: readonly string[],
-  ): ChainRow => [
-    base[0],
-    base[1],
-    base[2],
-    base[3],
-    checks[0] ?? na,
-    checks[1] ?? na,
-    checks[2] ?? na,
-    checks[3] ?? na,
+  const row = (base: readonly [string, string, string, string], checks: Checks): ChainRow => [
+    ...base,
+    ...checks,
   ]
   return {
-    sent: problem === 'missingIntermediate' ? [HOST] : [HOST, LEAF_ISSUER],
+    sent:
+      problem === 'missingIntermediate'
+        ? [HOST]
+        : problem === 'unknownCa'
+          ? [HOST, LEAF_ISSUER, UNKNOWN_ROOT]
+          : [HOST, LEAF_ISSUER],
     rows: [row(leaf, pending), row(intermediate, pending), row(rootRow, pending)],
     checked: [
       row(leaf, leafChecks),
@@ -427,8 +459,8 @@ const VALIDATION_TEXT = {
       ja: 'チェーンの行き着く先が、信頼していないルート',
     },
     description: {
-      en: 'The signatures and dates are fine, but the chain leads to “Unknown Root CA”, which is not in the client’s trust store (for example, a self-made CA). Without a trusted root, the check fails.',
-      ja: '署名も日付も問題ないが、チェーンの行き着く先の「Unknown Root CA」がクライアントの信頼ストアにない（自前で作った CA など）。信頼できるルートがないので、検証は失敗する。',
+      en: 'The server sent a chain up to its own root, “Unknown Root CA”, so the client can check every signature and date. But that root is not in the client’s trust store (for example, a CA a company made for itself). Anyone can make a root certificate, so a root the client does not already trust proves nothing, and the check fails.',
+      ja: 'サーバーは自前のルート「Unknown Root CA」までのチェーンを送ってきたので、クライアントは署名と日付をすべて確かめられる。しかし、そのルートはクライアントの信頼ストアにない（会社が自分で作った CA など）。ルート証明書はだれでも作れるので、もともと信頼しているルートでなければ何の証明にもならず、検証は失敗する。',
     },
   },
   missingIntermediate: {
@@ -467,6 +499,9 @@ function buildSteps(options: TlsOptions): readonly Step[] {
         send(serverHello),
         set(SERVER, SEND_KEYS, 'handshake'),
         set(CLIENT, STATE, 'WAIT_EE'),
+        // RFC 8446 付録 A.1 では、クライアントの K_send を handshake にするのはサーバーの Finished の後
+        // （0-RTT のデータを送っている可能性があるため）。このシナリオには 0-RTT がなく、中断時のアラートを
+        // handshake の鍵で送るので、ここで切り替えている
         set(CLIENT, SEND_KEYS, 'handshake'),
       ],
     },
@@ -488,11 +523,15 @@ function buildSteps(options: TlsOptions): readonly Step[] {
         en:
           problem === 'missingIntermediate'
             ? 'The server sends only its own certificate for www.example.com. It should also have sent the intermediate CA certificate that signed it.'
-            : 'The server sends its own certificate for www.example.com, followed by the intermediate CA certificate that signed it. The root certificate is not sent: the client must already have it.',
+            : problem === 'unknownCa'
+              ? 'The server sends its certificate, the intermediate CA certificate, and also the root of its own CA.'
+              : 'The server sends its own certificate for www.example.com, followed by the intermediate CA certificate that signed it. The root certificate is not sent: the client must already have it.',
         ja:
           problem === 'missingIntermediate'
             ? 'サーバーは www.example.com の自分の証明書だけを送る。本来は、それに署名した中間 CA の証明書も送るべきだった。'
-            : 'サーバーは www.example.com の自分の証明書と、それに署名した中間 CA の証明書を送る。ルート証明書は送らない。クライアントがあらかじめ持っているはずだから。',
+            : problem === 'unknownCa'
+              ? 'サーバーは自分の証明書と中間 CA の証明書に加えて、自前の CA のルート証明書も送ってくる。'
+              : 'サーバーは www.example.com の自分の証明書と、それに署名した中間 CA の証明書を送る。ルート証明書は送らない。クライアントがあらかじめ持っているはずだから。',
       },
       events: [
         send(
@@ -524,18 +563,38 @@ function buildSteps(options: TlsOptions): readonly Step[] {
         set(CLIENT, STATE, 'WAIT_CV'),
       ],
     },
-    {
-      id: 'validate-chain',
-      section: SECTIONS.handshake,
-      title: VALIDATION_TEXT[problem].title,
-      description: VALIDATION_TEXT[problem].description,
-      events: [set(CLIENT, CERT_CHAIN, { columns: CERT_CHAIN_COLUMNS, rows: certs.checked })],
-    },
   ]
+
+  const validateChain: Step = {
+    id: 'validate-chain',
+    section: SECTIONS.handshake,
+    title: VALIDATION_TEXT[problem].title,
+    description: VALIDATION_TEXT[problem].description,
+    events: [set(CLIENT, CERT_CHAIN, { columns: CERT_CHAIN_COLUMNS, rows: certs.checked })],
+  }
 
   if (problem !== 'none') {
     const alert = ALERTS[problem]
     steps.push(
+      {
+        id: 'rest-of-flight',
+        section: SECTIONS.handshake,
+        title: {
+          en: 'The rest of the server’s flight arrives',
+          ja: 'サーバーの残りのメッセージが届く',
+        },
+        description: {
+          en: 'The server does not wait for the client: it sends CertificateVerify and Finished right after Certificate, switches to the application traffic keys, and waits for the client’s Finished. The client, however, checks the certificate chain before going any further.',
+          ja: 'サーバーはクライアントを待たずに、Certificate に続けて CertificateVerify と Finished を送り、アプリケーション用の鍵に切り替えて、クライアントの Finished を待つ。しかしクライアントは、先に進む前に証明書チェーンを確かめる。',
+        },
+        events: [
+          send(certificateVerify),
+          send(finished(SERVER)),
+          set(SERVER, SEND_KEYS, 'application'),
+          set(SERVER, STATE, 'WAIT_FINISHED'),
+        ],
+      },
+      validateChain,
       {
         id: 'alert',
         section: SECTIONS.handshake,
@@ -544,8 +603,8 @@ function buildSteps(options: TlsOptions): readonly Step[] {
           ja: `クライアントが ${alert.description} のアラートで中断する`,
         },
         description: {
-          en: `The client sends a fatal alert and closes the connection. The server had already sent CertificateVerify and Finished in the same flight, but the client does not process them.${problem === 'nameMismatch' ? ' (Which alert is sent for a name mismatch varies between implementations; browsers show an error such as NET::ERR_CERT_COMMON_NAME_INVALID.)' : ''}`,
-          ja: `クライアントは致命的なアラートを送って接続を閉じる。サーバーは CertificateVerify と Finished をすでに同じまとまりで送っているが、クライアントはそれらを処理しない。${problem === 'nameMismatch' ? '（名前の不一致でどのアラートを送るかは実装によって違う。ブラウザは NET::ERR_CERT_COMMON_NAME_INVALID のようなエラーを表示する。）' : ''}`,
+          en: `The client sends a fatal alert and closes the connection. It does not process the CertificateVerify and Finished that have already arrived.${problem === 'nameMismatch' ? ' (Which alert is sent for a name mismatch varies between implementations; browsers show an error such as NET::ERR_CERT_COMMON_NAME_INVALID.)' : ''}`,
+          ja: `クライアントは致命的なアラートを送って接続を閉じる。すでに届いている CertificateVerify と Finished は処理しない。${problem === 'nameMismatch' ? '（名前の不一致でどのアラートを送るかは実装によって違う。ブラウザは NET::ERR_CERT_COMMON_NAME_INVALID のようなエラーを表示する。）' : ''}`,
         },
         events: [
           send(
@@ -573,9 +632,6 @@ function buildSteps(options: TlsOptions): readonly Step[] {
               ],
             }),
           ),
-          // サーバーは CertificateVerify と Finished まで送り終え、クライアントの Finished を待っている
-          set(SERVER, SEND_KEYS, 'application'),
-          set(SERVER, STATE, 'WAIT_FINISHED'),
           set(CLIENT, ALERT, alert.description),
           set(CLIENT, STATE, 'CLOSED'),
         ],
@@ -595,6 +651,7 @@ function buildSteps(options: TlsOptions): readonly Step[] {
   }
 
   steps.push(
+    validateChain,
     {
       id: 'certificate-verify',
       section: SECTIONS.handshake,
@@ -664,7 +721,7 @@ function buildSteps(options: TlsOptions): readonly Step[] {
             fields: [
               {
                 name: 'content',
-                value: 'GET / (HTTP/2)',
+                value: 'HTTP/2 HEADERS: GET /',
                 highlight: true,
                 description: {
                   en: 'Only the two endpoints can read this.',
@@ -711,6 +768,6 @@ export const tlsHandshakeScenario: Scenario<TlsOptions> = {
       defaultValue: 'none',
     },
   },
-  parseOptions: (raw) => tlsOptionsSchema.parse(raw),
+  parseOptions: (raw) => optionsSchema.parse(raw),
   buildSteps,
 }

@@ -43,6 +43,10 @@ describe('tlsHandshakeScenario', () => {
     expect(validateScenario(handle)).toEqual([])
   })
 
+  it('不正なオプションはデフォルトに戻す', () => {
+    expect(handle.resolve({ certProblem: 'bogus' }).options).toEqual({ certProblem: 'none' })
+  })
+
   describe('正常系（RFC 8446 §2 Figure 1）', () => {
     const steps = build()
 
@@ -109,8 +113,18 @@ describe('tlsHandshakeScenario', () => {
         'CONNECTED',
         'CONNECTED',
       ])
-      expect(server.at(1)).toBe('NEGOTIATED')
-      expect(server.at(-1)).toBe('CONNECTED')
+      expect(server).toEqual([
+        'START',
+        'NEGOTIATED',
+        'NEGOTIATED',
+        'NEGOTIATED',
+        'NEGOTIATED',
+        'NEGOTIATED',
+        'WAIT_FINISHED',
+        'WAIT_FINISHED',
+        'CONNECTED',
+      ])
+      expect(stateAt(steps, steps.length - 1).client?.alert).toBe('-')
     })
 
     it('送信に使う鍵: ServerHello 以降はハンドシェイク用、各自の Finished の後はアプリケーション用', () => {
@@ -139,6 +153,10 @@ describe('tlsHandshakeScenario', () => {
           'certificate_list',
         ),
       ).toBe('www.example.com\nExample Intermediate CA')
+      expect(field(messages(steps)[0], 'application_layer_protocol_negotiation')).toBe(
+        'h2\nhttp/1.1',
+      )
+      expect(field(messages(steps)[2], 'application_layer_protocol_negotiation')).toBe('h2')
       expect(checks(steps)).toEqual({
         'www.example.com': ['✓', '✓', '✓', '-'],
         'Example Intermediate CA': ['✓', '✓', '-', '-'],
@@ -156,13 +174,23 @@ describe('tlsHandshakeScenario', () => {
     ] as const)('%s: クライアントは暗号化されたアラート %s を送って中断する', (problem, alert) => {
       const steps = build(problem)
       const all = messages(steps)
+      // サーバーは Certificate に続けて CertificateVerify と Finished まで送り終えている
       expect(all.map((m) => m.label)).toEqual([
         'ClientHello',
         'ServerHello',
         'EncryptedExtensions',
         'Certificate',
+        'CertificateVerify',
+        'Finished',
         `Alert: ${alert.replace(/ \(\d+\)$/, '')}`,
       ])
+      // サーバーの状態と鍵は、残りのメッセージを送った時点で変わる（アラートへの反応ではない）
+      const flight = steps.findIndex((step) => step.id === 'rest-of-flight')
+      expect(stateAt(steps, flight).server).toMatchObject({
+        state: 'WAIT_FINISHED',
+        sendKeys: 'application',
+      })
+      expect(steps[flight + 1]?.id).toBe('validate-chain')
       expect(all.find((m) => m.id === 'certificate')?.status).toBe('rejected')
       const alertMessage = all.at(-1)
       expect(alertMessage?.encrypted).toBe(true)
@@ -181,8 +209,17 @@ describe('tlsHandshakeScenario', () => {
       expect(checks(build('nameMismatch'))['www.example.com']).toEqual(['✓', '✓', '✗', '-'])
     })
 
-    it('未知の CA はルートの信頼だけが不合格', () => {
-      expect(checks(build('unknownCa'))['Unknown Root CA']).toEqual(['-', '✓', '-', '✗'])
+    it('未知の CA: サーバーは自前のルートまで送り、署名と日付は確かめられるが、ルートの信頼だけが不合格', () => {
+      const steps = build('unknownCa')
+      expect(
+        field(
+          messages(steps).find((m) => m.id === 'certificate'),
+          'certificate_list',
+        ),
+      ).toBe('www.example.com\nExample Intermediate CA\nUnknown Root CA')
+      const result = checks(steps)
+      expect(result['Example Intermediate CA']).toEqual(['✓', '✓', '-', '-'])
+      expect(result['Unknown Root CA']).toEqual(['-', '✓', '-', '✗'])
     })
 
     it('中間証明書の欠落は、送られた証明書が 1 枚で、サーバー証明書の署名を確かめられない', () => {
@@ -193,7 +230,19 @@ describe('tlsHandshakeScenario', () => {
           'certificate_list',
         ),
       ).toBe('www.example.com')
-      expect(checks(steps)['www.example.com']).toEqual(['✗', '✓', '✓', '-'])
+      // 署名が不正なのではなく、確かめられない（?）
+      expect(checks(steps)['www.example.com']).toEqual(['?', '✓', '✓', '-'])
+      const chain = stateAt(steps, steps.length - 1).client?.certChain
+      expect(typeof chain === 'object' ? chain.rows[1] : undefined).toEqual([
+        'Example Intermediate CA',
+        '(not sent)',
+        '(not sent)',
+        '-',
+        '-',
+        '-',
+        '-',
+        '-',
+      ])
     })
 
     it('検証の前は、受け取った証明書の結果は未確認', () => {
