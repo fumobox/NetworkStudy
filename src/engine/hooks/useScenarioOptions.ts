@@ -19,6 +19,8 @@ export interface ScenarioSession {
   readonly optionsKey: string
   /** URL の ?step= から読んだ初期ステップ（0 始まり。丸めはプレイヤーが行う） */
   readonly initialStepIndex: number
+  /** 今の URL の ?step=（0 始まり）。戻る・進むやリンクで外から変わったことの検出に使う */
+  readonly urlStepIndex: number
   /** オプションを変更する。URL を更新し、ステップは最初に戻る */
   readonly setOption: (key: string, value: OptionValue) => void
   /** 現在のステップを URL に書き戻す（値が同じなら何もしない） */
@@ -66,6 +68,7 @@ export function useScenarioOptions(handle: ScenarioHandle): ScenarioSession {
     steps: resolved.steps,
     optionsKey,
     initialStepIndex: currentStep,
+    urlStepIndex: currentStep,
     setOption,
     syncStep,
   }

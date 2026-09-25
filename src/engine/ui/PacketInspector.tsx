@@ -103,7 +103,7 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
                           <span className="sr-only">{m.inspector.highlighted}</span>
                         )}
                       </th>
-                      <td className="py-1.5 pr-3 align-top font-mono break-all">{field.value}</td>
+                      <td className="py-1.5 pr-3 align-top font-mono break-words">{field.value}</td>
                       <td className="py-1.5 align-top text-muted-foreground">
                         {field.description === undefined ? null : t(field.description)}
                       </td>

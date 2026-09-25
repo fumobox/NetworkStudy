@@ -79,6 +79,14 @@ export const ja = {
     score: (p) => `${String(p.total)} 問中 ${String(p.correct)} 問正解`,
     reset: 'もう一度',
   },
+  theme: {
+    difficulty: {
+      beginner: '初級',
+      intermediate: '中級',
+    },
+    minutes: (p) => `約 ${String(p.minutes)} 分`,
+    player: 'ステップ実行',
+  },
   notFound: {
     title: 'ページが見つかりません',
     description: 'お探しのページは存在しません。',

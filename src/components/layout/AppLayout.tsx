@@ -2,6 +2,7 @@ import { Outlet } from 'react-router'
 import { useMessages } from '@/lib/i18n'
 import { Footer } from './Footer'
 import { Header } from './Header'
+import { Sidebar } from './Sidebar'
 
 const MAIN_ID = 'main'
 
@@ -17,9 +18,14 @@ export function AppLayout() {
         {m.layout.skipToContent}
       </a>
       <Header />
-      <main id={MAIN_ID} tabIndex={-1} className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-        <Outlet />
-      </main>
+      <div className="mx-auto flex w-full max-w-7xl flex-1 gap-8 px-4 py-10">
+        <aside className="hidden w-56 shrink-0 lg:block">
+          <Sidebar />
+        </aside>
+        <main id={MAIN_ID} tabIndex={-1} className="min-w-0 flex-1">
+          <Outlet />
+        </main>
+      </div>
       <Footer />
     </div>
   )

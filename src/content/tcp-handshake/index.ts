@@ -1,0 +1,11 @@
+import { toScenarioHandle } from '@/engine/scenario'
+import { TCP_HANDSHAKE_META } from '../themeMeta'
+import type { ThemeModule } from '../types'
+import { tcpHandshakeQuiz } from './quiz'
+import { tcpHandshakeScenario } from './scenario'
+
+export const tcpHandshakeTheme: ThemeModule = {
+  meta: TCP_HANDSHAKE_META,
+  scenario: toScenarioHandle(tcpHandshakeScenario),
+  quiz: tcpHandshakeQuiz,
+}
