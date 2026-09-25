@@ -116,6 +116,19 @@ describe('SequenceDiagram', () => {
     expect(screen.getByText('×')).toBeInTheDocument()
     expect(screen.getByText('✗')).toBeInTheDocument()
     expect(screen.getByText('SYN ↻')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /rejected/ })).toHaveClass('text-destructive')
+  })
+
+  it('矢印の向きとロスの位置', () => {
+    renderDiagram()
+    const lines = (name: RegExp) => screen.getByRole('button', { name }).querySelector('line')
+    const lost = lines(/lost$/)
+    const rst = lines(/^RST/)
+    // Client → Server の線は右向き、ロスは中点で止まる。Server → Client は左向き
+    expect(Number(lost?.getAttribute('x2'))).toBeLessThan(
+      Number(lines(/retransmission/)?.getAttribute('x2')),
+    )
+    expect(Number(rst?.getAttribute('x1'))).toBeGreaterThan(Number(rst?.getAttribute('x2')))
   })
 
   it('タイマーと経過時間を表示する', () => {
@@ -126,9 +139,27 @@ describe('SequenceDiagram', () => {
     expect(screen.getAllByText('t = 1s').length).toBeGreaterThan(0)
   })
 
-  it('指定したステップまでのメッセージだけを描く', () => {
+  it('指定したステップまでのメッセージだけを描く（タイマーはボタンではない）', () => {
     renderDiagram({ stepIndex: 0 })
     expect(screen.getAllByRole('button')).toHaveLength(1)
+  })
+
+  it('範囲外の stepIndex は丸め、現在のステップのメッセージを強調する', () => {
+    renderDiagram({ stepIndex: 99 })
+    expect(screen.getAllByRole('button')).toHaveLength(3)
+    expect(screen.getByRole('button', { name: /^RST/ })).toHaveAttribute('data-current', 'true')
+    expect(screen.getByRole('button', { name: /lost$/ })).toHaveAttribute('data-current', 'false')
+  })
+
+  it('タイマーのないシナリオでは経過時間の列を出さない', () => {
+    const first = steps[0]
+    renderDiagram({ steps: first === undefined ? [] : [first], stepIndex: 0 })
+    expect(screen.queryByText(/^t = /)).toBeNull()
+  })
+
+  it('タイマーのあるシナリオでは、まだタイマーの前でも経過時間の列を出す', () => {
+    renderDiagram({ stepIndex: 0 })
+    expect(screen.getByText('t = 0s')).toBeInTheDocument()
   })
 
   it('クリックと Enter / Space でメッセージを選択する', async () => {
@@ -142,6 +173,13 @@ describe('SequenceDiagram', () => {
     expect(onSelectMessage).toHaveBeenLastCalledWith('syn')
     await user.keyboard(' ')
     expect(onSelectMessage).toHaveBeenCalledTimes(3)
+  })
+
+  it('選択中のメッセージをもう一度押すと選択を解除する', async () => {
+    const user = userEvent.setup()
+    const { onSelectMessage } = renderDiagram({ selectedMessageId: 'rst' })
+    await user.click(screen.getByRole('button', { name: /^RST/ }))
+    expect(onSelectMessage).toHaveBeenLastCalledWith(null)
   })
 
   it('選択中のメッセージに aria-pressed を付ける', () => {

@@ -24,6 +24,8 @@ describe('formatSeconds', () => {
     expect(formatSeconds('en', 1500)).toBe('1.5s')
     expect(formatSeconds('en', 3000)).toBe('3s')
     expect(formatSeconds('ja', 1000)).toBe('1 秒')
+    expect(formatSeconds('ja', 1500)).toBe('1.5 秒')
+    expect(formatSeconds('en', 250)).toBe('0.3s')
   })
 })
 

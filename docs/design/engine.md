@@ -274,7 +274,7 @@ export type PlayerAction =
 - 時間は `timer` イベントだけで表す。「`actorId` の `name` タイマーが `durationMs` 待って発火した」という意味
   - TCP の SYN ロス: 「RTO 満了、SYN を再送」のステップに `{ kind: 'timer', actorId: 'client', name: 'RTO', durationMs: 1000 }` と再送メッセージ（`retransmitOf: 'syn'`）を並べる。2 回目は 2000（RFC 6298 §5.5 の指数バックオフ）
   - DNS のタイムアウト: `name: 'timeout'` の後に別サーバへのクエリ
-- 図の縦軸は時間に比例させない（行 = ステップ）。シナリオに timer が 1 つでもあれば、`elapsedMs` を各行の左に「t = 1.0 s」と小さく表示する。メッセージの伝搬遅延はモデル化しない
+- 図の縦軸は時間に比例させない。シナリオに timer が 1 つでもあれば、経過時間を各行の左に「t = 1s」と小さく表示する。メッセージの伝搬遅延はモデル化しない
 - 図の中のタイマーは、ライフライン上のアイコンと `RTO (1 s)` のラベルで描く。文言は辞書の関数で組み立て、秒数は `formatNumber` で整形する
 
 ## 暗号化区間とテーマ固有 UI
@@ -283,13 +283,21 @@ export type PlayerAction =
 - テーマ固有のデータは、`Step` に型パラメータを持たせず、アクターの状態スロット（`StateTable` など）として steps に載せる。テーマ固有 UI（CertChainPanel）はそれを読み、content 側の静的なデータ（証明書の subject・issuer・notAfter・SAN）と結合して描く
 - 合成: `ScenarioPlayer` は `renderPanels?: (ctx: { derived: DerivedState; options: ScenarioOptions }) => ReactNode` と `hiddenStateKeys?: readonly StateKey[]`（汎用パネルで二重に表示しないため）を受け取る。engine は content の型を知らない
 
+## シーケンス図（src/engine/diagram.ts、src/engine/ui/SequenceDiagram.tsx）
+
+- 入力は `actors`・`steps`・`stepIndex`（丸める）・`selectedMessageId`・`onSelectMessage`。`DerivedState` はメッセージとタイマーを別々の配列に持ち、ステップ内の順序が失われるため使わない
+- 行の単位は「メッセージかタイマー 1 件」（1 ステップに複数のメッセージがありうるため、ステップではない）。行は `diagramRows(steps, index)` で組み立て、各行に stepIndex とその時点の経過時間を付ける
+- 現在のステップ（丸めた stepIndex）の行は強調し、#30 でアニメーションの対象にする
+- メッセージは `role="button"` で、`aria-pressed` のトグル（もう一度押すと選択を解除して null を渡す）
+- `Step.section` の帯は、TLS のシナリオ（Phase 2）で描く
+
 ## deriveState（src/engine/derive.ts）
 
 `deriveState(actors, steps, index): DerivedState`
 
 - `steps[0..index]` を含む。index は `[0, length - 1]` に丸める（負 → 0、超過 → 末尾、小数は切り捨て、NaN → 0）。steps が空なら `stepIndex: -1`、各状態は初期値、throw しない
 - 「開始前」の特別な状態は作らない（TCP なら「サーバが LISTEN になる」を最初のステップにする）
-- `messages`: 出現順に `{ ...message, stepIndex }`。SequenceDiagram は `stepIndex === derived.stepIndex` のものだけアニメーションする
+- `messages`: 出現順に `{ ...message, stepIndex }`
 - `resolveSelectedMessage(derived, id)`: id が見つからない（ステップを戻って消えた）か null なら、現在ステップの最後のメッセージ、それもなければ全体の最後のメッセージを返す
 - `actorStates`: 初期値は `stateSlots`、stateChange で上書きする。`changedKeys` は表示ステップの stateChange のうち、値が実際に変わったものだけ（同じ値の再設定は含めない。表は列と行の文字列で比較する）
 - 未宣言のキー・存在しないアクターへの stateChange は無視する（`validateScenario` で検出する）

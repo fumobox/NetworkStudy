@@ -44,6 +44,22 @@ describe('diagramRows', () => {
     expect(diagramRows([], 0)).toEqual([])
   })
 
+  it('範囲外の index は丸める', () => {
+    expect(diagramRows(steps, 99)).toHaveLength(4)
+    expect(diagramRows(steps, -1)).toEqual([])
+    expect(diagramRows(steps, Number.NaN)).toEqual([])
+  })
+
+  it('タイマーより前のメッセージには、タイマー前の経過時間を付ける', () => {
+    const custom = [
+      step('s', [
+        { kind: 'message', message: message('before') },
+        { kind: 'timer', actorId: 'a', name: 'RTO', durationMs: 500 },
+      ]),
+    ]
+    expect(diagramRows(custom, 0).map((row) => row.elapsedMs)).toEqual([0, 500])
+  })
+
   it('各行に、その時点での経過時間とステップ番号を付ける', () => {
     expect(diagramRows(steps, 2).map((row) => [row.stepIndex, row.elapsedMs])).toEqual([
       [1, 0],

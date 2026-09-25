@@ -1,6 +1,8 @@
+import { Lock, Timer } from 'lucide-react'
 import type { KeyboardEvent } from 'react'
 import { formatSeconds, useLocale, useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
+import { clampStepIndex } from '../derive'
 import { diagramRows, hasTimers, type DiagramRow } from '../diagram'
 import type { Actor, ActorId, Message, MessageId, Step, TimerEvent } from '../types'
 
@@ -10,23 +12,23 @@ const HEADER_HEIGHT = 48
 const ROW_HEIGHT = 56
 const BOTTOM_PADDING = 16
 const ARROW_SIZE = 8
+const ICON_SIZE = 14
 
 // 図の中の記号（翻訳しない）。意味は aria-label で伝える
 const LOST_MARK = '×'
 const REJECTED_MARK = '✗'
 const RETRANSMIT_MARK = '↻'
-const ENCRYPTED_MARK = '🔒'
-const TIMER_MARK = '⏱'
 
 interface SequenceDiagramProps {
   actors: readonly Actor[]
   steps: readonly Step[]
   stepIndex: number
   selectedMessageId: MessageId | null
-  onSelectMessage: (messageId: MessageId) => void
+  /** 選択中のメッセージをもう一度押すと null（選択解除）を渡す */
+  onSelectMessage: (messageId: MessageId | null) => void
 }
 
-/** アクターの列 × メッセージの行で、steps[0..stepIndex] のやり取りを描く */
+/** アクターの列 × メッセージの行で、steps[0..stepIndex] のやり取りを描く（stepIndex は丸める） */
 export function SequenceDiagram({
   actors,
   steps,
@@ -38,7 +40,8 @@ export function SequenceDiagram({
   const t = useText()
   const locale = useLocale()
 
-  const rows = diagramRows(steps, stepIndex)
+  const currentStep = clampStepIndex(steps.length, stepIndex)
+  const rows = diagramRows(steps, currentStep)
   const showElapsed = hasTimers(steps)
   const offsetX = showElapsed ? TIME_COLUMN_WIDTH : 0
   const width = offsetX + actors.length * LANE_WIDTH
@@ -51,6 +54,7 @@ export function SequenceDiagram({
     const actor = actors.find((candidate) => candidate.id === actorId)
     return actor === undefined ? actorId : t(actor.name)
   }
+  // 矢印の上にラベルを置くため、行の中心より少し下に線を引く
   const rowY = (i: number) => HEADER_HEIGHT + i * ROW_HEIGHT + ROW_HEIGHT / 2 + 8
 
   return (
@@ -61,7 +65,7 @@ export function SequenceDiagram({
         viewBox={`0 0 ${String(width)} ${String(height)}`}
         width={width}
         height={height}
-        className="max-w-none text-foreground select-none"
+        className="text-foreground select-none"
       >
         {actors.map((actor) => {
           const x = laneX.get(actor.id) ?? 0
@@ -98,7 +102,12 @@ export function SequenceDiagram({
           return (
             <g key={rowKey(row, i)}>
               {showElapsed && (
-                <text x={8} y={y + 4} className="fill-muted-foreground font-mono text-xs">
+                <text
+                  x={8}
+                  y={y + 4}
+                  className="fill-muted-foreground font-mono text-xs"
+                  data-elapsed
+                >
                   {m.diagram.elapsed({ time: formatSeconds(locale, row.elapsedMs) })}
                 </text>
               )}
@@ -108,7 +117,7 @@ export function SequenceDiagram({
                   x1={laneX.get(row.message.from) ?? 0}
                   x2={laneX.get(row.message.to) ?? 0}
                   y={y}
-                  isCurrent={row.stepIndex === stepIndex}
+                  isCurrent={row.stepIndex === currentStep}
                   isSelected={row.message.id === selectedMessageId}
                   label={m.diagram.message({
                     label: row.message.label,
@@ -156,7 +165,7 @@ interface MessageArrowProps {
   isCurrent: boolean
   isSelected: boolean
   label: string
-  onSelect: (messageId: MessageId) => void
+  onSelect: (messageId: MessageId | null) => void
 }
 
 function MessageArrow({
@@ -174,18 +183,16 @@ function MessageArrow({
   const isRejected = message.status === 'rejected'
   const midX = (x1 + x2) / 2
   const endX = isLost ? midX : x2
-  const caption = [
-    message.encrypted === true ? ENCRYPTED_MARK : null,
-    message.label,
-    message.retransmitOf === undefined ? null : RETRANSMIT_MARK,
-  ]
-    .filter((part) => part !== null)
-    .join(' ')
+  const caption =
+    message.retransmitOf === undefined ? message.label : `${message.label} ${RETRANSMIT_MARK}`
+  const toggle = () => {
+    onSelect(isSelected ? null : message.id)
+  }
 
   const handleKeyDown = (event: KeyboardEvent<SVGGElement>) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      onSelect(message.id)
+      toggle()
     }
   }
 
@@ -196,9 +203,8 @@ function MessageArrow({
       aria-label={label}
       aria-pressed={isSelected}
       data-status={message.status}
-      onClick={() => {
-        onSelect(message.id)
-      }}
+      data-current={isCurrent}
+      onClick={toggle}
       onKeyDown={handleKeyDown}
       className={cn(
         'group cursor-pointer outline-none',
@@ -214,16 +220,28 @@ function MessageArrow({
         height={ROW_HEIGHT - 8}
         rx={6}
         className={cn(
-          'fill-transparent stroke-transparent group-focus-visible:stroke-ring',
+          // --ring は背景とのコントラストが 3:1 に届かないため、フォーカスは foreground の太線で示す
+          'fill-transparent stroke-transparent group-focus-visible:stroke-foreground',
           isSelected && 'fill-accent',
         )}
-        strokeWidth={2}
+        strokeWidth={3}
+        aria-hidden
       />
+      {message.encrypted === true && (
+        <Lock
+          x={x1 + direction * 8 - (direction < 0 ? ICON_SIZE : 0)}
+          y={y - 8 - ICON_SIZE}
+          size={ICON_SIZE}
+          className="stroke-current"
+          aria-hidden
+        />
+      )}
       <text
         x={midX}
         y={y - 8}
         textAnchor="middle"
         className={cn('fill-current font-mono text-xs', isCurrent && 'font-bold')}
+        aria-hidden
       >
         {caption}
       </text>
@@ -237,7 +255,13 @@ function MessageArrow({
         strokeDasharray={message.retransmitOf === undefined ? undefined : '6 4'}
       />
       {isLost ? (
-        <text x={midX} y={y + 5} textAnchor="middle" className="fill-current text-base font-bold">
+        <text
+          x={midX}
+          y={y + 5}
+          textAnchor="middle"
+          className="fill-current text-base font-bold"
+          aria-hidden
+        >
           {LOST_MARK}
         </text>
       ) : (
@@ -252,6 +276,7 @@ function MessageArrow({
           y={y + 18}
           textAnchor="middle"
           className="fill-current text-sm font-bold"
+          aria-hidden
         >
           {REJECTED_MARK}
         </text>
@@ -269,12 +294,18 @@ interface TimerMarkProps {
 }
 
 function TimerMark({ timer, x, y, text, label }: TimerMarkProps) {
-  const caption = `${TIMER_MARK} ${text}`
   return (
     <g role="img" aria-label={label} data-timer={timer.name} className="text-muted-foreground">
       <circle cx={x} cy={y} r={4} className="fill-current" />
-      <text x={x + 10} y={y + 4} className="fill-current font-mono text-xs">
-        {caption}
+      <Timer
+        x={x + 8}
+        y={y - ICON_SIZE / 2}
+        size={ICON_SIZE}
+        className="stroke-current"
+        aria-hidden
+      />
+      <text x={x + 10 + ICON_SIZE} y={y + 4} className="fill-current font-mono text-xs">
+        {text}
       </text>
     </g>
   )
