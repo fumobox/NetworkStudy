@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MotionConfig } from 'motion/react'
 import type { ReactNode } from 'react'
 import { describe, expect, it, vi } from 'vitest'
 import { LocaleProvider, type Locale } from '@/lib/i18n'
@@ -76,10 +77,14 @@ const steps: readonly Step[] = [
 function renderDiagram(
   props: Partial<Parameters<typeof SequenceDiagram>[0]> = {},
   locale: Locale = 'en',
+  reducedMotion: 'always' | 'never' = 'always',
 ) {
   const onSelectMessage = vi.fn()
+  // 座標を確認するため、既定ではアニメーションを止める
   const wrapper = ({ children }: { children: ReactNode }) => (
-    <LocaleProvider locale={locale}>{children}</LocaleProvider>
+    <MotionConfig reducedMotion={reducedMotion}>
+      <LocaleProvider locale={locale}>{children}</LocaleProvider>
+    </MotionConfig>
   )
   render(
     <SequenceDiagram
@@ -149,6 +154,35 @@ describe('SequenceDiagram', () => {
     expect(screen.getAllByRole('button')).toHaveLength(3)
     expect(screen.getByRole('button', { name: /^RST/ })).toHaveAttribute('data-current', 'true')
     expect(screen.getByRole('button', { name: /lost$/ })).toHaveAttribute('data-current', 'false')
+  })
+
+  it('アニメーションが有効なら、現在のステップの線だけを送信側から伸ばす', () => {
+    renderDiagram({}, 'en', 'never')
+    const line = (name: RegExp) => screen.getByRole('button', { name }).querySelector('line')
+    const rst = line(/^RST/)
+    // 開始状態では終点が始点と同じ（jsdom ではアニメーションが進まない）
+    expect(rst?.getAttribute('x2')).toBe(rst?.getAttribute('x1'))
+    const done = line(/retransmission/)
+    expect(done?.getAttribute('x2')).not.toBe(done?.getAttribute('x1'))
+  })
+
+  it('狭い画面ではアクターの短縮名を使う', () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      matches: true,
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }))
+    renderDiagram({
+      actors: actors.map((actor) =>
+        actor.id === 'client' ? { ...actor, shortName: { en: 'C', ja: 'C' } } : actor,
+      ),
+    })
+    expect(screen.getByText('C')).toBeInTheDocument()
+    expect(screen.queryByText('Client')).toBeNull()
+    // 短縮名のないアクターは通常の名前
+    expect(screen.getByText('Server')).toBeInTheDocument()
+    vi.unstubAllGlobals()
   })
 
   it('タイマーのないシナリオでは経過時間の列を出さない', () => {
