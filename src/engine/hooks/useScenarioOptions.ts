@@ -1,7 +1,13 @@
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import type { OptionValue, ScenarioHandle, ScenarioOptions, Step } from '../types'
-import { optionParamsKey, readOptionParams, readStepParam, writeScenarioParams } from '../url'
+import {
+  optionParamsKey,
+  readOptionParams,
+  readStepParam,
+  writeScenarioParams,
+  writeStepParam,
+} from '../url'
 
 export interface ScenarioSession {
   readonly options: ScenarioOptions
@@ -49,17 +55,10 @@ export function useScenarioOptions(handle: ScenarioHandle): ScenarioSession {
       if (stepIndex === currentStep) {
         return
       }
-      setParams(
-        (previous) =>
-          writeScenarioParams(previous, {
-            optionDefs: handle.optionDefs,
-            options: resolved.options,
-            stepIndex,
-          }),
-        { replace: true },
-      )
+      // ステップだけを書き換える。オプションまで書き直すと、直前のオプション変更を古い値で巻き戻すことがある
+      setParams((previous) => writeStepParam(previous, stepIndex), { replace: true })
     },
-    [currentStep, handle.optionDefs, resolved.options, setParams],
+    [currentStep, setParams],
   )
 
   return {

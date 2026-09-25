@@ -58,9 +58,12 @@ export function ScenarioOptionsForm({ optionDefs, options, onChange }: ScenarioO
           const value = options[key]
           return (
             <fieldset key={key} className="space-y-2">
-              <legend className="text-sm font-medium">{t(def.label)}</legend>
+              <legend id={`${id}-legend`} className="text-sm font-medium">
+                {t(def.label)}
+              </legend>
               {description}
               <RadioGroup
+                aria-labelledby={`${id}-legend`}
                 value={typeof value === 'string' ? value : def.defaultValue}
                 aria-describedby={def.description === undefined ? undefined : descriptionId}
                 onValueChange={(next) => {
