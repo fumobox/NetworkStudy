@@ -9,7 +9,9 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run pages:generate",
+    "pages:generate": "tsx --tsconfig tsconfig.scripts.json scripts/generate-static-pages.ts",
+    "pages:verify": "tsx --tsconfig tsconfig.scripts.json scripts/verify-static-pages.ts",
     "typecheck": "tsc -b",
     "test": "vitest",
     "test:run": "vitest run",
@@ -57,6 +59,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "shadcn": "^4.21.0",
     "tailwindcss": "^4.3.3",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.70.1",
     "vite": "^8.3.1",

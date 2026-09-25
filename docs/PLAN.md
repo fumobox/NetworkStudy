@@ -62,7 +62,7 @@
 | 検証 | zod | URL クエリ、localStorage を検証してから型を付ける |
 | テスト | Vitest + Testing Library、Playwright（Phase 3 でスモークのみ） | シナリオの導出ロジックを重点的にテスト |
 | Lint | ESLint（typescript-eslint strict-type-checked）+ Prettier + dependency-cruiser | `no-explicit-any`、`consistent-type-assertions`、`react/jsx-no-literals`、循環依存・レイヤ違反の検出 |
-| CI/CD | GitHub Actions → GitHub Pages（`actions/deploy-pages`） | PR ごとのプレビューは MVP では作らない（`vite preview` で確認） |
+| CI/CD | GitHub Actions（ci.yml の check → deploy）→ GitHub Pages（`actions/deploy-pages`） | PR ごとのプレビューは MVP では作らない（`vite preview` で確認） |
 
 ## 4. アーキテクチャ
 
@@ -270,14 +270,14 @@ export const ja = {
 - **直リンク対策**: ビルド後に `scripts/generate-static-pages.ts` で、ロケール × テーマの組み合わせごとに `dist/{en,ja}/index.html` と `dist/{en,ja}/themes/<id>/index.html` を複製する。どの URL も 200 で返るため、検索エンジンにも拾われる
 - 複製時に `<html lang>`、`hreflang`（en / ja / x-default）、OG メタを置換して埋め込む
 - 未知のパス用に `404.html` も置く（中身は SPA のエントリと同じ）
-- デプロイは main への push をトリガーに GitHub Actions で行う
+- デプロイは ci.yml の deploy job で行う。main への push のとき、check job（検証・ビルド）が通った後にだけ実行する
 
 ## 7. ディレクトリ構成
 
 ```
 NetworkStudy/
 ├── .github/
-│   ├── workflows/ (ci.yml, deploy.yml)
+│   ├── workflows/ci.yml        # check（検証・ビルド）→ deploy（main のみ）
 │   ├── ISSUE_TEMPLATE/ (design.md, enhancement.md, bug.md)
 │   └── pull_request_template.md
 ├── docs/ (PLAN.md, glossary.md)
