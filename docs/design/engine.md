@@ -250,6 +250,7 @@ export type PlayerAction =
   | { readonly type: 'jump'; readonly stepIndex: number }
   | { readonly type: 'play' }
   | { readonly type: 'pause' }
+  | { readonly type: 'togglePlay' } // 再生ボタンと Space キー
   | { readonly type: 'tick' } // 自動再生のタイマーから。末尾で isPlaying = false
   | { readonly type: 'reset'; readonly stepCount: number } // オプション変更時（最初に戻す）
   | { readonly type: 'setSpeed'; readonly speed: PlaybackSpeed }
@@ -290,6 +291,16 @@ export type PlayerAction =
 - 現在のステップ（丸めた stepIndex）の行は強調し、#30 でアニメーションの対象にする
 - メッセージは `role="button"` で、`aria-pressed` のトグル（もう一度押すと選択を解除して null を渡す）
 - `Step.section` の帯は、TLS のシナリオ（Phase 2）で描く
+
+## 操作 UI（src/engine/ui/StepControls.tsx、src/engine/hooks/useStepKeyboard.ts）
+
+- キーボード: ← / → でステップを移動、Space で再生・一時停止（ページのスクロールは止める）。window で受け取る
+  - Space は、フォーカスが本文（body）にあるときだけ。ボタンやリンクの上ではその要素の操作に任せる。長押しは無視する
+  - ← / → は、矢印キーを自分で使う要素（入力欄・スライダー・タブ・ラジオ・リスト・ダイアログなど）にフォーカスがあるときだけ無視する。ボタンの上でも効く
+  - 修飾キー付き・IME 変換中・他の要素が `preventDefault` 済みのときは無視する
+  - 同じページに置く UI（クイズ、オプションのフォームなど）は、矢印キーを使うなら上の要素（native の input / Radix の role 付き要素）で作る
+- 読み上げ（`aria-live`）は StepDescription の 1 か所だけにする（PacketInspector などには付けない）
+- スライダーは画面のステップ番号に合わせて 1 始まり
 
 ## deriveState（src/engine/derive.ts）
 

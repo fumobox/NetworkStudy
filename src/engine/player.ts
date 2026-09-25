@@ -27,6 +27,7 @@ export type PlayerAction =
   | { readonly type: 'jump'; readonly stepIndex: number }
   | { readonly type: 'play' }
   | { readonly type: 'pause' }
+  | { readonly type: 'togglePlay' }
   /** 自動再生のタイマーから送る。最終ステップに達したら止まる */
   | { readonly type: 'tick' }
   /** ステップ列が変わったとき（オプションの変更など）に送る。最初のステップに戻して停止する */
@@ -84,6 +85,8 @@ export function playerReducer(state: PlayerState, action: PlayerAction): PlayerS
     }
     case 'pause':
       return pause(state)
+    case 'togglePlay':
+      return state.isPlaying ? pause(state) : playerReducer(state, { type: 'play' })
     case 'tick': {
       if (!state.isPlaying) {
         return state
