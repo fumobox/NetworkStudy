@@ -42,6 +42,19 @@ function stateHistory(steps: readonly Step[]) {
   })
 }
 
+/** ステップごとの [クライアントの SND.NXT, RCV.NXT, サーバーの SND.NXT, RCV.NXT]（状態パネルに出る値） */
+function sequenceHistory(steps: readonly Step[]) {
+  return steps.map((_, index) => {
+    const { client, server } = deriveState(tcpCloseScenario.actors, steps, index).actorStates
+    return [
+      client?.values['SND.NXT'],
+      client?.values['RCV.NXT'],
+      server?.values['SND.NXT'],
+      server?.values['RCV.NXT'],
+    ]
+  })
+}
+
 function elapsedMs(steps: readonly Step[]): number {
   return deriveState(tcpCloseScenario.actors, steps, steps.length - 1).elapsedMs
 }
@@ -92,6 +105,18 @@ describe('tcpCloseScenario', () => {
       ])
     })
 
+    it('状態パネルの SND.NXT と RCV.NXT は、FIN を送った側と受け取った側で 1 ずつ進む', () => {
+      expect(sequenceHistory(steps)).toEqual([
+        ['1001', '5001', '5001', '1001'],
+        ['1002', '5001', '5001', '1001'],
+        ['1002', '5001', '5001', '1002'],
+        ['1002', '5001', '5002', '1002'],
+        ['1002', '5002', '5002', '1002'],
+        ['1002', '5002', '-', '-'],
+        ['-', '-', '-', '-'],
+      ])
+    })
+
     it('TIME-WAIT は 2MSL（MSL = 2 分なので 4 分）', () => {
       const timers = steps.flatMap((step) => step.events.filter((event) => event.kind === 'timer'))
       expect(timers).toEqual([
@@ -133,6 +158,11 @@ describe('tcpCloseScenario', () => {
       ])
       // RTO（1 秒）の後に、やり直した 2MSL
       expect(elapsedMs(steps)).toBe(1_000 + 240_000)
+      // 再送した FIN は同じ番号なので、SND.NXT と RCV.NXT は変わらない
+      expect(sequenceHistory(steps).slice(4, 6)).toEqual([
+        ['1002', '5002', '5002', '1002'],
+        ['1002', '5002', '5002', '1002'],
+      ])
     })
   })
 
@@ -157,6 +187,13 @@ describe('tcpCloseScenario', () => {
         ['CLOSED', 'CLOSED'],
       ])
       expect(elapsedMs(steps)).toBe(240_000)
+      expect(sequenceHistory(steps)).toEqual([
+        ['1001', '5001', '5001', '1001'],
+        ['1002', '5001', '5002', '1001'],
+        ['1002', '5002', '5002', '1002'],
+        ['1002', '5002', '5002', '1002'],
+        ['-', '-', '-', '-'],
+      ])
     })
 
     it('最後の ACK のロスは影響しない', () => {
@@ -175,6 +212,11 @@ describe('tcpCloseScenario', () => {
         ['CLOSED', 'CLOSED'],
       ])
       expect(elapsedMs(steps)).toBe(0)
+      expect(sequenceHistory(steps)).toEqual([
+        ['1001', '5001', '5001', '1001'],
+        ['-', '-', '5001', '1001'],
+        ['-', '-', '-', '-'],
+      ])
     })
 
     it('最後の ACK のロスは影響しない', () => {
