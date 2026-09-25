@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { THEME_META } from '@/content/themeMeta'
+import { THEME_META, themeMetaOfKind } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { LOCALE_NAMES, MESSAGES } from '@/lib/i18n/messages'
 
@@ -27,7 +27,7 @@ for (const locale of LOCALES) {
     }
   })
 
-  for (const meta of THEME_META) {
+  for (const meta of themeMetaOfKind('sequence')) {
     test(`${meta.id} を最終ステップまで進める（${locale}）`, async ({ page }) => {
       await page.goto(`${locale}/themes/${meta.id}`)
       await expect(page.getByRole('heading', { level: 1, name: meta.title[locale] })).toBeVisible()
@@ -41,6 +41,14 @@ for (const locale of LOCALES) {
       }
       await expect(next).toBeDisabled()
       await expect(page).toHaveURL(new RegExp(`[?&]step=${String(total)}$`))
+    })
+  }
+
+  for (const meta of themeMetaOfKind('custom')) {
+    test(`${meta.id} が開く（${locale}）`, async ({ page }) => {
+      await page.goto(`${locale}/themes/${meta.id}`)
+      await expect(page.getByRole('heading', { level: 1, name: meta.title[locale] })).toBeVisible()
+      await expect(page.getByRole('region', { name: m.quiz.title })).toBeVisible()
     })
   }
 }

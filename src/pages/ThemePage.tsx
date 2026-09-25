@@ -1,8 +1,9 @@
+import { Suspense } from 'react'
 import { useParams } from 'react-router'
 import { OverviewSection } from '@/components/features/overview/OverviewSection'
 import { QuizPanel } from '@/components/features/quiz/QuizPanel'
 import { findTheme } from '@/content/registry'
-import type { ThemeModule } from '@/content/types'
+import type { CustomThemeModule, SequenceThemeModule, ThemeModule } from '@/content/types'
 import { ScenarioPlayer } from '@/engine/ui/ScenarioPlayer'
 import { useDocumentDescription } from '@/lib/hooks/useDocumentDescription'
 import { useLocale, useMessages, useText } from '@/lib/i18n'
@@ -38,17 +39,33 @@ function ThemeView({ theme }: { theme: ThemeModule }) {
           </p>
         </header>
         <OverviewSection content={theme.overview[locale]} />
-        <ScenarioPlayer
-          scenario={theme.scenario}
-          {...(theme.panels === undefined
-            ? {}
-            : {
-                renderPanels: theme.panels.render,
-                hiddenStateKeys: theme.panels.hiddenStateKeys,
-              })}
-        />
+        {theme.kind === 'sequence' ? <SequenceBody theme={theme} /> : <CustomBody theme={theme} />}
         <QuizPanel quiz={theme.quiz} />
       </article>
     </>
+  )
+}
+
+function SequenceBody({ theme }: { theme: SequenceThemeModule }) {
+  return (
+    <ScenarioPlayer
+      scenario={theme.scenario}
+      {...(theme.panels === undefined
+        ? {}
+        : {
+            renderPanels: theme.panels.render,
+            hiddenStateKeys: theme.panels.hiddenStateKeys,
+          })}
+    />
+  )
+}
+
+function CustomBody({ theme }: { theme: CustomThemeModule }) {
+  const m = useMessages()
+  const Body = theme.body
+  return (
+    <Suspense fallback={<p className="text-sm text-muted-foreground">{m.theme.loading}</p>}>
+      <Body />
+    </Suspense>
   )
 }

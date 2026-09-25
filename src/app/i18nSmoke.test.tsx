@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
-import { THEME_IDS } from '@/content/themeMeta'
+import { THEME_IDS, themeMetaOfKind } from '@/content/themeMeta'
 import { LOCALES, MESSAGES, type Locale } from '@/lib/i18n'
 import { waitForPage } from '@/test/waitForPage'
 import { AppRoutes } from './AppRoutes'
@@ -31,7 +31,7 @@ const ROUTES = [
   '/no-such-page',
   ...THEME_IDS.map((id) => `/themes/${id}`),
   // 最終ステップまで進めた状態（途中のステップでしか出ない文言も表示される）
-  ...THEME_IDS.map((id) => `/themes/${id}?step=99`),
+  ...themeMetaOfKind('sequence').map((meta) => `/themes/${meta.id}?step=99`),
 ]
 
 /** 画面に出る文言（テキストと、aria-label・alt などの属性） */
