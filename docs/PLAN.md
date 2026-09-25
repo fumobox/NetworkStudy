@@ -1,6 +1,6 @@
 # NetworkStudy 計画書
 
-ネットワークプロトコルの動きを、1パケットずつ自分の手で進めながらインタラクティブに学ぶポータルサイト。
+ネットワークプロトコルの動きを、1 パケットずつ自分の手で進めながらインタラクティブに学ぶポータルサイト。
 
 ## 0. 決定事項
 
@@ -45,7 +45,7 @@
 | 高 | OSI 参照モデル／カプセル化 | レイヤを積み上げるアニメーション |
 | 高 | IP／サブネット計算 | 計算ツール |
 | 中 | ARP、TCP の 4 ウェイクローズ、再送・輻輳制御（cwnd グラフ） | シーケンス図（＋グラフ） |
-| 中 | NAT／ルーティング | トポロジ図（React Flow を検討） |
+| 中 | NAT／ルーティング | トポロジ図（SVG + Motion。React Flow の判断は §3） |
 | 低 | DHCP、ICMP（ping/traceroute）、QUIC | シーケンス図 |
 
 ## 3. 技術スタック
@@ -55,7 +55,7 @@
 | 基盤 | React 19 + Vite + TypeScript（strict） | `any` 禁止、`as` は原則禁止（`as const` と `satisfies` は可） |
 | UI | Tailwind CSS v4 + shadcn/ui | Button, Card, Tabs, Tooltip, Slider, Toggle, Collapsible, Sheet |
 | ルーティング | React Router v8（宣言的モード、BrowserRouter） | `basename={import.meta.env.BASE_URL}` |
-| 可視化 | SVG + Motion（旧 framer-motion） | シーケンス図は決まったレイアウトなので D3 などのレイアウトエンジンは不要 |
+| 可視化 | SVG + Motion（旧 framer-motion） | シーケンス図は決まったレイアウトなので D3 などのレイアウトエンジンは不要。グラフ（cwnd など）もチャートライブラリを使わず素の SVG で描く |
 | 多言語対応 | 自前の型安全辞書（`src/lib/i18n`） | 外部ライブラリは使わない。詳細は §5 |
 | 長文コンテンツ | MDX（`@mdx-js/rollup`、Phase 2 から） | ロケールごとにファイルを分ける |
 | 状態管理 | useReducer + Context | グローバルストアなし |
@@ -392,6 +392,23 @@ NetworkStudy/
 | 3-5 | サブネット計算ツール | content |
 | 3-6 | トポロジ系で React Flow を導入するか判断する | design |
 | 3-7 | TCP の 4 ウェイクローズ、再送・輻輳制御 | theme:tcp |
+
+Issue は #76〜#91 に分けて起票した（3-3 はヘルパーとテーマ、3-5 は計算の関数と UI、3-7 は 4 ウェイクローズと輻輳制御をそれぞれ別のテーマにする）。
+
+#### Phase 3 の判断
+
+| 項目 | 判断 | 理由 |
+|---|---|---|
+| React Flow（3-6） | Phase 3 では導入しない | Phase 3 のテーマ（HTTPS はシーケンス図、OSI は縦の積み上げ、サブネットはフォーム、cwnd は折れ線）は、どれも自動レイアウトやドラッグ編集を必要としない。依存が増え、型の扱い（`as` 禁止、`exactOptionalPropertyTypes`）の確認も要る。NAT／ルーティングに着手するときに「ノード数が動的か（利用者が追加するか）」「ドラッグで編集するか」で判断し直す。固定のトポロジ（3〜5 ノード）なら SVG + Motion で描く |
+| cwnd のグラフ | 素の SVG | 点は 10〜15 個、系列は cwnd と ssthresh の 2 本だけ。チャートライブラリは型の扱いが重く、バンドルも増える |
+| シーケンス図以外のテーマ | `ThemeModule` を `kind`（`sequence` / `custom`）で判別する共用体にする | OSI とサブネット計算はシナリオを持たない。クイズと概要はどの kind でも必須にし、ホームの進捗と説明の形をそろえる |
+| HTTPS の全体像 | 既存の 3 シナリオと小さな HTTP のパートを合成する。What-if は v1 では出さない | オプションを全部出すと組み合わせが DNS × TCP × TLS の積になり、フォームも長くなる。帯はパート名（1. 名前解決〜4. リクエスト）にする |
+| OSI | OSI の 7 層を主にし、TCP/IP の 4 層は対応表で示す。例は HTTP GET over TCP / IPv4 / Ethernet | 資格試験（基本情報など）の出題に合わせる |
+| サブネット計算 | IPv4 のみ。クイズも付ける | 対象の学習者に必要な範囲。IPv6 は扱わない |
+| TCP の 4 ウェイクローズ・輻輳制御 | 別のテーマ（`tcp-close`、`tcp-congestion`）にする。輻輳制御は Reno 相当（RFC 5681）に限り、難易度は中級 | 既存の TCP テーマの分岐にすると、オプションとステップ数が増えすぎる。CUBIC などは概要で触れるだけにする |
+| 用語集 | 開発者向けの `docs/glossary.md` だけにする（利用者向けのページは作らない） | 訳語をそろえるのが目的 |
+| ホームの構成 | テーマが増えたら、カテゴリ（基礎／プロトコル／TCP をもっと詳しく）ごとに分ける | 一列の学習順では 8 テーマを案内しにくい |
+| CI | e2e（Playwright と axe）と Lighthouse CI は `Check` job のステップにする。Lighthouse はアクセシビリティだけを error にする | 必須チェックの設定を変えずに済む。パフォーマンスは CI では値がぶれる |
 
 ## 9. リスクと対策
 
