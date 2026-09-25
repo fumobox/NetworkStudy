@@ -96,6 +96,14 @@ export const en = {
       `${String(p.correct)} of ${String(p.total)} correct`,
     reset: 'Try again',
   },
+  theme: {
+    difficulty: {
+      beginner: 'Beginner',
+      intermediate: 'Intermediate',
+    },
+    minutes: (p: { minutes: number }) => `About ${String(p.minutes)} min`,
+    player: 'Interactive walkthrough',
+  },
   notFound: {
     title: 'Page not found',
     description: 'The page you are looking for does not exist.',

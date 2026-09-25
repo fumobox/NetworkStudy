@@ -1,7 +1,7 @@
-import { THEME_IDS } from '@/content/themeIds'
+import { THEME_META, type ThemeMeta } from '@/content/themeMeta'
 import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/lib/i18n/locale'
 import { MESSAGES } from '@/lib/i18n/messages'
-import { outputPath, routesFor, type PageMeta } from './lib'
+import { outputPath, type PageMeta } from './lib'
 
 export interface PlannedPage {
   file: string
@@ -13,10 +13,22 @@ export interface PlannedPage {
 /** URL とファイルパスに使うため、テーマ ID は英小文字・数字・ハイフンに限る */
 const THEME_ID_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 
-function metaFor(locale: Locale): PageMeta {
+/** テーマの情報を持つかどうかで区別したルート。ホームは theme が null */
+interface PlannedRoute {
+  route: string
+  theme: Pick<ThemeMeta, 'id' | 'title' | 'summary'> | null
+}
+
+function metaFor(locale: Locale, theme: PlannedRoute['theme']): PageMeta {
   const m = MESSAGES[locale]
-  // テーマページのタイトルは、Phase 1 で registry からテーマ名を取れるようになったら差し替える
-  return { lang: locale, title: m.common.siteName, description: m.common.tagline }
+  if (theme === null) {
+    return { lang: locale, title: m.common.siteName, description: m.common.tagline }
+  }
+  return {
+    lang: locale,
+    title: m.common.pageTitle({ page: theme.title[locale], site: m.common.siteName }),
+    description: theme.summary[locale],
+  }
 }
 
 /**
@@ -24,25 +36,30 @@ function metaFor(locale: Locale): PageMeta {
  * ロケールなしのページ（`/`、`/themes/<id>/`）は、SPA がロケール付きの URL へリダイレクトする。
  * hreflang の x-default の参照先でもあるため、ルートごとに生成して 200 で返す。
  */
-export function plannedPages(themeIds: readonly string[] = THEME_IDS): PlannedPage[] {
-  const invalid = themeIds.filter((id) => !THEME_ID_PATTERN.test(id))
+export function plannedPages(
+  themes: readonly Pick<ThemeMeta, 'id' | 'title' | 'summary'>[] = THEME_META,
+): PlannedPage[] {
+  const invalid = themes.map((theme) => theme.id).filter((id) => !THEME_ID_PATTERN.test(id))
   if (invalid.length > 0) {
     throw new Error(`テーマ ID の形式が不正です: ${invalid.join(', ')}`)
   }
-  const routes = routesFor(themeIds)
+  const routes: PlannedRoute[] = [
+    { route: '', theme: null },
+    ...themes.map((theme) => ({ route: `themes/${theme.id}`, theme })),
+  ]
   return [
-    ...routes.map((route) => ({
+    ...routes.map(({ route, theme }) => ({
       file: outputPath(null, route),
       locale: null,
       route,
-      meta: metaFor(DEFAULT_LOCALE),
+      meta: metaFor(DEFAULT_LOCALE, theme),
     })),
     ...LOCALES.flatMap((locale) =>
-      routes.map((route) => ({
+      routes.map(({ route, theme }) => ({
         file: outputPath(locale, route),
         locale,
         route,
-        meta: metaFor(locale),
+        meta: metaFor(locale, theme),
       })),
     ),
   ]

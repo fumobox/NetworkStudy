@@ -35,9 +35,9 @@ src/
 ├── components/
 │   ├── ui/         shadcn/ui の生成コード
 │   ├── layout/     AppLayout, Header, Footer, LanguageSwitcher
-│   └── features/   クイズ・進捗など（予定）
-├── content/        テーマごとのシナリオ・クイズ・MDX（themeIds.ts にテーマ ID の一覧）
-├── engine/         シーケンスエンジン（予定）
+│   └── features/   クイズ（quiz/）、テーマカード（theme-card/）
+├── content/        テーマごとのシナリオ・クイズ（themeMeta.ts にメタ情報、registry.ts に登録）
+├── engine/         シーケンスエンジン（型・導出・検証・プレイヤー・UI）
 ├── lib/            汎用処理（i18n/, hooks/, storage.ts, utils.ts）
 ├── types/          横断的な型（DeepReadonly など）
 └── test/setup.ts
@@ -90,8 +90,8 @@ scripts/            ビルド後の静的ページ生成・検証（tsx で実�
 ## 静的ページ生成（scripts/）
 
 - GitHub Pages には SPA 用のフォールバックがないため、`build` の最後に「ロケール × ルート」と「ロケールなし × ルート」の `index.html`、および `404.html` を生成する（`lang`・`title`・`description`・`hreflang`、ロケール付きのページには `canonical` も埋め込む）
-- テーマを追加したら `src/content/themeIds.ts` に ID を足す（英小文字・数字・ハイフンのみ）。静的ページも自動で増える
-- scripts は `tsconfig.scripts.json`（DOM なし）で型チェックされる。scripts から import してよい src は、DOM や `import.meta.env` に依存しないモジュール（`content/themeIds.ts`、`lib/i18n/locale.ts`、`lib/i18n/messages/`）に限る
+- テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ）を足し、`src/content/registry.ts` に登録する。静的ページも自動で増える
+- scripts は `tsconfig.scripts.json`（DOM なし）で型チェックされる。scripts から import してよい src は、DOM や `import.meta.env` に依存しないモジュール（`content/themeMeta.ts`、`lib/i18n/locale.ts`、`lib/i18n/messages/`）に限る
 
 ## 開発フロー
 

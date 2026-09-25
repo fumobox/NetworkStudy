@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { escapeHtml, outputPath, pageUrl, renderNotFound, renderPage, routesFor } from './lib'
+import { escapeHtml, outputPath, pageUrl, renderNotFound, renderPage } from './lib'
 
 const SITE = 'https://example.github.io/NetworkStudy/'
 
@@ -15,13 +15,6 @@ const TEMPLATE = `<!doctype html>
   </body>
 </html>
 `
-
-describe('routesFor', () => {
-  it('ホームとテーマのルートを返す', () => {
-    expect(routesFor([])).toEqual([''])
-    expect(routesFor(['tcp', 'dns'])).toEqual(['', 'themes/tcp', 'themes/dns'])
-  })
-})
 
 describe('pageUrl', () => {
   it.each([
