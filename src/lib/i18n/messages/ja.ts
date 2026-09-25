@@ -17,7 +17,7 @@ export const ja = {
     system: 'システムに従う',
     light: 'ライト',
     dark: 'ダーク',
-    toggle: (p) => `配色: ${p.current}。${p.next}に切り替える`,
+    toggle: (p) => `配色: ${p.current}。「${p.next}」に切り替える`,
   },
   language: {
     label: '言語',

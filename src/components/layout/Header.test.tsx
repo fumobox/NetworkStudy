@@ -1,14 +1,29 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useNavigate } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/AppRoutes'
 import { COLOR_SCHEME_STORAGE_KEY } from '@/lib/colorScheme'
+
+/** ブラウザの「戻る」を再現するボタン */
+function BackButton() {
+  const navigate = useNavigate()
+  return (
+    <button
+      type="button"
+      data-testid="back"
+      onClick={() => {
+        void navigate(-1)
+      }}
+    />
+  )
+}
 
 function renderAt(path: string) {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <AppRoutes />
+      <BackButton />
     </MemoryRouter>,
   )
 }
@@ -52,24 +67,35 @@ describe('配色の切り替え', () => {
     window.localStorage.setItem(COLOR_SCHEME_STORAGE_KEY, JSON.stringify('dark'))
     renderAt('/ja')
     expect(
-      screen.getByRole('button', { name: '配色: ダーク。システムに従うに切り替える' }),
+      screen.getByRole('button', { name: '配色: ダーク。「システムに従う」に切り替える' }),
     ).toBeInTheDocument()
   })
 })
 
 describe('スマホのメニュー', () => {
-  it('メニューからテーマ一覧を開き、テーマを選ぶと閉じる', async () => {
+  it('メニューからテーマ一覧を開き、テーマを選ぶと閉じる。戻っても開き直さない', async () => {
     const user = userEvent.setup()
     renderAt('/ja')
     await user.click(screen.getByRole('button', { name: 'メニュー' }))
     const dialog = await screen.findByRole('dialog', { name: 'メニュー' })
-    expect(dialog).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: '閉じる' })).toBeInTheDocument()
-    await user.click(
-      screen
-        .getAllByRole('link', { name: 'DNS の名前解決' })
-        .find((link) => dialog.contains(link)) ?? dialog,
-    )
+    expect(within(dialog).getByRole('button', { name: '閉じる' })).toBeInTheDocument()
+    await user.click(within(dialog).getByRole('link', { name: 'DNS の名前解決' }))
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull()
+    })
+    fireEvent.click(screen.getByTestId('back'))
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { level: 1, name: 'NetworkStudy' })).toBeInTheDocument()
+    })
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('今いるページのリンクを押しても閉じる', async () => {
+    const user = userEvent.setup()
+    renderAt('/ja/themes/dns-resolution')
+    await user.click(screen.getByRole('button', { name: 'メニュー' }))
+    const dialog = await screen.findByRole('dialog', { name: 'メニュー' })
+    await user.click(within(dialog).getByRole('link', { name: 'DNS の名前解決' }))
     await waitFor(() => {
       expect(screen.queryByRole('dialog')).toBeNull()
     })

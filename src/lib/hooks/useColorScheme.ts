@@ -8,7 +8,10 @@ import {
 } from '../colorScheme'
 import { useMediaQuery } from './useMediaQuery'
 
-/** 配色の設定（system / light / dark）を持ち、<html> の .dark と color-scheme に反映する */
+/**
+ * 配色の設定（system / light / dark）を持ち、<html> の .dark に反映する。
+ * ヘッダーの 1 か所で使う前提で、他のインスタンスや別のタブの変更には追従しない
+ */
 export function useColorScheme(): readonly [ColorScheme, (scheme: ColorScheme) => void] {
   const [scheme, setScheme] = useState<ColorScheme>(readColorScheme)
   const systemPrefersDark = useMediaQuery(DARK_MEDIA_QUERY)

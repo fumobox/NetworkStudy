@@ -8,13 +8,14 @@
     <script>
       // 描画の前にダークモードを反映して、ライトの画面が一瞬出るのを防ぐ（src/lib/colorScheme.ts と同じキー・値）
       ;(function () {
+        var saved = 'system'
         try {
-          var saved = JSON.parse(localStorage.getItem('ns.colorScheme') || '"system"')
-          var dark =
-            saved === 'dark' ||
-            (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
-          if (dark) document.documentElement.classList.add('dark')
+          saved = JSON.parse(localStorage.getItem('ns.colorScheme') || '"system"')
         } catch (e) {}
+        var dark =
+          saved === 'dark' ||
+          (saved !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        if (dark) document.documentElement.classList.add('dark')
       })()
     </script>
   </head>
