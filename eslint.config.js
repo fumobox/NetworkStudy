@@ -40,6 +40,11 @@ export default defineConfig([
     },
   },
   {
+    // scripts は Node で実行する
+    files: ['scripts/**/*.ts'],
+    languageOptions: { globals: globals.node },
+  },
+  {
     // 多言語対応のため、画面の文言は辞書から取得する（JSX への文字列の直書きを禁止）
     files: [
       'src/*.tsx',
