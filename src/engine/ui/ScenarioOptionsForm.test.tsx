@@ -41,6 +41,7 @@ describe('ScenarioOptionsForm', () => {
     expect(toggle).toBeChecked()
     expect(toggle).toHaveAccessibleDescription('The SYN never arrives.')
     expect(screen.getByRole('group', { name: 'Server port' })).toBeInTheDocument()
+    expect(screen.getByRole('radiogroup', { name: 'Server port' })).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: 'Closed' })).toBeChecked()
     expect(screen.getByRole('radio', { name: 'Open' })).not.toBeChecked()
   })

@@ -1,7 +1,13 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import type { ScenarioOptionDefs, ScenarioOptions } from './types'
-import { optionParamsKey, readOptionParams, readStepParam, writeScenarioParams } from './url'
+import {
+  optionParamsKey,
+  readOptionParams,
+  readStepParam,
+  writeScenarioParams,
+  writeStepParam,
+} from './url'
 
 const text = (en: string) => ({ en, ja: en })
 const optionDefs: ScenarioOptionDefs<ScenarioOptions> = {
@@ -26,6 +32,8 @@ describe('readStepParam', () => {
     ['step=abc', null],
     ['step=-1', null],
     ['step=1.5', null],
+    ['step=007', 6],
+    ['step=999999', 999998],
   ])('%j → %j', (query, expected) => {
     expect(readStepParam(new URLSearchParams(query))).toBe(expected)
   })
@@ -46,6 +54,16 @@ describe('optionParamsKey', () => {
       optionParamsKey(new URLSearchParams('opt.lost=1&opt.port=closed&step=5')),
     )
     expect(optionParamsKey(new URLSearchParams('step=2'))).toBe('')
+  })
+})
+
+describe('writeStepParam', () => {
+  it('ステップだけを書き換え、オプションや他のパラメータは残す', () => {
+    const params = new URLSearchParams('opt.lost=1&x=y&step=2')
+    expect(writeStepParam(params, 4).toString()).toBe('opt.lost=1&x=y&step=5')
+    expect(writeStepParam(params, 0).toString()).toBe('opt.lost=1&x=y')
+    // 元の URLSearchParams は変更しない
+    expect(params.toString()).toBe('opt.lost=1&x=y&step=2')
   })
 })
 

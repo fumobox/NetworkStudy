@@ -29,7 +29,8 @@ export function optionParamsKey(params: URLSearchParams): string {
   return new URLSearchParams(
     [...params]
       .filter(([name]) => name.startsWith(OPTION_PREFIX))
-      .sort(([a], [b]) => a.localeCompare(b)),
+      // 等値比較にしか使わないので、ロケールに依存しない単純な比較で並べる
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)),
   ).toString()
 }
 
@@ -38,6 +39,17 @@ function serializeOption(value: OptionValue): string {
     return value ? TOGGLE_ON : TOGGLE_OFF
   }
   return value
+}
+
+/** ステップだけを書き換えた新しい URLSearchParams を返す（最初のステップなら ?step= を消す） */
+export function writeStepParam(params: URLSearchParams, stepIndex: number): URLSearchParams {
+  const next = new URLSearchParams(params)
+  if (stepIndex > 0) {
+    next.set(STEP_PARAM, String(stepIndex + 1))
+  } else {
+    next.delete(STEP_PARAM)
+  }
+  return next
 }
 
 /**
