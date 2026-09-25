@@ -5,9 +5,9 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { LOCALES } from '@/lib/i18n/locale'
-import { renderNotFound, renderPage } from './static-pages/lib'
+import { renderNotFound, renderPage, renderSitemap } from './static-pages/lib'
 import { plannedPages } from './static-pages/pages'
-import { SITE_URL } from './static-pages/site'
+import { OG_IMAGE, SITE_NAME, SITE_URL } from './static-pages/site'
 
 const distDir = path.resolve(import.meta.dirname, '..', 'dist')
 const template = await readFile(path.join(distDir, 'index.html'), 'utf8')
@@ -15,6 +15,8 @@ const template = await readFile(path.join(distDir, 'index.html'), 'utf8')
 for (const page of plannedPages()) {
   const html = renderPage(template, {
     siteUrl: SITE_URL,
+    siteName: SITE_NAME,
+    ogImage: OG_IMAGE,
     locales: LOCALES,
     locale: page.locale,
     route: page.route,
@@ -28,3 +30,7 @@ for (const page of plannedPages()) {
 
 await writeFile(path.join(distDir, '404.html'), renderNotFound(template))
 console.log('generated 404.html')
+
+const routes = [...new Set(plannedPages().map((page) => page.route))]
+await writeFile(path.join(distDir, 'sitemap.xml'), renderSitemap(SITE_URL, LOCALES, routes))
+console.log('generated sitemap.xml')

@@ -6,7 +6,7 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { DEFAULT_LOCALE, isLocale, LOCALES } from '@/lib/i18n/locale'
 import { plannedPages } from './static-pages/pages'
-import { BASE_PATH, SITE_URL } from './static-pages/site'
+import { BASE_PATH, OG_IMAGE, SITE_URL } from './static-pages/site'
 
 const distDir = path.resolve(import.meta.dirname, '..', 'dist')
 const failures: string[] = []
@@ -120,6 +120,44 @@ for (const file of files) {
   if (!html.includes(`src="${BASE_PATH}assets/`)) {
     fail(file, `アセットが ${BASE_PATH}assets/ から読み込まれていない`)
   }
+
+  // Open Graph と Twitter カード
+  for (const property of [
+    'og:type',
+    'og:site_name',
+    'og:title',
+    'og:description',
+    'og:url',
+    'og:locale',
+    'og:image',
+  ]) {
+    expectCount(file, html, new RegExp(`property="${property}" content="[^"]+"`), 1, property)
+  }
+  expectCount(file, html, /name="twitter:card" content="summary_large_image"/, 1, 'twitter:card')
+  if (!html.includes(`<meta property="og:url" content="${urlFor(locale, route)}" />`)) {
+    fail(file, `og:url が ${urlFor(locale, route)} ではない`)
+  }
+  if (!html.includes(`<meta property="og:image" content="${SITE_URL}${OG_IMAGE.path}" />`)) {
+    fail(file, 'og:image の URL が違う')
+  }
+}
+
+// OG 画像と sitemap.xml
+try {
+  await readFile(path.join(distDir, OG_IMAGE.path))
+} catch {
+  fail(OG_IMAGE.path, 'ファイルがない')
+}
+const sitemap = await readDist('sitemap.xml')
+if (sitemap !== null) {
+  const localized = files.filter((file) => parsePagePath(file).locale !== null)
+  for (const file of localized) {
+    const { locale, route } = parsePagePath(file)
+    if (!sitemap.includes(`<loc>${urlFor(locale, route)}</loc>`)) {
+      fail('sitemap.xml', `${urlFor(locale, route)} がない`)
+    }
+  }
+  expectCount('sitemap.xml', sitemap, /<loc>/, localized.length, '<loc>')
 }
 
 const notFound = await readDist('404.html')
