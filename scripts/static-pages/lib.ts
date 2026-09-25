@@ -7,7 +7,7 @@ export interface PageMeta {
 }
 
 /** OG の og:locale の値 */
-const OG_LOCALES: Readonly<Record<Locale, string>> = { en: 'en_US', ja: 'ja_JP' }
+export const OG_LOCALE: Readonly<Record<Locale, string>> = { en: 'en_US', ja: 'ja_JP' }
 
 interface RenderOptions {
   siteUrl: string
@@ -82,10 +82,8 @@ export function renderPage(template: string, options: RenderOptions): string {
   const description = escapeHtml(meta.description)
 
   const headTags = [
-    `<meta name="description" content="${escapeHtml(meta.description)}" />`,
-    ...(locale === null
-      ? []
-      : [`<link rel="canonical" href="${pageUrl(siteUrl, locale, route)}" />`]),
+    `<meta name="description" content="${description}" />`,
+    ...(locale === null ? [] : [`<link rel="canonical" href="${url}" />`]),
     ...locales.map(
       (alternate) =>
         `<link rel="alternate" hreflang="${alternate}" href="${pageUrl(siteUrl, alternate, route)}" />`,
@@ -97,15 +95,16 @@ export function renderPage(template: string, options: RenderOptions): string {
     `<meta property="og:title" content="${title}" />`,
     `<meta property="og:description" content="${description}" />`,
     `<meta property="og:url" content="${url}" />`,
-    `<meta property="og:locale" content="${OG_LOCALES[meta.lang]}" />`,
+    `<meta property="og:locale" content="${OG_LOCALE[meta.lang]}" />`,
     ...locales
       .filter((alternate) => alternate !== meta.lang)
       .map(
-        (alternate) => `<meta property="og:locale:alternate" content="${OG_LOCALES[alternate]}" />`,
+        (alternate) => `<meta property="og:locale:alternate" content="${OG_LOCALE[alternate]}" />`,
       ),
     `<meta property="og:image" content="${siteUrl}${ogImage.path}" />`,
     `<meta property="og:image:width" content="${String(ogImage.width)}" />`,
     `<meta property="og:image:height" content="${String(ogImage.height)}" />`,
+    `<meta property="og:image:alt" content="${escapeHtml(siteName)}" />`,
     `<meta name="twitter:card" content="summary_large_image" />`,
   ]
 
@@ -115,12 +114,7 @@ export function renderPage(template: string, options: RenderOptions): string {
     `<html lang="${meta.lang}">`,
     '<html lang>',
   )
-  html = replaceOnce(
-    html,
-    /<title>[^<]*<\/title>/,
-    `<title>${escapeHtml(meta.title)}</title>`,
-    '<title>',
-  )
+  html = replaceOnce(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, '<title>')
   html = replaceOnce(html, / *<\/head>/, `    ${headTags.join('\n    ')}\n  </head>`, '</head>')
   return html
 }
@@ -147,13 +141,13 @@ export function renderSitemap(
       const alternates = [
         ...locales.map(
           (alternate) =>
-            `    <xhtml:link rel="alternate" hreflang="${alternate}" href="${pageUrl(siteUrl, alternate, route)}" />`,
+            `    <xhtml:link rel="alternate" hreflang="${alternate}" href="${escapeHtml(pageUrl(siteUrl, alternate, route))}" />`,
         ),
-        `    <xhtml:link rel="alternate" hreflang="x-default" href="${pageUrl(siteUrl, null, route)}" />`,
+        `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeHtml(pageUrl(siteUrl, null, route))}" />`,
       ]
       return [
         '  <url>',
-        `    <loc>${pageUrl(siteUrl, locale, route)}</loc>`,
+        `    <loc>${escapeHtml(pageUrl(siteUrl, locale, route))}</loc>`,
         ...alternates,
         '  </url>',
       ].join('\n')

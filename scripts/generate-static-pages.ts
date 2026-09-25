@@ -12,7 +12,8 @@ import { OG_IMAGE, SITE_NAME, SITE_URL } from './static-pages/site'
 const distDir = path.resolve(import.meta.dirname, '..', 'dist')
 const template = await readFile(path.join(distDir, 'index.html'), 'utf8')
 
-for (const page of plannedPages()) {
+const pages = plannedPages()
+for (const page of pages) {
   const html = renderPage(template, {
     siteUrl: SITE_URL,
     siteName: SITE_NAME,
@@ -31,6 +32,6 @@ for (const page of plannedPages()) {
 await writeFile(path.join(distDir, '404.html'), renderNotFound(template))
 console.log('generated 404.html')
 
-const routes = [...new Set(plannedPages().map((page) => page.route))]
+const routes = [...new Set(pages.map((page) => page.route))]
 await writeFile(path.join(distDir, 'sitemap.xml'), renderSitemap(SITE_URL, LOCALES, routes))
 console.log('generated sitemap.xml')

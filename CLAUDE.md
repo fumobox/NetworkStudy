@@ -92,6 +92,7 @@ scripts/            ビルド後の静的ページ生成・検証（tsx で実�
 
 - GitHub Pages には SPA 用のフォールバックがないため、`build` の最後に「ロケール × ルート」と「ロケールなし × ルート」の `index.html`、および `404.html` を生成する（`lang`・`title`・`description`・`hreflang`、ロケール付きのページには `canonical` も埋め込む）
 - テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ）を足し、`src/content/registry.ts` に登録する。静的ページも自動で増える
+- 各ページに Open Graph と Twitter カードを入れ、`sitemap.xml`（hreflang 付き）も生成する。OG 画像は `public/og.png` で、元の HTML は `scripts/og/og.html`（作り直し方はそのファイルの先頭に書いてある）。robots.txt はプロジェクトサイトでは効かないので置かない
 - scripts は `tsconfig.scripts.json`（DOM なし）で型チェックされる。scripts から import してよい src は、DOM や `import.meta.env` に依存しないモジュール（`content/themeMeta.ts`、`lib/i18n/locale.ts`、`lib/i18n/messages/`）に限る
 
 ## 開発フロー
