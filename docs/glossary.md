@@ -71,6 +71,14 @@
 | loss / lost | ロス／失われる | |
 | port | ポート | |
 | congestion control | 輻輳制御 | |
+| sender / receiver | 送信側／受信側 | |
+| round (round trip) | ラウンド（往復） | 輻輳制御のテーマで、1 RTT 分のやり取り |
+| duplicate ACK | 重複 ACK | |
+| fast retransmit | 高速再送 | |
+| fast recovery | 高速リカバリ | |
+| congestion avoidance | 輻輳回避 | |
+| slow start threshold (ssthresh) | スロースタートのしきい値（ssthresh） | |
+| flight size | 送信中のデータ（FlightSize） | 送ったが累積の確認応答をまだ受けていない量 |
 | congestion window | 輻輳ウィンドウ（cwnd） | |
 | slow start | スロースタート | |
 | certificate | 証明書 | |
