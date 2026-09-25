@@ -12,6 +12,8 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       data-orientation={orientation}
+      // 生成コードは orientation を Root に渡しておらず aria-orientation / 矢印キー方向が常に horizontal になるため追加
+      orientation={orientation}
       className={cn(
         "group/tabs flex gap-2 data-horizontal:flex-col",
         className
