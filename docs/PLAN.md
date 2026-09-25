@@ -270,7 +270,7 @@ export const ja = {
 
 - `vite.config.ts` に `base: "/NetworkStudy/"` を設定する
 - **直リンク対策**: ビルド後に `scripts/generate-static-pages.ts` で、ロケール × テーマの組み合わせごとに `dist/{en,ja}/index.html` と `dist/{en,ja}/themes/<id>/index.html` を複製する。どの URL も 200 で返るため、検索エンジンにも拾われる
-- 複製時に `<html lang>`、`<title>`、`description`、`canonical`、`hreflang`（en / ja / x-default）を埋め込む。OG メタは Phase 2（2-12）で追加する
+- 複製時に `<html lang>`、`<title>`、`description`、`canonical`、`hreflang`（en / ja / x-default）を埋め込む。OG メタと Twitter カード、sitemap.xml も生成する（#66）
 - ロケールなしのページ（`/`、`/themes/<id>/`）もルートごとに生成する（x-default の参照先。SPA がロケール付きの URL へリダイレクトする）
 - 未知のパス用に `404.html` も置く（中身は SPA のエントリと同じ）
 - デプロイは ci.yml の deploy job で行う。main への push のとき、check job（検証・ビルド）が通った後にだけ実行する

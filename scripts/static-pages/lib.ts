@@ -6,8 +6,13 @@ export interface PageMeta {
   description: string
 }
 
+/** OG の og:locale の値 */
+export const OG_LOCALE: Readonly<Record<Locale, string>> = { en: 'en_US', ja: 'ja_JP' }
+
 interface RenderOptions {
   siteUrl: string
+  siteName: string
+  ogImage: { readonly path: string; readonly width: number; readonly height: number }
   locales: readonly Locale[]
   /** ロケール付きのページなら そのロケール、ルートのリダイレクト用ページなら null */
   locale: Locale | null
@@ -55,6 +60,8 @@ const GENERATED_MARKERS = [
   'rel="canonical"',
   'rel="alternate"',
   'name="robots"',
+  'property="og:',
+  'name="twitter:',
 ]
 
 function assertPristine(template: string): void {
@@ -68,19 +75,37 @@ function assertPristine(template: string): void {
 
 /** ビルド済みの index.html をもとに、ロケール・ルートごとの HTML を作る */
 export function renderPage(template: string, options: RenderOptions): string {
-  const { siteUrl, locales, locale, route, meta } = options
+  const { siteUrl, siteName, ogImage, locales, locale, route, meta } = options
   assertPristine(template)
+  const url = pageUrl(siteUrl, locale, route)
+  const title = escapeHtml(meta.title)
+  const description = escapeHtml(meta.description)
 
   const headTags = [
-    `<meta name="description" content="${escapeHtml(meta.description)}" />`,
-    ...(locale === null
-      ? []
-      : [`<link rel="canonical" href="${pageUrl(siteUrl, locale, route)}" />`]),
+    `<meta name="description" content="${description}" />`,
+    ...(locale === null ? [] : [`<link rel="canonical" href="${url}" />`]),
     ...locales.map(
       (alternate) =>
         `<link rel="alternate" hreflang="${alternate}" href="${pageUrl(siteUrl, alternate, route)}" />`,
     ),
     `<link rel="alternate" hreflang="x-default" href="${pageUrl(siteUrl, null, route)}" />`,
+    // SNS で共有されたときの表示（Open Graph と Twitter カード）
+    `<meta property="og:type" content="website" />`,
+    `<meta property="og:site_name" content="${escapeHtml(siteName)}" />`,
+    `<meta property="og:title" content="${title}" />`,
+    `<meta property="og:description" content="${description}" />`,
+    `<meta property="og:url" content="${url}" />`,
+    `<meta property="og:locale" content="${OG_LOCALE[meta.lang]}" />`,
+    ...locales
+      .filter((alternate) => alternate !== meta.lang)
+      .map(
+        (alternate) => `<meta property="og:locale:alternate" content="${OG_LOCALE[alternate]}" />`,
+      ),
+    `<meta property="og:image" content="${siteUrl}${ogImage.path}" />`,
+    `<meta property="og:image:width" content="${String(ogImage.width)}" />`,
+    `<meta property="og:image:height" content="${String(ogImage.height)}" />`,
+    `<meta property="og:image:alt" content="${escapeHtml(siteName)}" />`,
+    `<meta name="twitter:card" content="summary_large_image" />`,
   ]
 
   let html = replaceOnce(
@@ -89,12 +114,7 @@ export function renderPage(template: string, options: RenderOptions): string {
     `<html lang="${meta.lang}">`,
     '<html lang>',
   )
-  html = replaceOnce(
-    html,
-    /<title>[^<]*<\/title>/,
-    `<title>${escapeHtml(meta.title)}</title>`,
-    '<title>',
-  )
+  html = replaceOnce(html, /<title>[^<]*<\/title>/, `<title>${title}</title>`, '<title>')
   html = replaceOnce(html, / *<\/head>/, `    ${headTags.join('\n    ')}\n  </head>`, '</head>')
   return html
 }
@@ -108,4 +128,36 @@ export function renderNotFound(template: string): string {
     '    <meta name="robots" content="noindex" />\n  </head>',
     '</head>',
   )
+}
+
+/** sitemap.xml を作る。ロケール付きのページだけを載せ、各 URL に hreflang の対応を付ける */
+export function renderSitemap(
+  siteUrl: string,
+  locales: readonly Locale[],
+  routes: readonly string[],
+): string {
+  const urls = routes.flatMap((route) =>
+    locales.map((locale) => {
+      const alternates = [
+        ...locales.map(
+          (alternate) =>
+            `    <xhtml:link rel="alternate" hreflang="${alternate}" href="${escapeHtml(pageUrl(siteUrl, alternate, route))}" />`,
+        ),
+        `    <xhtml:link rel="alternate" hreflang="x-default" href="${escapeHtml(pageUrl(siteUrl, null, route))}" />`,
+      ]
+      return [
+        '  <url>',
+        `    <loc>${escapeHtml(pageUrl(siteUrl, locale, route))}</loc>`,
+        ...alternates,
+        '  </url>',
+      ].join('\n')
+    }),
+  )
+  return [
+    '<?xml version="1.0" encoding="UTF-8"?>',
+    '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
+    ...urls,
+    '</urlset>',
+    '',
+  ].join('\n')
 }

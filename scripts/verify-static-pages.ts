@@ -6,7 +6,8 @@ import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { DEFAULT_LOCALE, isLocale, LOCALES } from '@/lib/i18n/locale'
 import { plannedPages } from './static-pages/pages'
-import { BASE_PATH, SITE_URL } from './static-pages/site'
+import { BASE_PATH, OG_IMAGE, SITE_URL } from './static-pages/site'
+import { OG_LOCALE } from './static-pages/lib'
 
 const distDir = path.resolve(import.meta.dirname, '..', 'dist')
 const failures: string[] = []
@@ -119,6 +120,68 @@ for (const file of files) {
 
   if (!html.includes(`src="${BASE_PATH}assets/`)) {
     fail(file, `アセットが ${BASE_PATH}assets/ から読み込まれていない`)
+  }
+
+  // Open Graph と Twitter カード
+  for (const property of [
+    'og:type',
+    'og:site_name',
+    'og:title',
+    'og:description',
+    'og:url',
+    'og:locale',
+    'og:image',
+  ]) {
+    expectCount(file, html, new RegExp(`property="${property}" content="[^"]+"`), 1, property)
+  }
+  expectCount(file, html, /name="twitter:card" content="summary_large_image"/, 1, 'twitter:card')
+  if (!html.includes(`<meta property="og:url" content="${urlFor(locale, route)}" />`)) {
+    fail(file, `og:url が ${urlFor(locale, route)} ではない`)
+  }
+  if (!html.includes(`<meta property="og:image" content="${SITE_URL}${OG_IMAGE.path}" />`)) {
+    fail(file, 'og:image の URL が違う')
+  }
+  const lang = locale ?? DEFAULT_LOCALE
+  if (!html.includes(`<meta property="og:locale" content="${OG_LOCALE[lang]}" />`)) {
+    fail(file, `og:locale が ${OG_LOCALE[lang]} ではない`)
+  }
+  expectCount(
+    file,
+    html,
+    /property="og:locale:alternate"/,
+    LOCALES.length - 1,
+    'og:locale:alternate',
+  )
+}
+
+// OG 画像: PNG の IHDR（オフセット 16 から幅・高さが 4 バイトずつ big-endian）を読んで、og:image:width / height と照らし合わせる
+try {
+  const image = await readFile(path.join(distDir, OG_IMAGE.path))
+  const [width, height] = [image.readUInt32BE(16), image.readUInt32BE(20)]
+  if (width !== OG_IMAGE.width || height !== OG_IMAGE.height) {
+    fail(
+      OG_IMAGE.path,
+      `大きさが ${String(width)}×${String(height)}（期待値 ${String(OG_IMAGE.width)}×${String(OG_IMAGE.height)}）`,
+    )
+  }
+} catch (error) {
+  if (!isEnoent(error)) throw error
+  fail(OG_IMAGE.path, 'ファイルがない')
+}
+const sitemap = await readDist('sitemap.xml')
+if (sitemap !== null) {
+  const localized = files.filter((file) => parsePagePath(file).locale !== null)
+  for (const file of localized) {
+    const { locale, route } = parsePagePath(file)
+    if (!sitemap.includes(`<loc>${urlFor(locale, route)}</loc>`)) {
+      fail('sitemap.xml', `${urlFor(locale, route)} がない`)
+    }
+  }
+  expectCount('sitemap.xml', sitemap, /<loc>/, localized.length, '<loc>')
+  for (const [, href = ''] of sitemap.matchAll(
+    /xhtml:link rel="alternate" hreflang="[^"]+" href="([^"]+)"/g,
+  )) {
+    checkHrefTarget('sitemap.xml', href)
   }
 }
 
