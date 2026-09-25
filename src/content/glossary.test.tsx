@@ -5,6 +5,7 @@ import { collectQuizTexts } from '@/components/features/quiz/validate'
 import { collectLocalizedTexts } from '@/engine/validate'
 import { ja } from '@/lib/i18n/messages/ja'
 import { THEMES } from './registry'
+import { CERT_CHAIN_TEXT } from './tls-handshake/certChainText'
 import { THEME_META } from './themeMeta'
 
 // docs/glossary.md の表記の規則のうち、機械的に確かめられるものを日本語の文章すべてについて検査する
@@ -24,8 +25,8 @@ const FORBIDDEN: readonly { readonly pattern: RegExp; readonly use: string }[] =
   { pattern: /[Ａ-Ｚａ-ｚ０-９]/, use: '半角英数字' },
 ]
 
-// かな・漢字（「・」と「ー」は含めない）と半角英数字が、スペースなしで隣り合っている
-const JAPANESE = '[\\u3041-\\u3096\\u30A1-\\u30FA\\u4E00-\\u9FFF]'
+// かな（長音の「ー」を含み、「・」は含めない）・漢字と半角英数字が、スペースなしで隣り合っている
+const JAPANESE = '[\\u3041-\\u3096\\u30A1-\\u30FA\\u30FC\\u4E00-\\u9FFF]'
 const MISSING_SPACE = new RegExp(`${JAPANESE}[A-Za-z0-9]|[A-Za-z0-9]${JAPANESE}`)
 
 interface JapaneseText {
@@ -46,10 +47,20 @@ function findGlossaryProblems(texts: readonly JapaneseText[]): string[] {
   })
 }
 
-/** 辞書の文字列を集める（引数を取る関数の文言は、埋め込みの前後が固定の文字列なので対象外） */
+/**
+ * 関数の文言に渡す引数。どのプロパティを読んでも、英字の目印を返す（数値の引数も String() で文字列になる）。
+ * 埋め込みの前後の固定の文字列と、埋め込みとの間のスペースを検査するため
+ */
+const PLACEHOLDER_ARGS = new Proxy({}, { get: () => 'X' })
+
+/** 辞書の文字列を集める。関数は目印の引数で呼び出した結果を検査する */
 function collectMessageTexts(value: unknown, path: string): JapaneseText[] {
   if (typeof value === 'string') {
     return [{ path, text: value }]
+  }
+  if (typeof value === 'function') {
+    const result: unknown = Reflect.apply(value, undefined, [PLACEHOLDER_ARGS])
+    return collectMessageTexts(result, `${path}()`)
   }
   if (Array.isArray(value)) {
     return value.flatMap((item, i) => collectMessageTexts(item, `${path}[${String(i)}]`))
@@ -60,6 +71,17 @@ function collectMessageTexts(value: unknown, path: string): JapaneseText[] {
     )
   }
   return []
+}
+
+/** テーマ固有のパネルの文言（入れ子の LocalizedText）から、日本語を集める */
+function collectJapanese(value: unknown, path: string): JapaneseText[] {
+  if (typeof value !== 'object' || value === null) {
+    return []
+  }
+  if ('ja' in value && typeof value.ja === 'string') {
+    return [{ path, text: value.ja }]
+  }
+  return Object.entries(value).flatMap(([key, item]) => collectJapanese(item, `${path}.${key}`))
 }
 
 describe('用語集（docs/glossary.md）の表記', () => {
@@ -73,21 +95,24 @@ describe('用語集（docs/glossary.md）の表記', () => {
         { path: 'variant', text: 'サーバがリゾルバに問い合わせる' },
         { path: 'space', text: 'TCPの接続' },
         { path: 'fullwidth', text: 'ＳＹＮ を送る' },
+        { path: 'long-vowel', text: 'サーバーA' },
       ]),
     ).toEqual([
       'variant: サーバ → サーバー',
       'variant: リゾルバ → リゾルバー',
       'space: 日本語と英数字の間にスペースがない（Pの）',
       'fullwidth: Ｓ → 半角英数字',
+      'long-vowel: 日本語と英数字の間にスペースがない（ーA）',
     ])
   })
 
-  it('シナリオ・クイズ・メタ情報', () => {
+  it('シナリオ・クイズ・メタ情報・テーマ固有のパネル', () => {
     const texts = [
       ...THEME_META.flatMap((meta) => [
         { path: `${meta.id}.title`, text: meta.title.ja },
         { path: `${meta.id}.summary`, text: meta.summary.ja },
       ]),
+      ...collectJapanese(CERT_CHAIN_TEXT, 'tls-handshake.CertChainPanel'),
       ...THEMES.flatMap((theme) =>
         [...collectLocalizedTexts(theme.scenario), ...collectQuizTexts(theme.quiz)].map(
           (entry) => ({ path: `${theme.meta.id}.${entry.path}`, text: entry.text.ja }),
@@ -101,6 +126,10 @@ describe('用語集（docs/glossary.md）の表記', () => {
   it('UI の辞書', () => {
     const texts = collectMessageTexts(ja, 'ja')
     expect(texts.length).toBeGreaterThan(50)
+    // 関数の文言も対象になっている
+    expect(texts.find((entry) => entry.path === 'ja.stepper.counter()')?.text).toBe(
+      'ステップ X / X',
+    )
     expect(findGlossaryProblems(texts)).toEqual([])
   })
 

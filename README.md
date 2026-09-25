@@ -1,7 +1,7 @@
 # NetworkStudy
 
 An interactive portal for learning how network protocols work, one packet at a time.
-ネットワークプロトコルの動きを、1パケットずつ自分の手で進めて学ぶインタラクティブな学習サイトです。
+ネットワークプロトコルの動きを、1 パケットずつ自分の手で進めて学ぶインタラクティブな学習サイトです。
 
 ## Topics / テーマ
 

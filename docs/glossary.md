@@ -2,7 +2,7 @@
 
 サイトに表示する文章（シナリオ、クイズ、概要の MDX、UI の辞書、テーマのメタ情報）の訳語と表記をそろえるための一覧。コードのコメントや開発者向けのドキュメントは対象外。
 
-新しいテーマを書くときや文言を変えるときは、この用語集に従う。載っていない用語を使うときは、ここに追記する。機械的に確かめられる規則は `src/content/glossary.test.ts` で検査している。
+新しいテーマを書くときや文言を変えるときは、この用語集に従う。載っていない用語を使うときは、ここに追記する。機械的に確かめられる規則は `src/content/glossary.test.tsx` で検査している。
 
 ## 1. 表記の規則
 
@@ -13,7 +13,7 @@
 | 英数字は半角にする（全角英数字を使わない） | `SYN`（`ＳＹＮ` としない） | ○ |
 | 日本語の文中の括弧は全角「（）」にする。式やコードの括弧は半角のまま | `TTL（有効期限）`、`min(SOA の TTL, SOA の MINIMUM)` | × |
 | シナリオ・クイズ・概要の文末は常体（だ・である）か体言止めにする。UI の案内文（辞書）は敬体（です・ます）にする | 「ポートが閉じている」／「まだ表示するメッセージはありません。」 | × |
-| 強調（`**…**`）は全角の記号の直後で閉じない（CommonMark の規則で太字にならない）。記号は強調の外に出す | `**委任**（referral）` | ○（`overview.test.tsx`） |
+| 強調（`**…**`）は全角の記号の直後で閉じない（CommonMark の規則で太字にならない）。記号は強調の外に出す | `**紹介**（委任）` | ○（`overview.test.tsx`） |
 
 ## 2. 翻訳しない用語
 
@@ -27,7 +27,7 @@
 | DNS のメッセージ・フィールド | QNAME、QTYPE、ID、QR、RD、RA、AA、RCODE、NOERROR、NXDOMAIN、SERVFAIL、TTL |
 | DNS のレコード | A、AAAA、NS、CNAME、SOA、MX |
 | TLS 1.3 のメッセージ | ClientHello、ServerHello、EncryptedExtensions、Certificate、CertificateVerify、Finished、Alert |
-| TLS の拡張・値 | key_share、supported_versions、signature_algorithms、server_name（SNI）、certificate_expired、bad_certificate、unknown_ca |
+| TLS の拡張・値 | key_share、supported_versions、signature_algorithms、server_name（SNI）、certificate_expired、certificate_unknown、unknown_ca |
 | 証明書 | SAN（subjectAltName）、CA、X.509 |
 | その他 | IP、IPv4、HTTP、HTTPS、URL、RFC、OSI、CIDR |
 
@@ -44,7 +44,8 @@
 | root server | ルートサーバー | |
 | name server | ネームサーバー | |
 | top-level domain (TLD) | トップレベルドメイン（TLD） | |
-| referral / delegation | 委任 | |
+| referral | 紹介 | 担当のサーバーを教える応答（委任の応答） |
+| delegation | 委任 | ゾーンの管理を下位のサーバーに任せること |
 | query | 問い合わせ | フィールド名の QNAME などは訳さない |
 | response / answer | 応答 | |
 | cache | キャッシュ | |
@@ -53,7 +54,7 @@
 | browser | ブラウザー | |
 | handshake | ハンドシェイク | 「ハンドシェーク」としない |
 | three-way handshake | 3 ウェイハンドシェイク | |
-| four-way close | 4 ウェイクローズ | |
+| four-way close | 4 ウェイクローズ | 定着した訳語ではないので、初出で「接続の終了（4 つのセグメントのやり取り）」と説明を添える |
 | segment | セグメント | TCP の単位。IP の単位は「パケット」 |
 | packet | パケット | |
 | sequence number | シーケンス番号 | |
