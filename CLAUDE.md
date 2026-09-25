@@ -35,7 +35,7 @@ src/
 ├── components/
 │   ├── ui/         shadcn/ui の生成コード
 │   ├── layout/     AppLayout, Header, Footer, LanguageSwitcher
-│   └── features/   クイズ（quiz/）、テーマカード（theme-card/）
+│   └── features/   クイズ（quiz/）、テーマカード（theme-card/）、概要（overview/）
 ├── content/        テーマごとのシナリオ・クイズ（themeMeta.ts にメタ情報、registry.ts に登録）
 ├── engine/         シーケンスエンジン（型・導出・検証・プレイヤー・UI）
 ├── lib/            汎用処理（i18n/, hooks/, storage.ts, utils.ts）
@@ -72,6 +72,7 @@ scripts/            ビルド後の静的ページ生成・検証（tsx で実�
 - シナリオ・クイズの文章は `LocalizedText`（`{ en, ja }`）としてデータに直接持たせ、表示時に `useText()` で解決する
 - 型が `LocalizedText` なら翻訳する、`ProtocolTerm`（`SYN`、`ClientHello`、`QNAME` など。`engine/types.ts` に定義予定）なら翻訳しない
 - リンクは `localePath(locale, path)` でロケール付きのパスを作る
+- テーマの概要は `src/content/<theme>/overview.{en,ja}.mdx` に書き、`index.ts` の `overview` に `lazy` で登録する。見出しは h2（`##`）から始める（ページの h1 はテーマ名）。MDX の文言は lint で検査されないので、英日の内容の差はレビューで確認する。日本語では `**…）**で` のように全角の記号の直後で強調を閉じると太字にならない（CommonMark の規則）ので、記号は強調の外に出す
 
 ## 学習コンテンツの正確性
 

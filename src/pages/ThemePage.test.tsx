@@ -56,6 +56,18 @@ describe('ThemePage', () => {
     })
   })
 
+  it('表示中のロケールの概要（MDX）を読み込んで表示する', async () => {
+    renderAt('/ja/themes/tcp-handshake')
+    expect(
+      await screen.findByRole('heading', { level: 2, name: 'なぜハンドシェイクが必要か' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Why a handshake?' })).toBeNull()
+    expect(screen.getByRole('link', { name: /RFC 9293/ })).toHaveAttribute(
+      'href',
+      'https://www.rfc-editor.org/rfc/rfc9293',
+    )
+  })
+
   it('URL の ?step= と opt.* から始める', () => {
     renderAt('/ja/themes/tcp-handshake?opt.serverPort=closed&step=3')
     expect(screen.getByText('ステップ 3 / 4')).toBeInTheDocument()

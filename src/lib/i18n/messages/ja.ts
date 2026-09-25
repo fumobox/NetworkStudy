@@ -86,6 +86,8 @@ export const ja = {
     },
     minutes: (p) => `約 ${String(p.minutes)} 分`,
     player: 'ステップ実行',
+    overview: '概要',
+    loading: '読み込み中…',
   },
   notFound: {
     title: 'ページが見つかりません',
