@@ -215,7 +215,7 @@ function normalRound(
           },
       description: slowStart
         ? {
-            en: `The sender sends ${String(cwnd)} segment(s). In slow start, each ACK increases cwnd by one segment, so cwnd doubles every round trip${nextCwnd === ssthresh ? ` until it reaches ssthresh (${String(ssthresh)}). From the next round, the sender switches to congestion avoidance` : ''}.`,
+            en: `The sender sends ${String(cwnd)} ${cwnd === 1 ? 'segment' : 'segments'}. In slow start, each ACK increases cwnd by one segment, so cwnd doubles every round trip${nextCwnd === ssthresh ? ` until it reaches ssthresh (${String(ssthresh)}). From the next round, the sender switches to congestion avoidance` : ''}.`,
             ja: `送信側は ${String(cwnd)} 個のセグメントを送る。スロースタートでは ACK が 1 つ届くたびに cwnd が 1 増えるので、cwnd は 1 往復ごとに倍になる${nextCwnd === ssthresh ? `。ssthresh（${String(ssthresh)}）に達したので、次のラウンドからは輻輳回避に移る` : ''}。`,
           }
         : {
@@ -286,12 +286,17 @@ function buildSteps(options: TcpCongestionOptions): readonly Step[] {
 
   // ラウンド 4: cwnd = 8 で送ったセグメントの一部（dupack）またはすべて（rto）が失われる
   const first = next
-  const flight = cwnd
-  const halved = Math.max(Math.floor(flight / 2), 2)
+  // このラウンドで送ったセグメントの数（cwnd と同じ）
+  const sent = cwnd
+  /** RFC 5681 の式（3）: ssthresh = max(FlightSize / 2, 2 SMSS)。FlightSize は、送ったが累積の確認応答をまだ受けていない量（cwnd ではない） */
+  const halve = (flightSize: number) => Math.max(Math.floor(flightSize / 2), 2)
 
   if (options.loss === 'dupack') {
     const lost = first + 2
-    const after = first + flight - lost - 1
+    const after = first + sent - lost - 1
+    // 3 つ目の重複 ACK の時点で、lost 〜 最後のセグメントが確認応答されていない（lost より前は ACK 済み）
+    const flight = first + sent - lost
+    const halved = halve(flight)
     steps.push({
       id: 'round-4',
       title: {
@@ -299,8 +304,8 @@ function buildSteps(options: TcpCongestionOptions): readonly Step[] {
         ja: `ラウンド 4: セグメント ${String(lost)} が失われる`,
       },
       description: {
-        en: `The sender sends ${String(flight)} segments, and segment ${String(lost)} is lost. The receiver acknowledges up to ${String(lost - 1)} normally. Every later segment is out of order, so each one gets a duplicate ACK that asks for ${String(lost)} again.`,
-        ja: `送信側は ${String(flight)} 個のセグメントを送り、セグメント ${String(lost)} が失われる。受信側は ${String(lost - 1)} までは普通に確認応答する。その後のセグメントは順番が抜けているので、どれにも ${String(lost)} をもう一度求める重複 ACK を返す。`,
+        en: `The sender sends ${String(sent)} segments, and segment ${String(lost)} is lost. The receiver acknowledges up to ${String(lost - 1)} normally. Every later segment is out of order, so each one gets a duplicate ACK that asks for ${String(lost)} again.`,
+        ja: `送信側は ${String(sent)} 個のセグメントを送り、セグメント ${String(lost)} が失われる。受信側は ${String(lost - 1)} までは普通に確認応答する。その後のセグメントは順番が抜けているので、どれにも ${String(lost)} をもう一度求める重複 ACK を返す。`,
       },
       events: [
         send(dataMessage('data-4', first, 2, 'delivered')),
@@ -317,7 +322,7 @@ function buildSteps(options: TcpCongestionOptions): readonly Step[] {
             2 + after,
           ),
         ),
-        history.record({ cwnd: flight, ssthresh, event: EVENTS.fastRetransmit }),
+        history.record({ cwnd: sent, ssthresh, event: EVENTS.fastRetransmit }),
       ],
     })
     const inflated = halved + 3
@@ -329,8 +334,8 @@ function buildSteps(options: TcpCongestionOptions): readonly Step[] {
           ja: '重複 ACK が 3 つ届いた: 高速再送',
         },
         description: {
-          en: `Three duplicate ACKs strongly suggest that one segment was lost while later ones still arrive. Without waiting for the RTO, the sender retransmits segment ${String(lost)}, halves ssthresh (${String(flight)} / 2 = ${String(halved)}), and sets cwnd to ssthresh + 3 = ${String(inflated)} for fast recovery. (Each further duplicate ACK temporarily inflates cwnd by one; this page leaves that out.)`,
-          ja: `重複 ACK が 3 つ届くのは、1 つのセグメントが失われ、後のセグメントは届いているしるし。送信側は RTO を待たずにセグメント ${String(lost)} を再送し、ssthresh を半分（${String(flight)} / 2 = ${String(halved)}）にして、高速リカバリのため cwnd を ssthresh + 3 = ${String(inflated)} にする（その後の重複 ACK のたびに cwnd を一時的に 1 ずつ増やすが、このページでは省略する）。`,
+          en: `Three duplicate ACKs strongly suggest that one segment was lost while later ones still arrive. Without waiting for the RTO, the sender retransmits segment ${String(lost)} and sets ssthresh to half of the data in flight: segments ${range(lost, flight)} (${String(flight)} segments) are sent but not yet acknowledged, so ${String(flight)} / 2 = ${String(halved)}. It then sets cwnd to ssthresh + 3 = ${String(inflated)} for fast recovery. (Each further duplicate ACK temporarily inflates cwnd by one; this page leaves that out.)`,
+          ja: `重複 ACK が 3 つ届くのは、1 つのセグメントが失われ、後のセグメントは届いているしるし。送信側は RTO を待たずにセグメント ${String(lost)} を再送し、ssthresh を送信中のデータの半分にする。セグメント ${range(lost, flight)}（${String(flight)} 個）が送ったまま確認応答されていないので、${String(flight)} / 2 = ${String(halved)}。そして高速リカバリのため cwnd を ssthresh + 3 = ${String(inflated)} にする（その後の重複 ACK のたびに cwnd を一時的に 1 ずつ増やすが、このページでは省略する）。`,
         },
         events: [
           send(dataMessage('data-rtx', lost, 1, 'delivered', { retransmitOf: 'data-4-lost' })),
@@ -345,14 +350,14 @@ function buildSteps(options: TcpCongestionOptions): readonly Step[] {
           ja: `再送が確認応答される（cwnd → ${String(halved)}）`,
         },
         description: {
-          en: `The retransmitted segment fills the gap, so the receiver acknowledges everything up to segment ${String(first + flight - 1)} at once. Fast recovery ends and cwnd is set back to ssthresh (${String(halved)}). The sender continues in congestion avoidance, without going back to slow start.`,
-          ja: `再送したセグメントで抜けが埋まったので、受信側はセグメント ${String(first + flight - 1)} までをまとめて確認応答する。高速リカバリが終わり、cwnd は ssthresh（${String(halved)}）に戻る。送信側はスロースタートに戻らず、輻輳回避を続ける。`,
+          en: `The retransmitted segment fills the gap, so the receiver acknowledges everything up to segment ${String(first + sent - 1)} at once. Fast recovery ends and cwnd is set back to ssthresh (${String(halved)}). The sender continues in congestion avoidance, without going back to slow start.`,
+          ja: `再送したセグメントで抜けが埋まったので、受信側はセグメント ${String(first + sent - 1)} までをまとめて確認応答する。高速リカバリが終わり、cwnd は ssthresh（${String(halved)}）に戻る。送信側はスロースタートに戻らず、輻輳回避を続ける。`,
         },
         events: [
           send(
             ackMessage(
               'ack-rtx',
-              String(first + flight),
+              String(first + sent),
               {
                 en: 'A cumulative ACK for everything received so far.',
                 ja: 'ここまでに受け取ったすべてへの累積の ACK。',
@@ -364,14 +369,16 @@ function buildSteps(options: TcpCongestionOptions): readonly Step[] {
         ],
       },
     )
-    next = first + flight
+    next = first + sent
     cwnd = halved
     ssthresh = halved
     addRounds(5, 6)
     return steps
   }
 
-  // rto: 重複 ACK が 3 つ届かない（ここではラウンドのセグメントがすべて失われる）
+  // rto: 重複 ACK が 3 つ届かない（ここではラウンドのセグメントがすべて失われる）。どれも確認応答されていないので、FlightSize = sent
+  const flight = sent
+  const halved = halve(flight)
   steps.push(
     {
       id: 'round-4',
@@ -395,8 +402,8 @@ function buildSteps(options: TcpCongestionOptions): readonly Step[] {
         ja: 'ラウンド 5: RTO が満了し、スロースタートからやり直す（cwnd 1 → 2）',
       },
       description: {
-        en: `The retransmission timer expires. The sender takes this as a sign of heavy congestion: it halves ssthresh (${String(flight)} / 2 = ${String(halved)}), drops cwnd to 1 segment, and retransmits the first unacknowledged segment (${String(first)}). It then goes through slow start again.`,
-        ja: `再送タイマーが満了する。送信側はこれを激しい輻輳のしるしと受け取り、ssthresh を半分（${String(flight)} / 2 = ${String(halved)}）にし、cwnd を 1 セグメントまで下げて、確認応答されていない最初のセグメント（${String(first)}）を再送する。そこからもう一度スロースタートする。`,
+        en: `The retransmission timer expires. The sender takes this as a sign of heavy congestion: it sets ssthresh to half of the data in flight (none of the ${String(flight)} segments was acknowledged, so ${String(flight)} / 2 = ${String(halved)}), drops cwnd to 1 segment, and retransmits the first unacknowledged segment (${String(first)}). It then goes through slow start again, resending segments ${range(first + 1, flight - 1)} before any new data.`,
+        ja: `再送タイマーが満了する。送信側はこれを激しい輻輳のしるしと受け取り、ssthresh を送信中のデータの半分にし（${String(flight)} 個のセグメントがどれも確認応答されていないので ${String(flight)} / 2 = ${String(halved)}）、cwnd を 1 セグメントまで下げて、確認応答されていない最初のセグメント（${String(first)}）を再送する。そこからもう一度スロースタートし、新しいデータより先にセグメント ${range(first + 1, flight - 1)} を送り直す。`,
       },
       events: [
         { kind: 'timer', actorId: SENDER, name: 'RTO', durationMs: RTO_MS },
@@ -429,7 +436,7 @@ export const tcpCongestionScenario: Scenario<TcpCongestionOptions> = {
   optionDefs: {
     loss: {
       kind: 'select',
-      label: { en: 'Packet loss in round 4', ja: 'ラウンド 4 でのパケットロス' },
+      label: { en: 'Segment loss in round 4', ja: 'ラウンド 4 でのセグメントのロス' },
       description: {
         en: 'See how the sender reacts to a single lost segment and to a timeout.',
         ja: 'セグメントが 1 つ失われたときと、タイムアウトしたときの送信側の反応を確かめる。',

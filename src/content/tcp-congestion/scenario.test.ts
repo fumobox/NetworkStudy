@@ -34,7 +34,36 @@ function rounds(steps: readonly Step[]) {
   return typeof table === 'object' ? table.rows : []
 }
 
+/** 送ったセグメントと ACK の番号（フィールドの値）を順に */
+function numbers(steps: readonly Step[], from: 'client' | 'server') {
+  return messages(steps)
+    .filter((message) => message.from === from)
+    .map((message) => message.fields[0]?.value)
+}
+
 describe('tcpCongestionScenario', () => {
+  it.each([
+    [
+      'none',
+      ['1', '2–3', '4–7', '8–15', '16–24', '25–34'],
+      ['2', '3–4', '5–8', '9–16', '17–25', '26–35'],
+    ],
+    [
+      'dupack',
+      ['1', '2–3', '4–7', '8–9', '10', '11–15', '10', '16–18', '19–22'],
+      ['2', '3–4', '5–8', '9–10, 10 ×5 (dup)', '16', '17–19', '20–23'],
+    ],
+    [
+      'rto',
+      ['1', '2–3', '4–7', '8–15', '8', '9–10', '11–14'],
+      ['2', '3–4', '5–8', '9', '10–11', '12–15'],
+    ],
+  ] as const)('%s: セグメントと ACK の番号', (loss, segments, acks) => {
+    const steps = build(loss)
+    expect(numbers(steps, 'client')).toEqual(segments)
+    expect(numbers(steps, 'server')).toEqual(acks)
+  })
+
   it('すべてのオプションで整合している', () => {
     expect(validateScenario(handle)).toEqual([])
   })
@@ -58,20 +87,12 @@ describe('tcpCongestionScenario', () => {
       ])
       expect(windowHistory(steps).at(-1)).toEqual(['11', '8'])
     })
-
-    it('ラウンドごとに cwnd 個のセグメントを続きの番号で送る', () => {
-      expect(
-        messages(steps)
-          .filter((message) => message.from === 'client')
-          .map((message) => message.fields[0]?.value),
-      ).toEqual(['1', '2–3', '4–7', '8–15', '16–24', '25–34'])
-    })
   })
 
   describe('1 つのロスと 3 つの重複 ACK（RFC 5681 §3.2）', () => {
     const steps = build('dupack')
 
-    it('高速再送で ssthresh = 8 / 2 = 4、cwnd = ssthresh + 3 = 7、回復したら cwnd = 4', () => {
+    it('高速再送で ssthresh = FlightSize（10〜15 の 6 個）/ 2 = 3、cwnd = ssthresh + 3 = 6、回復したら cwnd = 3', () => {
       expect(steps.map((step) => step.id)).toEqual([
         'start',
         'round-1',
@@ -85,10 +106,10 @@ describe('tcpCongestionScenario', () => {
       ])
       expect(windowHistory(steps).slice(4)).toEqual([
         ['8', '8'],
-        ['7', '4'],
-        ['4', '4'],
-        ['5', '4'],
-        ['6', '4'],
+        ['6', '3'],
+        ['3', '3'],
+        ['4', '3'],
+        ['5', '3'],
       ])
     })
 
@@ -112,8 +133,8 @@ describe('tcpCongestionScenario', () => {
         ['2', '2', '8', 'slow start'],
         ['3', '4', '8', 'slow start'],
         ['4', '8', '8', '3 dup ACKs'],
-        ['5', '4', '4', 'congestion avoidance'],
-        ['6', '5', '4', 'congestion avoidance'],
+        ['5', '3', '3', 'congestion avoidance'],
+        ['6', '4', '3', 'congestion avoidance'],
       ])
     })
   })
