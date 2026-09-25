@@ -124,6 +124,10 @@ describe('SubnetCalculator', () => {
     await user.type(prefix, '8')
     expect(prefix).toHaveValue(8)
     expect(location()).toBe('?ip=10.20.30.40&prefix=8')
+    // 続けて 0 を打つと 80 になるが、範囲外なので 8 のまま
+    await user.type(prefix, '0')
+    expect(prefix).toHaveValue(8)
+    expect(location()).toBe('?ip=10.20.30.40&prefix=8')
     expect(results()['Subnet mask']).toBe('255.0.0.0')
   })
 
@@ -147,6 +151,12 @@ describe('SubnetCalculator', () => {
       target: { value: '40' },
     })
     expect(location()).toBe('?ip=10.20.30.40&prefix=9')
+    // 入力欄とスライダーの表示も、結果と同じ値のまま
+    expect(screen.getByRole('spinbutton', { name: 'Prefix length' })).toHaveValue(9)
+    expect(screen.getByRole('slider', { name: 'Prefix length' })).toHaveAttribute(
+      'aria-valuenow',
+      '9',
+    )
   })
 
   it('2 進数の表示で、ネットワーク部とホスト部の境目を文でも伝える', () => {

@@ -115,9 +115,11 @@ export function SubnetCalculator() {
               aria-describedby={ids.prefixHint}
               onChange={(event) => {
                 const text = event.target.value
-                setPrefixDraft({ base: query.prefix, text })
                 const prefix = Number(text)
-                if (text !== '' && isPrefixLength(prefix)) {
+                // 空欄は打ち直しの途中なので残す。範囲外などの不正な値は受け付けず、表示を URL の値に戻す
+                if (text === '') {
+                  setPrefixDraft({ base: query.prefix, text })
+                } else if (isPrefixLength(prefix)) {
                   writeQuery({ prefix })
                 }
               }}
