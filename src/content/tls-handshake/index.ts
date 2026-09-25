@@ -1,12 +1,13 @@
 import { createElement, lazy } from 'react'
 import { toScenarioHandle } from '@/engine/scenario'
 import { TLS_HANDSHAKE_META } from '../themeMeta'
-import type { ThemeModule } from '../types'
+import type { SequenceThemeModule } from '../types'
 import { CertChainPanel } from './CertChainPanel'
 import { tlsHandshakeQuiz } from './quiz'
 import { CERT_CHAIN, tlsHandshakeScenario } from './scenario'
 
-export const tlsHandshakeTheme: ThemeModule = {
+export const tlsHandshakeTheme: SequenceThemeModule = {
+  kind: 'sequence',
   meta: TLS_HANDSHAKE_META,
   scenario: toScenarioHandle(tlsHandshakeScenario),
   quiz: tlsHandshakeQuiz,

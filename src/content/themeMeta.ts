@@ -7,9 +7,17 @@ import type { LocalizedText } from '@/lib/i18n/locale'
 export const DIFFICULTIES = ['beginner', 'intermediate'] as const
 export type Difficulty = (typeof DIFFICULTIES)[number]
 
+/**
+ * テーマの種類。sequence はシーケンスエンジン（ステップ実行の図）を使い、custom はテーマ独自の UI（計算ツールなど）を持つ。
+ * e2e や静的ページ生成（DOM に依存しない側）からも判別できるよう、メタ情報に持たせる
+ */
+export const THEME_KINDS = ['sequence', 'custom'] as const
+export type ThemeKind = (typeof THEME_KINDS)[number]
+
 export interface ThemeMeta {
   /** URL とファイルパスに使うので、英小文字・数字・ハイフンのみ */
   readonly id: string
+  readonly kind: ThemeKind
   readonly title: LocalizedText
   readonly summary: LocalizedText
   readonly difficulty: Difficulty
@@ -24,6 +32,7 @@ export const DNS_RESOLUTION_META = {
     en: 'How a name like www.example.com becomes an IP address: a resolver follows referrals from the root to the right server, and caches what it learns.',
     ja: 'www.example.com のような名前が IP アドレスになるまで。リゾルバーがルートから委任をたどって担当のサーバーにたどり着き、わかったことをキャッシュする流れ。',
   },
+  kind: 'sequence',
   difficulty: 'beginner',
   minutes: 12,
 } as const satisfies ThemeMeta
@@ -35,6 +44,7 @@ export const TCP_HANDSHAKE_META = {
     en: 'How two hosts agree on sequence numbers and open a TCP connection, and what happens when a segment is lost or the port is closed.',
     ja: '2 つのホストがシーケンス番号を合わせて TCP の接続を開く流れと、セグメントが失われたときやポートが閉じているときに何が起きるか。',
   },
+  kind: 'sequence',
   difficulty: 'beginner',
   minutes: 10,
 } as const satisfies ThemeMeta
@@ -46,6 +56,7 @@ export const TLS_HANDSHAKE_META = {
     en: 'How a browser and a server agree on keys in one round trip, and how the browser checks the server’s certificate chain before trusting it.',
     ja: 'ブラウザーとサーバーが 1 往復で鍵を合わせる流れと、ブラウザーがサーバーの証明書チェーンを確かめてから信頼するまで。',
   },
+  kind: 'sequence',
   difficulty: 'intermediate',
   minutes: 15,
 } as const satisfies ThemeMeta
@@ -60,3 +71,9 @@ export const THEME_META = [
 export type ThemeId = (typeof THEME_META)[number]['id']
 
 export const THEME_IDS: readonly ThemeId[] = THEME_META.map((theme) => theme.id)
+
+/** 指定した種類のテーマのメタ情報（学習順） */
+export function themeMetaOfKind(kind: ThemeKind): readonly ThemeMeta[] {
+  const all: readonly ThemeMeta[] = THEME_META
+  return all.filter((meta) => meta.kind === kind)
+}

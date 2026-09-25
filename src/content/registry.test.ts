@@ -18,10 +18,13 @@ describe('registry', () => {
     )
   })
 
-  it('テーマ・シナリオ・クイズの id がそろっている', () => {
+  it('テーマ・シナリオ・クイズの id と種類がそろっている', () => {
     for (const theme of THEMES) {
-      expect(theme.scenario.id).toBe(theme.meta.id)
       expect(theme.quiz.id).toBe(theme.meta.id)
+      expect(theme.kind).toBe(theme.meta.kind)
+      if (theme.kind === 'sequence') {
+        expect(theme.scenario.id).toBe(theme.meta.id)
+      }
     }
   })
 
@@ -35,7 +38,9 @@ describe('registry', () => {
   it.each(THEMES.map((theme) => [theme.meta.id, theme] as const))(
     '%s のシナリオとクイズは整合している',
     (_, theme) => {
-      expect(validateScenario(theme.scenario)).toEqual([])
+      if (theme.kind === 'sequence') {
+        expect(validateScenario(theme.scenario)).toEqual([])
+      }
       expect(validateQuiz(theme.quiz)).toEqual([])
     },
   )

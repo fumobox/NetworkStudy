@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Locator, type Page } from '@playwright/test'
-import { THEME_META } from '@/content/themeMeta'
+import { THEME_META, type ThemeMeta } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { MESSAGES } from '@/lib/i18n/messages'
 
@@ -9,6 +9,9 @@ import { MESSAGES } from '@/lib/i18n/messages'
 const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']
 
 /** What-if を変えたときの表示（ロス・タイマー・証明書の ✗ など）も確かめる（テーマの id → クエリ） */
+// 種類（kind）で分けるため、リテラル型ではなく ThemeMeta として扱う
+const THEME_METAS: readonly ThemeMeta[] = THEME_META
+
 const WHAT_IF_QUERIES: Readonly<Record<string, string>> = {
   'tcp-handshake': '?opt.synLoss=twice&step=99',
   'dns-resolution': '?opt.name=alias&step=99',
@@ -23,13 +26,14 @@ interface PageCase {
 
 const pages: readonly PageCase[] = LOCALES.flatMap((locale) => [
   { path: `${locale}/`, heading: MESSAGES[locale].common.siteName },
-  ...THEME_META.flatMap((meta) => {
+  ...THEME_METAS.flatMap((meta) => {
     const heading = meta.title[locale]
     const base = `${locale}/themes/${meta.id}`
     const whatIf = WHAT_IF_QUERIES[meta.id]
     return [
       { path: base, heading },
-      { path: `${base}?step=99`, heading },
+      // 最終ステップは、シーケンスのテーマだけ
+      ...(meta.kind === 'sequence' ? [{ path: `${base}?step=99`, heading }] : []),
       ...(whatIf === undefined ? [] : [{ path: `${base}${whatIf}`, heading }]),
     ]
   }),
