@@ -197,7 +197,7 @@ describe('テーマへの導線', () => {
 
   it('ホームにテーマのカードを表示する', () => {
     renderAt('/ja')
-    const list = screen.getByRole('region', { name: 'テーマ一覧' })
+    const list = screen.getByRole('region', { name: 'どこから始めるか' })
     expect(within(list).getByRole('link', { name: 'TCP 3 ウェイハンドシェイク' })).toHaveAttribute(
       'href',
       '/ja/themes/tcp-handshake',
@@ -209,5 +209,18 @@ describe('テーマへの導線', () => {
         .getAllByRole('link')
         .map((link) => link.textContent),
     ).toEqual(['DNS の名前解決', 'TCP 3 ウェイハンドシェイク', 'TLS 1.3 のハンドシェイクと証明書'])
+    expect(screen.getByRole('region', { name: 'このサイトの使い方' })).toBeInTheDocument()
+  })
+
+  it('ホームのカードにクイズの進捗を表示する', () => {
+    window.localStorage.setItem(
+      'ns.quiz.tcp-handshake',
+      JSON.stringify({ answers: { 'first-segment': 'syn', 'state-after-syn': 'listen' } }),
+    )
+    renderAt('/en')
+    const progress = [...document.querySelectorAll('[data-progress]')].map(
+      (node) => node.textContent,
+    )
+    expect(progress).toEqual(['Quiz not taken yet', 'Quiz: 1 of 5 correct', 'Quiz not taken yet'])
   })
 })

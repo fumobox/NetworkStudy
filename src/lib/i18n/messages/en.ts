@@ -93,6 +93,21 @@ export const en = {
       `${String(p.correct)} of ${String(p.total)} correct`,
     reset: 'Try again',
   },
+  home: {
+    orderTitle: 'Where to start',
+    orderLead:
+      'The themes build on each other: a browser first looks up the server’s address (DNS), then opens a connection (TCP), and then secures it (TLS).',
+    howToTitle: 'How to use this site',
+    howTo: [
+      'Read the short overview at the top of each theme.',
+      'Step through the diagram with the buttons or the ← → keys, and select a message to see its fields.',
+      'Try the “What if…” options to see what happens when something goes wrong.',
+      'Check your understanding with the quiz at the end.',
+    ],
+    notStarted: 'Quiz not taken yet',
+    progress: (p: { correct: number; total: number }) =>
+      `Quiz: ${String(p.correct)} of ${String(p.total)} correct`,
+  },
   theme: {
     difficulty: {
       beginner: 'Beginner',

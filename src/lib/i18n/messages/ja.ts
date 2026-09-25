@@ -76,6 +76,20 @@ export const ja = {
     score: (p) => `${String(p.total)} 問中 ${String(p.correct)} 問正解`,
     reset: 'もう一度',
   },
+  home: {
+    orderTitle: 'どこから始めるか',
+    orderLead:
+      '3 つのテーマはつながっている。ブラウザはまずサーバーのアドレスを調べ（DNS）、次に接続を開き（TCP）、その接続を安全にする（TLS）。',
+    howToTitle: 'このサイトの使い方',
+    howTo: [
+      '各テーマの最初にある短い概要を読む。',
+      'ボタンか ← → キーで図をステップ実行し、メッセージを選んでフィールドを見る。',
+      '「もしも…」のオプションで、うまくいかないときに何が起きるかを試す。',
+      '最後のクイズで理解を確かめる。',
+    ],
+    notStarted: 'クイズは未挑戦',
+    progress: (p) => `クイズ: ${String(p.total)} 問中 ${String(p.correct)} 問正解`,
+  },
   theme: {
     difficulty: {
       beginner: '初級',
