@@ -288,7 +288,7 @@ function buildSteps(options: TcpCongestionOptions): readonly Step[] {
   const first = next
   // このラウンドで送ったセグメントの数（cwnd と同じ）
   const sent = cwnd
-  /** RFC 5681 の式（3）: ssthresh = max(FlightSize / 2, 2 SMSS)。FlightSize は、送ったが累積の確認応答をまだ受けていない量（cwnd ではない） */
+  /** RFC 5681 の式（4）: ssthresh = max(FlightSize / 2, 2 SMSS)。FlightSize は、送ったが累積の確認応答をまだ受けていない量（cwnd ではない） */
   const halve = (flightSize: number) => Math.max(Math.floor(flightSize / 2), 2)
 
   if (options.loss === 'dupack') {
