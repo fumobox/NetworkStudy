@@ -17,9 +17,10 @@
 | `npm run format` / `format:check` | Prettier |
 | `npm test` / `test:run` / `test:coverage` | Vitest |
 | `npm run pages:verify` | 生成した静的ページの検証（`build` の後に実行） |
-| `npm run e2e` | Playwright のスモークテスト（`build` の後に実行。初回は `npx playwright install chromium`） |
+| `npm run e2e` | Playwright のスモークテストと axe によるアクセシビリティのチェック（`build` の後に実行。初回は `npx playwright install chromium`） |
+| `npm run lhci` | Lighthouse CI（`build` の後に実行。sitemap.xml の全ページでアクセシビリティ 90 以上。レポートは `lhci-report/`） |
 
-CI（`.github/workflows/ci.yml` の `Check` job）は typecheck → lint → depcruise → format:check → test:run → build → pages:verify → e2e の順に実行する。main への push では、その後 `Deploy` job が GitHub Pages へデプロイする。
+CI（`.github/workflows/ci.yml` の `Check` job）は typecheck → lint → depcruise → format:check → test:run → build → pages:verify → e2e → lhci の順に実行する。main への push では、その後 `Deploy` job が GitHub Pages へデプロイする。
 
 ## 技術スタック
 
@@ -43,7 +44,7 @@ src/
 ├── types/          横断的な型（DeepReadonly など）
 └── test/setup.ts
 scripts/            ビルド後の静的ページ生成・検証（tsx で実行）
-e2e/                Playwright のスモークテスト
+e2e/                Playwright のスモークテストとアクセシビリティのチェック（axe）
 ```
 
 依存の向きは **`app` / `pages` → `content` → `engine` → `lib`** の一方向。dependency-cruiser（`.dependency-cruiser.cjs`）で強制している。
@@ -90,6 +91,7 @@ e2e/                Playwright のスモークテスト
 - ブラウザの言語は `vi.spyOn(navigator, 'languages', 'get')` で差し替える
 - Radix が使う `ResizeObserver`・pointer capture・`scrollIntoView` は `src/test/setup.ts` で補っている。足りない API があればそこに追加する
 - e2e（`e2e/*.spec.ts`）はスモークのみ（各テーマ × 各ロケールで最終ステップまで進める、直リンク、言語切替、404）。挙動の検証は Vitest で行う。ビルド済みの `dist` を `vite preview` で配信して確かめる。テーマ一覧と文言は `themeMeta.ts` と辞書から取り、テーマを足すと自動で対象になる。e2e から import してよい src は scripts と同じ（DOM 非依存のモジュールのみ）
+- `e2e/a11y.spec.ts` は axe で WCAG 2.1 A / AA の違反がないことを、明暗の両方の配色で確かめる（各ページの初期表示・最終ステップ・What-if 変更後・クイズの回答後）。色を変えたら e2e で確かめる。shadcn の既定の `--muted-foreground` はライトモードの `bg-accent` 上でコントラストが足りないので、`src/index.css` で暗くしている
 
 ## 静的ページ生成（scripts/）
 
