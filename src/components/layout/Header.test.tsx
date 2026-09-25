@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/AppRoutes'
 import { COLOR_SCHEME_STORAGE_KEY } from '@/lib/colorScheme'
 
-/** ブラウザの「戻る」を再現するボタン */
+/** ブラウザーの「戻る」を再現するボタン */
 function BackButton() {
   const navigate = useNavigate()
   return (

@@ -124,7 +124,7 @@ export const tlsHandshakeQuiz: Quiz = {
       answerId: 'abort',
       explanation: {
         en: 'A valid certificate for another name does not prove that this is www.example.com. The client sends an alert and closes the connection, and the browser shows a certificate error.',
-        ja: '別の名前の正しい証明書では、相手が www.example.com であることの証明にならない。クライアントはアラートを送って接続を閉じ、ブラウザは証明書のエラーを表示する。',
+        ja: '別の名前の正しい証明書では、相手が www.example.com であることの証明にならない。クライアントはアラートを送って接続を閉じ、ブラウザーは証明書のエラーを表示する。',
       },
     },
     {

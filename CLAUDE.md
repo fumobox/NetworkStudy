@@ -67,6 +67,7 @@ e2e/                Playwright のスモークテストとアクセシビリテ�
 
 ## 多言語対応（i18n）
 
+- 日本語の訳語と表記（長音、英数字の前後のスペース、翻訳しない用語）は [docs/glossary.md](docs/glossary.md) に従う。機械的に確かめられる規則は `src/content/glossary.test.tsx` で検査している
 - URL は常に `/:locale/...`（`en` / `ja`）。ロケールのないパスは `LocaleRedirect` がリダイレクトする
 - 画面の文言はすべて辞書（`src/lib/i18n/messages/en.ts`、`ja.ts`）から取る。`useMessages()` でプロパティとして参照する
   - `en.ts` が正。`ja.ts` は `satisfies Messages` で、キーの欠落・余剰や関数シグネチャの不一致が型エラーになる

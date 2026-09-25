@@ -4,7 +4,7 @@ import type { Messages } from './en'
 export const ja = {
   common: {
     siteName: 'NetworkStudy',
-    tagline: 'ネットワークプロトコルの動きを、1パケットずつ自分の手で進めて学ぶ。',
+    tagline: 'ネットワークプロトコルの動きを、1 パケットずつ自分の手で進めて学ぶ。',
     pageTitle: (p) => `${p.page} | ${p.site}`,
   },
   nav: {
@@ -87,7 +87,7 @@ export const ja = {
   home: {
     orderTitle: 'どこから始めるか',
     orderLead:
-      '3 つのテーマはつながっている。ブラウザはまずサーバーのアドレスを調べ（DNS）、次に接続を開き（TCP）、その接続を安全にする（TLS）。',
+      '3 つのテーマはつながっている。ブラウザーはまずサーバーのアドレスを調べ（DNS）、次に接続を開き（TCP）、その接続を安全にする（TLS）。',
     howToTitle: 'このサイトの使い方',
     howTo: [
       '各テーマの最初にある短い概要を読む。',

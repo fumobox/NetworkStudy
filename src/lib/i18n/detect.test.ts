@@ -20,7 +20,7 @@ describe('detectLocale', () => {
     expect(detectLocale({ pathTag: 'ja-JP', stored: 'en', languages: ['en-US'] })).toBe('ja')
   })
 
-  it('URL の言語タグが対応外なら保存済みの設定・ブラウザの言語を使う', () => {
+  it('URL の言語タグが対応外なら保存済みの設定・ブラウザーの言語を使う', () => {
     expect(detectLocale({ pathTag: 'fr', stored: 'ja', languages: ['en-US'] })).toBe('ja')
     expect(detectLocale({ pathTag: 'fr', stored: null, languages: ['ja'] })).toBe('ja')
   })
@@ -29,12 +29,12 @@ describe('detectLocale', () => {
     expect(detectLocale({ pathTag: null, stored: 'ja', languages: ['en-US'] })).toBe('ja')
   })
 
-  it('保存済みの値が不正なら無視してブラウザの言語を使う', () => {
+  it('保存済みの値が不正なら無視してブラウザーの言語を使う', () => {
     expect(detectLocale({ pathTag: null, stored: 'fr', languages: ['ja-JP'] })).toBe('ja')
     expect(detectLocale({ pathTag: null, stored: null, languages: ['ja-JP'] })).toBe('ja')
   })
 
-  it('ブラウザの言語は優先順に最初に対応するものを使う', () => {
+  it('ブラウザーの言語は優先順に最初に対応するものを使う', () => {
     expect(detectLocale({ pathTag: null, stored: null, languages: ['fr-FR', 'ja', 'en'] })).toBe(
       'ja',
     )

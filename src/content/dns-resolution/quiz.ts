@@ -8,10 +8,13 @@ export const dnsResolutionQuiz: Quiz = {
       id: 'stub-asks',
       prompt: {
         en: 'Where does the stub resolver in your PC send its query?',
-        ja: 'PC のスタブリゾルバは、問い合わせをどこに送る？',
+        ja: 'PC のスタブリゾルバーは、問い合わせをどこに送る？',
       },
       choices: [
-        { id: 'resolver', text: { en: 'To a full-service resolver', ja: 'フルサービスリゾルバ' } },
+        {
+          id: 'resolver',
+          text: { en: 'To a full-service resolver', ja: 'フルサービスリゾルバー' },
+        },
         { id: 'root', text: { en: 'To a root server', ja: 'ルートサーバー' } },
         { id: 'tld', text: { en: 'To the .com TLD server', ja: '.com の TLD サーバー' } },
         { id: 'auth', text: { en: 'To the authoritative server', ja: '権威サーバー' } },
@@ -19,7 +22,7 @@ export const dnsResolutionQuiz: Quiz = {
       answerId: 'resolver',
       explanation: {
         en: 'The stub resolver sends a recursive query (RD set) to the resolver it is configured to use, and lets that resolver do the rest of the work.',
-        ja: 'スタブリゾルバは、設定されているリゾルバに再帰問い合わせ（RD あり）を送り、残りの仕事はそのリゾルバに任せる。',
+        ja: 'スタブリゾルバーは、設定されているリゾルバーに再帰問い合わせ（RD あり）を送り、残りの仕事はそのリゾルバーに任せる。',
       },
     },
     {
@@ -52,7 +55,7 @@ export const dnsResolutionQuiz: Quiz = {
       answerId: 'referral',
       explanation: {
         en: 'The root does not know the address, but it knows who is responsible for com. It returns NS records for com. (with their addresses in the Additional section), and the resolver asks there next.',
-        ja: 'ルートはアドレスを知らないが、com. の担当は知っている。com. の NS レコード（と、Additional セクションにそのアドレス）を返し、リゾルバは次にそこへ聞く。',
+        ja: 'ルートはアドレスを知らないが、com. の担当は知っている。com. の NS レコード（と、Additional セクションにそのアドレス）を返し、リゾルバーは次にそこへ聞く。',
       },
     },
     {
@@ -112,14 +115,14 @@ export const dnsResolutionQuiz: Quiz = {
       answerId: 'authoritative',
       explanation: {
         en: 'AA (authoritative answer) is set by the server responsible for the zone. An answer from a resolver’s cache does not have it, and RA is the flag that means recursion is available.',
-        ja: 'AA（authoritative answer）は、ゾーンを担当するサーバーが付ける。リゾルバのキャッシュからの答えには付かない。再帰が使えることを示すのは RA フラグ。',
+        ja: 'AA（authoritative answer）は、ゾーンを担当するサーバーが付ける。リゾルバーのキャッシュからの答えには付かない。再帰が使えることを示すのは RA フラグ。',
       },
     },
     {
       id: 'negative-cache',
       prompt: {
         en: 'After getting NXDOMAIN, why does the resolver not ask again right away?',
-        ja: 'NXDOMAIN を受け取ったリゾルバが、すぐには同じ問い合わせをしないのはなぜ？',
+        ja: 'NXDOMAIN を受け取ったリゾルバーが、すぐには同じ問い合わせをしないのはなぜ？',
       },
       choices: [
         {
@@ -139,7 +142,7 @@ export const dnsResolutionQuiz: Quiz = {
       answerId: 'negative-cache',
       explanation: {
         en: 'The NXDOMAIN response carries the zone’s SOA record. The resolver remembers the negative answer for min(SOA TTL, SOA MINIMUM) seconds (RFC 2308).',
-        ja: 'NXDOMAIN の応答にはゾーンの SOA レコードが入っている。リゾルバは否定応答を min(SOA の TTL, SOA の MINIMUM) 秒のあいだ覚えておく（RFC 2308）。',
+        ja: 'NXDOMAIN の応答にはゾーンの SOA レコードが入っている。リゾルバーは否定応答を min(SOA の TTL, SOA の MINIMUM) 秒のあいだ覚えておく（RFC 2308）。',
       },
     },
   ],

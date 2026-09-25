@@ -21,7 +21,7 @@ export type StateKey = string
 export const ACTOR_KINDS = ['client', 'server', 'resolver', 'nameServer'] as const
 export type ActorKind = (typeof ACTOR_KINDS)[number]
 
-/** 表形式の状態（DNS リゾルバのキャッシュ、TLS の証明書チェーン検証結果など）。stateChange では表全体を置き換える */
+/** 表形式の状態（DNS リゾルバーのキャッシュ、TLS の証明書チェーン検証結果など）。stateChange では表全体を置き換える */
 export interface StateTable {
   readonly columns: readonly ProtocolTerm[]
   readonly rows: readonly (readonly ProtocolTerm[])[]

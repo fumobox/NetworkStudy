@@ -11,11 +11,11 @@ interface DetectLocaleInput {
   pathTag: string | null
   /** 保存済みの設定（検証前の値） */
   stored: unknown
-  /** ブラウザの言語設定（`navigator.languages`） */
+  /** ブラウザーの言語設定（`navigator.languages`） */
   languages: readonly string[]
 }
 
-/** 表示するロケールを決める。URL の言語タグ → 保存済みの設定 → ブラウザの言語 → デフォルトの順 */
+/** 表示するロケールを決める。URL の言語タグ → 保存済みの設定 → ブラウザーの言語 → デフォルトの順 */
 export function detectLocale({ pathTag, stored, languages }: DetectLocaleInput): Locale {
   const fromPath = pathTag === null ? null : matchLocale(pathTag)
   if (fromPath !== null) {
