@@ -48,6 +48,9 @@ export const ja = {
     timerLabel: (p) => `${p.actor}: ${p.name} タイマーが ${p.duration} で満了`,
     elapsed: (p) => `t = ${p.time}`,
   },
+  options: {
+    title: 'もしも…',
+  },
   inspector: {
     title: 'パケットの詳細',
     empty: 'まだ表示するメッセージはありません。',

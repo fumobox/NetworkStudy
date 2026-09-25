@@ -62,6 +62,9 @@ export const en = {
       `${p.actor}: ${p.name} timer expired after ${p.duration}`,
     elapsed: (p: { time: string }) => `t = ${p.time}`,
   },
+  options: {
+    title: 'What if…',
+  },
   inspector: {
     title: 'Packet details',
     empty: 'No message to show yet.',
