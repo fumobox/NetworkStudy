@@ -79,6 +79,8 @@
 | congestion avoidance | 輻輳回避 | |
 | slow start threshold (ssthresh) | スロースタートのしきい値（ssthresh） | |
 | flight size | 送信中のデータ（FlightSize） | 送ったが累積の確認応答をまだ受けていない量 |
+| loss window | ロスウィンドウ | RTO の後の cwnd（1 セグメント） |
+| AIMD (additive increase, multiplicative decrease) | AIMD（加算的増加・乗算的減少） | |
 | congestion window | 輻輳ウィンドウ（cwnd） | |
 | slow start | スロースタート | |
 | certificate | 証明書 | |

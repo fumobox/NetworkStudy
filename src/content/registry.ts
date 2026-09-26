@@ -3,6 +3,7 @@ import { httpsOverviewTheme } from './https-overview'
 import { osiModelTheme } from './osi-model'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { tcpCloseTheme } from './tcp-close'
+import { tcpCongestionTheme } from './tcp-congestion'
 import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
 import type { ThemeModule } from './types'
@@ -14,6 +15,7 @@ export const THEMES: readonly ThemeModule[] = [
   tlsHandshakeTheme,
   httpsOverviewTheme,
   tcpCloseTheme,
+  tcpCongestionTheme,
   subnetCalculatorTheme,
   osiModelTheme,
 ]

@@ -109,13 +109,26 @@ export const OSI_MODEL_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
-/** サイトで案内する学習順（DNS → TCP → TLS → それらをつなげた HTTPS の全体像 → TCP の接続の終了、その後に計算ツールと OSI 参照モデル）に並べる */
+export const TCP_CONGESTION_META = {
+  id: 'tcp-congestion',
+  kind: 'sequence',
+  title: { en: 'TCP congestion control', ja: 'TCP の輻輳制御' },
+  summary: {
+    en: 'How a TCP sender grows its congestion window with slow start and congestion avoidance, and how it reacts to a lost segment and to a timeout.',
+    ja: 'TCP の送信側が、スロースタートと輻輳回避で輻輳ウィンドウを広げるしくみと、セグメントのロスやタイムアウトへの反応。',
+  },
+  difficulty: 'intermediate',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
+/** サイトで案内する学習順（DNS → TCP → TLS → それらをつなげた HTTPS の全体像 → TCP の接続の終了 → TCP の輻輳制御、その後に計算ツールと OSI 参照モデル）に並べる */
 export const THEME_META = [
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
   HTTPS_OVERVIEW_META,
   TCP_CLOSE_META,
+  TCP_CONGESTION_META,
   SUBNET_CALCULATOR_META,
   OSI_MODEL_META,
 ] as const satisfies readonly ThemeMeta[]

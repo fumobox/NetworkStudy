@@ -3,6 +3,7 @@ import { httpsOverviewQuiz } from './https-overview/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
 import { tcpCloseQuiz } from './tcp-close/quiz'
+import { tcpCongestionQuiz } from './tcp-congestion/quiz'
 import { tcpHandshakeQuiz } from './tcp-handshake/quiz'
 import {
   DNS_RESOLUTION_META,
@@ -10,6 +11,7 @@ import {
   OSI_MODEL_META,
   SUBNET_CALCULATOR_META,
   TCP_CLOSE_META,
+  TCP_CONGESTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
 } from './themeMeta'
@@ -27,6 +29,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: TLS_HANDSHAKE_META, quiz: tlsHandshakeQuiz },
   { meta: HTTPS_OVERVIEW_META, quiz: httpsOverviewQuiz },
   { meta: TCP_CLOSE_META, quiz: tcpCloseQuiz },
+  { meta: TCP_CONGESTION_META, quiz: tcpCongestionQuiz },
   { meta: SUBNET_CALCULATOR_META, quiz: subnetCalculatorQuiz },
   { meta: OSI_MODEL_META, quiz: osiModelQuiz },
 ]
