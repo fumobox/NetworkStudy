@@ -78,7 +78,10 @@ const actors: readonly Actor[] = [
   {
     id: ROUTER,
     kind: 'router',
-    name: { en: 'Router (NAT, 203.0.113.5)', ja: 'ルーター（NAT、203.0.113.5）' },
+    name: {
+      en: 'Router (NAT, 192.168.1.1 / 203.0.113.5)',
+      ja: 'ルーター（NAT、192.168.1.1 / 203.0.113.5）',
+    },
     shortName: { en: 'Router', ja: 'ルーター' },
     stateSlots: [
       { key: NAT_TABLE, label: { en: 'NAT table', ja: 'NAT の変換表' }, initial: table([]) },
@@ -469,8 +472,8 @@ function buildSteps(options: NatOptions): readonly Step[] {
           ja: '対応がない: ルーターが捨てる',
         },
         description: {
-          en: 'The NAT table has no row for port 80, so the router does not know which PC should get the packet and drops it. (RFC 5382 asks the router not to answer for at least 6 seconds; afterwards it may send ICMP Port Unreachable.) To run a server at home, you add a static mapping by hand: port forwarding.',
-          ja: 'NAT の変換表にポート 80 の行がないので、ルーターはどの PC に渡せばよいかわからず、パケットを捨てる（RFC 5382 は少なくとも 6 秒は答えないよう求めている。その後は ICMP の Port Unreachable を返してもよい）。家庭でサーバーを動かすには、対応を手で書いておく。これがポートフォワーディング。',
+          en: 'The NAT table has no row for port 80, so the router does not know which PC should get the packet and drops it. (RFC 5382 asks the router not to answer for at least 6 seconds; afterwards it should send ICMP Port Unreachable, unless it is configured to stay silent.) To run a server at home, you add a static mapping by hand: port forwarding.',
+          ja: 'NAT の変換表にポート 80 の行がないので、ルーターはどの PC に渡せばよいかわからず、パケットを捨てる（RFC 5382 は少なくとも 6 秒は答えないよう求めている。その後は ICMP の Port Unreachable を返すべきだが、設定で黙って捨ててもよい）。家庭でサーバーを動かすには、対応を手で書いておく。これがポートフォワーディング。',
         },
         events: [],
       },

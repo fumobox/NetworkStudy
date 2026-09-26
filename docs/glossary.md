@@ -110,6 +110,7 @@
 | NAT table (mapping) | NAT の変換表（対応） | |
 | port forwarding | ポートフォワーディング | |
 | carrier-grade NAT | キャリアグレード NAT | |
+| hairpinning | ヘアピン | |
 | home router / ISP router | 家庭のルーター／ISP のルーター | |
 | hop | ホップ | |
 | probe | プローブ | traceroute が送るパケット |
