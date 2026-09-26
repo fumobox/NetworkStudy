@@ -13,6 +13,7 @@ Network basics / ネットワークの基礎
 Getting on the network / ネットワークにつながるまで
 
 - ARP: from IP address to MAC address / ARP: IP アドレスから MAC アドレスへ
+- DHCP: getting an IP address / DHCP: IP アドレスをもらう
 
 How a web page reaches you / Web のページが届くまで
 
