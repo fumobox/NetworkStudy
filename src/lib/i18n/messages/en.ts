@@ -105,7 +105,7 @@ export const en = {
   home: {
     orderTitle: 'Where to start',
     orderLead:
-      'The themes build on each other: a browser first looks up the server’s address (DNS), then opens a connection (TCP), and then secures it (TLS).',
+      'Start with the basics, then follow a web page on its way to your browser. The last group looks at TCP in more depth.',
     howToTitle: 'How to use this site',
     howTo: [
       'Read the short overview at the top of each theme.',
@@ -116,6 +116,20 @@ export const en = {
     notStarted: 'Quiz not taken yet',
     progress: (p: { correct: number; total: number }) =>
       `Quiz: ${String(p.correct)} of ${String(p.total)} correct`,
+  },
+  categories: {
+    basics: {
+      title: 'Network basics',
+      lead: 'How the work of sending data is split into layers, and how IP addresses are divided into networks.',
+    },
+    web: {
+      title: 'How a web page reaches you',
+      lead: 'The browser looks up the server’s address (DNS), opens a connection (TCP), secures it (TLS), and then gets the page (HTTPS).',
+    },
+    tcp: {
+      title: 'More about TCP',
+      lead: 'How a connection is closed, and how TCP avoids overloading the network.',
+    },
   },
   theme: {
     difficulty: {

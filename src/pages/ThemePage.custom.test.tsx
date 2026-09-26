@@ -15,6 +15,7 @@ vi.mock('@/content/registry', async () => {
     meta: {
       id: 'custom-fixture',
       kind: 'custom',
+      category: 'basics',
       title: { en: 'Custom fixture', ja: 'カスタムのテーマ' },
       summary: { en: 'A theme with its own UI.', ja: '独自の UI を持つテーマ。' },
       difficulty: 'beginner',

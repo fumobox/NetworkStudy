@@ -14,10 +14,18 @@ export type Difficulty = (typeof DIFFICULTIES)[number]
 export const THEME_KINDS = ['sequence', 'custom'] as const
 export type ThemeKind = (typeof THEME_KINDS)[number]
 
+/**
+ * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
+ * basics: ネットワークの基礎、web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく
+ */
+export const THEME_CATEGORIES = ['basics', 'web', 'tcp'] as const
+export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
+
 export interface ThemeMeta {
   /** URL とファイルパスに使うので、英小文字・数字・ハイフンのみ */
   readonly id: string
   readonly kind: ThemeKind
+  readonly category: ThemeCategory
   readonly title: LocalizedText
   readonly summary: LocalizedText
   readonly difficulty: Difficulty
@@ -27,6 +35,7 @@ export interface ThemeMeta {
 
 export const DNS_RESOLUTION_META = {
   id: 'dns-resolution',
+  category: 'web',
   title: { en: 'DNS name resolution', ja: 'DNS の名前解決' },
   summary: {
     en: 'How a name like www.example.com becomes an IP address: a resolver follows referrals from the root to the right server, and caches what it learns.',
@@ -39,6 +48,7 @@ export const DNS_RESOLUTION_META = {
 
 export const TCP_HANDSHAKE_META = {
   id: 'tcp-handshake',
+  category: 'web',
   title: { en: 'TCP three-way handshake', ja: 'TCP 3 ウェイハンドシェイク' },
   summary: {
     en: 'How two hosts agree on sequence numbers and open a TCP connection, and what happens when a segment is lost or the port is closed.',
@@ -51,6 +61,7 @@ export const TCP_HANDSHAKE_META = {
 
 export const TLS_HANDSHAKE_META = {
   id: 'tls-handshake',
+  category: 'web',
   title: { en: 'TLS 1.3 handshake and certificates', ja: 'TLS 1.3 のハンドシェイクと証明書' },
   summary: {
     en: 'How a browser and a server agree on keys in one round trip, and how the browser checks the server’s certificate chain before trusting it.',
@@ -64,6 +75,7 @@ export const TLS_HANDSHAKE_META = {
 export const TCP_CLOSE_META = {
   id: 'tcp-close',
   kind: 'sequence',
+  category: 'tcp',
   title: { en: 'Closing a TCP connection', ja: 'TCP の接続の終了' },
   summary: {
     en: 'How the two sides close a TCP connection with four segments, one direction at a time, and why the side that closes first waits in TIME-WAIT.',
@@ -76,6 +88,7 @@ export const TCP_CLOSE_META = {
 export const SUBNET_CALCULATOR_META = {
   id: 'subnet-calculator',
   kind: 'custom',
+  category: 'basics',
   title: { en: 'Subnet calculator', ja: 'サブネット計算' },
   summary: {
     en: 'How an IPv4 address splits into a network part and a host part: work out the subnet mask, network and broadcast addresses, and how many hosts fit.',
@@ -88,6 +101,7 @@ export const SUBNET_CALCULATOR_META = {
 export const HTTPS_OVERVIEW_META = {
   id: 'https-overview',
   kind: 'sequence',
+  category: 'web',
   title: { en: 'HTTPS from start to finish', ja: 'HTTPS の全体像' },
   summary: {
     en: 'Everything that happens when a browser opens an https:// page, in one walkthrough: DNS lookup, TCP connection, TLS handshake, and the HTTP request and response.',
@@ -100,6 +114,7 @@ export const HTTPS_OVERVIEW_META = {
 export const OSI_MODEL_META = {
   id: 'osi-model',
   kind: 'custom',
+  category: 'basics',
   title: { en: 'The OSI model and encapsulation', ja: 'OSI 参照モデルとカプセル化' },
   summary: {
     en: 'How the seven layers of the OSI model split up the work of sending data, and how each layer adds its header on the way down and removes it on the way up.',
@@ -112,6 +127,7 @@ export const OSI_MODEL_META = {
 export const TCP_CONGESTION_META = {
   id: 'tcp-congestion',
   kind: 'sequence',
+  category: 'tcp',
   title: { en: 'TCP congestion control', ja: 'TCP の輻輳制御' },
   summary: {
     en: 'How a TCP sender grows its congestion window with slow start and congestion avoidance, and how it reacts to a lost segment and to a timeout.',
@@ -121,16 +137,19 @@ export const TCP_CONGESTION_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
-/** サイトで案内する学習順（DNS → TCP → TLS → それらをつなげた HTTPS の全体像 → TCP の接続の終了 → TCP の輻輳制御、その後に計算ツールと OSI 参照モデル）に並べる */
+/**
+ * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
+ * 基礎（OSI 参照モデル → サブネット計算）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
+ */
 export const THEME_META = [
+  OSI_MODEL_META,
+  SUBNET_CALCULATOR_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
   HTTPS_OVERVIEW_META,
   TCP_CLOSE_META,
   TCP_CONGESTION_META,
-  SUBNET_CALCULATOR_META,
-  OSI_MODEL_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']
@@ -141,4 +160,20 @@ export const THEME_IDS: readonly ThemeId[] = THEME_META.map((theme) => theme.id)
 export function themeMetaOfKind(kind: ThemeKind): readonly ThemeMeta[] {
   const all: readonly ThemeMeta[] = THEME_META
   return all.filter((meta) => meta.kind === kind)
+}
+
+export interface ThemeGroup<T extends { readonly meta: ThemeMeta } | ThemeMeta> {
+  readonly category: ThemeCategory
+  readonly themes: readonly T[]
+}
+
+/** 分類ごとにまとめる（分類の順、分類の中は元の順）。テーマのない分類は含めない */
+export function groupByCategory<T extends ThemeMeta | { readonly meta: ThemeMeta }>(
+  items: readonly T[],
+): readonly ThemeGroup<T>[] {
+  const categoryOf = (item: T) => ('meta' in item ? item.meta.category : item.category)
+  return THEME_CATEGORIES.map((category) => ({
+    category,
+    themes: items.filter((item) => categoryOf(item) === category),
+  })).filter((group) => group.themes.length > 0)
 }

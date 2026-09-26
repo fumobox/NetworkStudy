@@ -97,7 +97,7 @@ e2e/                Playwright のスモークテストとアクセシビリテ�
 ## 静的ページ生成（scripts/）
 
 - GitHub Pages には SPA 用のフォールバックがないため、`build` の最後に「ロケール × ルート」と「ロケールなし × ルート」の `index.html`、および `404.html` を生成する（`lang`・`title`・`description`・`hreflang`、ロケール付きのページには `canonical` も埋め込む）
-- テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ）を足し、`src/content/registry.ts` に登録し、`src/content/quizzes.ts` の `THEME_QUIZZES` にもメタ情報とクイズを足す（順序は registry と同じ。registry.test.ts で確かめる）。静的ページも e2e の対象も自動で増える
+- テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ。分類 `category` も決め、`THEME_META` では分類ごとにまとめて並べる）を足し、`src/content/registry.ts` に登録し、`src/content/quizzes.ts` の `THEME_QUIZZES` にもメタ情報とクイズを足す（順序は registry と同じ。registry.test.ts で確かめる）。静的ページも e2e の対象も自動で増える
 - テーマには種類（`kind`）がある。`ThemeModule` は `kind` で判別する共用体（`src/content/types.ts`）で、メタ情報の `kind` と同じ値にする（型で強制される）。どの種類にも概要（MDX）とクイズが必要
   - `sequence`: シーケンスエンジンを使う（`SequenceThemeModule`。`scenario` と、必要なら `panels`）。e2e は最終ステップまで進める
   - `custom`: テーマ独自の UI を持つ（`CustomThemeModule`。`body` に `lazy` で本体のコンポーネントを渡す）。ThemePage は概要とクイズの間に `body` を表示する。e2e はページが開くことだけ確かめるので、操作のテストは各テーマで書く。例: `src/content/subnet-calculator/`（計算の純関数 `subnet.ts`、本体 `SubnetCalculator.tsx`、文言 `subnetText.ts`）、`src/content/osi-model/`（engine の `useScenarioPlayer`・`useStepParam`・`useStepUrlSync`・`StepControls`・`StepDescription` を再利用したステップ実行）。本体の文言は `LocalizedText` の定数にまとめ、用語集のテスト（`glossary.test.tsx`）の対象に加える

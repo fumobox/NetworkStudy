@@ -24,12 +24,12 @@ import type { ThemeModule } from './types'
  * 並び順と内容が registry と一致することは registry.test.ts で確かめる
  */
 export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
+  { meta: OSI_MODEL_META, quiz: osiModelQuiz },
+  { meta: SUBNET_CALCULATOR_META, quiz: subnetCalculatorQuiz },
   { meta: DNS_RESOLUTION_META, quiz: dnsResolutionQuiz },
   { meta: TCP_HANDSHAKE_META, quiz: tcpHandshakeQuiz },
   { meta: TLS_HANDSHAKE_META, quiz: tlsHandshakeQuiz },
   { meta: HTTPS_OVERVIEW_META, quiz: httpsOverviewQuiz },
   { meta: TCP_CLOSE_META, quiz: tcpCloseQuiz },
   { meta: TCP_CONGESTION_META, quiz: tcpCongestionQuiz },
-  { meta: SUBNET_CALCULATOR_META, quiz: subnetCalculatorQuiz },
-  { meta: OSI_MODEL_META, quiz: osiModelQuiz },
 ]

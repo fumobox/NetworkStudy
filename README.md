@@ -5,16 +5,30 @@ An interactive portal for learning how network protocols work, one packet at a t
 
 ## Topics / テーマ
 
-- TCP 3-way handshake / TCP 3ウェイハンドシェイク
-- DNS name resolution / DNS 名前解決
-- TLS 1.3 handshake and certificate chain validation / TLS 1.3 ハンドシェイクと証明書チェーン検証
-- Closing a TCP connection (four-way close, TIME-WAIT) / TCP の接続の終了（4 ウェイクローズ、TIME-WAIT）
+Network basics / ネットワークの基礎
+
+- The OSI model and encapsulation / OSI 参照モデルとカプセル化
+- Subnet calculator / サブネット計算
+
+How a web page reaches you / Web のページが届くまで
+
+- DNS name resolution / DNS の名前解決
+- TCP three-way handshake / TCP 3 ウェイハンドシェイク
+- TLS 1.3 handshake and certificates / TLS 1.3 のハンドシェイクと証明書
+- HTTPS from start to finish / HTTPS の全体像
+
+More about TCP / TCP をもっと詳しく
+
+- Closing a TCP connection / TCP の接続の終了
+- TCP congestion control / TCP の輻輳制御
 
 Available in English and Japanese. / 英語・日本語に対応しています。
 
-## Status / 状況
+## Site / サイト
 
-Planning phase. See [docs/PLAN.md](docs/PLAN.md). / 計画段階です。
+https://fumobox.github.io/NetworkStudy/
+
+The plan and roadmap are in [docs/PLAN.md](docs/PLAN.md). / 計画とロードマップは [docs/PLAN.md](docs/PLAN.md) にあります。
 
 ## License
 
