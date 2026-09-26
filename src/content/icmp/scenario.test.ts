@@ -170,6 +170,15 @@ describe('icmpScenario', () => {
       })
     })
 
+    it('置き換えた説明（Destination Unreachable、Time Exceeded）が入っている', () => {
+      const unreach = build({ outcome: 'hostUnreachable' }).find(
+        (step) => step.id === 'unreach-isp',
+      )
+      expect(unreach?.description.en).toContain('code 1 (host unreachable)')
+      const exceeded = build({ tool: 'traceroute' }).find((step) => step.id === 'exceeded1-router')
+      expect(exceeded?.description.en).toContain('192.168.1.1')
+    })
+
     it('プローブの種類は ping には影響しない', () => {
       expect(build({ probe: 'udp' })).toEqual(build())
     })

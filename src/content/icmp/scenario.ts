@@ -5,7 +5,8 @@
  * - RFC 792: Echo（type 8）と Echo Reply（type 0）、Time Exceeded（type 11、code 0 = 転送中に TTL が 0 になった）、
  *   Destination Unreachable（type 3。code 1 = host unreachable、code 3 = port unreachable）、エラーには元の IP ヘッダーと先頭の 8 バイトを入れる
  * - RFC 1122 §3.2.1.7: ホストは TTL が 1 のパケットを受け取ってもよい（TTL を減らすのは転送するときだけ）
- * - RFC 1122 §3.2.2.6: Echo Reply は Identifier・Sequence Number・データを Echo Request と同じにして返す
+ * - RFC 792（Echo）: Echo Reply は type を 0 にしてアドレスを入れ替えたもので、Identifier・Sequence Number はそのまま
+ * - RFC 1122 §3.2.2.6: Echo Reply はデータを Echo Request と同じにして返す
  * - RFC 1122 §4.1.3.1: 待ち受けていない UDP のポートへのデータには、Port Unreachable を返すべき
  * - RFC 1812 §5.3.1: ルーターは転送のたびに TTL を 1 減らし、0 になったら捨てて Time Exceeded を返さなければならない
  * - RFC 1812 §4.3.2.4: ICMP のエラーの送信元アドレスは、そのルーターのインターフェースのアドレス
@@ -58,7 +59,7 @@ const IDENTIFIER = '0x1234'
 const PING_INTERVAL_MS = 1000
 /** traceroute が 1 つのプローブの応答を待つ時間（Linux の traceroute の既定） */
 const PROBE_TIMEOUT_MS = 5000
-/** traceroute の UDP のプローブの送信元と、最初の宛先のポート（Linux の traceroute の既定） */
+/** traceroute の UDP のプローブの送信元（OS が選ぶ一時的なポートの例）と、最初の宛先のポート（Linux の traceroute の既定） */
 const UDP_SOURCE_PORT = 49153
 const UDP_FIRST_PORT = 33434
 
@@ -249,8 +250,8 @@ function hopMessage(spec: HopSpec): Message {
         name: 'IP Src → Dst',
         value: `${ADDRESSES[spec.source]} → ${ADDRESSES[spec.destination]}`,
         description: {
-          en: 'IP source and destination (unchanged along the path)',
-          ja: 'IP の送信元と宛先（途中では変わらない）',
+          en: 'IP source and destination (unchanged along the path; the home router’s NAT is not shown here, see the NAT theme)',
+          ja: 'IP の送信元と宛先（途中では変わらない。家庭のルーターの NAT はここでは描いていない。NAT のテーマを参照）',
         },
       },
       {
@@ -286,20 +287,13 @@ function hopStep(
  * PC から宛先のノードまで、プローブを 1 ホップずつ送るステップ。
  * 途中のルーターは TTL を 1 減らして転送する。stopAt のノードで TTL が 0 になるか、届く
  */
-function outboundSteps(
-  idBase: string,
-  packet: PacketKind,
-  ttl: number,
-  stopAt: Node,
-  lostAt?: Node,
-): Step[] {
+function outboundSteps(idBase: string, packet: PacketKind, ttl: number, stopAt: Node): Step[] {
   const steps: Step[] = []
   const last = PATH.indexOf(stopAt)
   for (let i = 0; i < last; i++) {
     const from = PATH[i] ?? PC
     const to = PATH[i + 1] ?? SERVER
     const hopTtl = ttl - i
-    const lost = lostAt === to
     const spec: HopSpec = {
       id: `${idBase}-${from}`,
       from,
@@ -308,7 +302,6 @@ function outboundSteps(
       source: PC,
       destination: SERVER,
       ttl: hopTtl,
-      ...(lost ? { status: 'lost' } : {}),
     }
     steps.push(
       hopStep(
@@ -324,8 +317,8 @@ function outboundSteps(
             },
         i === 0
           ? {
-              en: `The destination is ${ADDRESSES.server}, not on the PC’s network, so the packet goes to the default gateway first.`,
-              ja: `宛先 ${ADDRESSES.server} は PC のネットワークにないので、パケットはまずデフォルトゲートウェイに送る。`,
+              en: `The destination is ${ADDRESSES.server}, not on the PC’s network, so the packet goes to the default gateway first. (In a real home network the router would also translate the PC’s private address with NAT; this page leaves that out.)`,
+              ja: `宛先 ${ADDRESSES.server} は PC のネットワークにないので、パケットはまずデフォルトゲートウェイに送る（実際の家庭のネットワークでは、ルーターが PC のプライベートアドレスを NAT で変換する。このページでは省略する）。`,
             }
           : {
               en: `${capitalize(NAMES[from].en)} looks up the destination, decreases TTL by 1, and sends the packet to the next hop, ${NAMES[to].en}.`,
@@ -443,6 +436,10 @@ function pingSteps(options: IcmpOptions): Step[] {
           en: 'The server answers, but the reply is lost',
           ja: 'サーバーが答えるが、応答が失われる',
         },
+        description: {
+          en: 'The server sends an Echo Reply, but it is lost on the way (for example, on a congested link).',
+          ja: 'サーバーは Echo Reply を送るが、途中で失われる（たとえば、混んでいるリンクで捨てられる）。',
+        },
         events: reply.events.map((event) =>
           event.kind === 'message'
             ? { ...event, message: { ...event.message, status: 'lost' } }
@@ -486,6 +483,10 @@ function pingSteps(options: IcmpOptions): Step[] {
 
 /** 指定したステップの説明を置き換える */
 function withNote(steps: Step[], id: string, description: LocalizedText): Step[] {
+  // id が変わって置き換え損ねると、大事な説明が消えるので、見つからなければ例外にする
+  if (!steps.some((step) => step.id === id)) {
+    throw new Error(`icmpScenario: no step ${id}`)
+  }
   return steps.map((step) => (step.id === id ? { ...step, description } : step))
 }
 
@@ -524,8 +525,8 @@ function tracerouteHops(options: IcmpOptions): Step[] {
       id: 'timeout2',
       title: { en: 'Hop 2 does not answer: *', ja: '2 ホップ目が答えない: *' },
       description: {
-        en: 'The ISP router drops the probe but sends no Time Exceeded (routers may limit or turn off ICMP errors). After waiting 5 seconds, traceroute prints * and moves on. The path itself still works.',
-        ja: 'ISP のルーターはプローブを捨てるが、Time Exceeded を返さない（ルーターは ICMP のエラーを制限したり止めたりしてよい）。traceroute は 5 秒待ってから * を表示し、次へ進む。経路そのものは使える。',
+        en: 'The ISP router drops the probe but sends no Time Exceeded (routers may rate-limit ICMP errors, and some are configured not to send them). After waiting 5 seconds, traceroute prints * and moves on. The path itself still works.',
+        ja: 'ISP のルーターはプローブを捨てるが、Time Exceeded を返さない（ルーターは ICMP のエラーの量を制限してよく、送らないように設定されていることもある）。traceroute は 5 秒待ってから * を表示し、次へ進む。経路そのものは使える。',
       },
       events: [
         timer('timeout', PROBE_TIMEOUT_MS),
