@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 import { formatIPv4, parseIPv4, toBinaryOctets } from '../subnet-calculator/subnet'
 import { ROUTE_TEXT as TEXT } from './routeText'
 import {
+  formatPrefix,
   lookupRoute,
   nextHopOf,
   readRouteQuery,
@@ -23,10 +24,6 @@ const OCTET_SEPARATOR = '.'
 const EXAMPLES: Readonly<Record<RouteTableId, readonly string[]>> = {
   pc: ['192.168.1.20', '192.0.2.10'],
   router: ['192.168.1.20', '192.168.2.5', '192.168.7.1', '192.0.2.10', '192.0.2.53', '10.1.2.3'],
-}
-
-function prefixText(route: Pick<Route, 'network' | 'length'>): string {
-  return `${formatIPv4(route.network)}/${String(route.length)}`
 }
 
 /** 入力中の値。base は入力したときの URL の値 */
@@ -65,6 +62,7 @@ export function RouteLookup() {
     hint: `${baseId}-hint`,
     error: `${baseId}-error`,
     table: `${baseId}-table`,
+    tableLegend: `${baseId}-table-legend`,
   }
 
   return (
@@ -118,8 +116,11 @@ export function RouteLookup() {
           </div>
         </div>
         <fieldset className="space-y-2">
-          <legend className="text-sm font-medium">{t(TEXT.tableChoice)}</legend>
+          <legend id={ids.tableLegend} className="text-sm font-medium">
+            {t(TEXT.tableChoice)}
+          </legend>
           <RadioGroup
+            aria-labelledby={ids.tableLegend}
             value={query.table}
             onValueChange={(value) => {
               const table = ROUTE_TABLE_IDS.find((id) => id === value)
@@ -140,19 +141,25 @@ export function RouteLookup() {
         </fieldset>
       </div>
       {/* 経路表を切り替えたら、行の有効・無効は最初に戻す */}
-      <LookupTable key={query.table} table={ROUTE_TABLES[query.table]} destination={destination} />
+      <LookupTable key={query.table} tableId={query.table} destination={destination} />
     </section>
   )
 }
 
-function LookupTable({ table, destination }: { table: readonly Route[]; destination: number }) {
+function LookupTable({ tableId, destination }: { tableId: RouteTableId; destination: number }) {
   const t = useText()
   const resultId = useId()
   const [disabled, setDisabled] = useState<ReadonlySet<string>>(new Set())
-  const routes = table.map((route) => ({ ...route, enabled: !disabled.has(route.id) }))
+  const routes = ROUTE_TABLES[tableId].map((route) => ({
+    ...route,
+    enabled: !disabled.has(route.id),
+  }))
   const result = lookupRoute(routes, destination)
   const candidates = new Set(result.candidates.map((route) => route.id))
   const selected = result.selected
+  const hop = selected === null ? null : nextHopOf(selected, destination)
+  const reason =
+    result.reason === 'none' && tableId === 'pc' ? TEXT.noneOnHost : TEXT.reasons[result.reason]
 
   return (
     <>
@@ -199,7 +206,7 @@ function LookupTable({ table, destination }: { table: readonly Route[]; destinat
                     <input
                       type="checkbox"
                       checked={route.enabled}
-                      aria-label={t(TEXT.routeLabel(prefixText(route)))}
+                      aria-label={t(TEXT.routeLabel(formatPrefix(route, formatIPv4)))}
                       onChange={(event) => {
                         const next = new Set(disabled)
                         if (event.target.checked) {
@@ -217,7 +224,9 @@ function LookupTable({ table, destination }: { table: readonly Route[]; destinat
                         {SELECTED_MARK}
                       </span>
                     )}
-                    <span className={cn(isSelected && 'font-semibold')}>{prefixText(route)}</span>
+                    <span className={cn(isSelected && 'font-semibold')}>
+                      {formatPrefix(route, formatIPv4)}
+                    </span>
                     {isSelected && <span className="sr-only">{t(TEXT.selected)}</span>}
                   </th>
                   <td className="py-1 pr-3 font-mono whitespace-nowrap">
@@ -232,20 +241,23 @@ function LookupTable({ table, destination }: { table: readonly Route[]; destinat
           </tbody>
         </table>
       </div>
-      <section aria-labelledby={resultId} className="space-y-2" aria-live="polite">
+      <section aria-labelledby={resultId} className="space-y-2">
         <h3 id={resultId} className="text-base font-semibold">
           {t(TEXT.result)}
         </h3>
-        <p className="text-sm">{t(TEXT.reasons[result.reason])}</p>
-        {selected !== null && (
-          <p className="text-sm">
-            {(() => {
-              const hop = nextHopOf(selected, destination)
-              const address = formatIPv4(hop.address)
-              return t(hop.onLink ? TEXT.onLink(address) : TEXT.viaGateway(address))
-            })()}
-          </p>
-        )}
+        {/* 読み上げるのは説明の文だけ（ビットの比較は入力のたびに多くの要素が変わるので外す） */}
+        <div aria-live="polite" aria-atomic className="space-y-2">
+          <p className="text-sm">{t(reason)}</p>
+          {hop !== null && (
+            <p className="text-sm">
+              {t(
+                hop.onLink
+                  ? TEXT.onLink(formatIPv4(hop.address))
+                  : TEXT.viaGateway(formatIPv4(hop.address)),
+              )}
+            </p>
+          )}
+        </div>
         {selected !== null && <BinaryCompare destination={destination} route={selected} />}
       </section>
     </>

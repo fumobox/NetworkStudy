@@ -65,6 +65,11 @@ export const ROUTE_TEXT = {
       ja: '一致する経路がないので、パケットは転送できない。ルーターは捨てて、ICMP の Destination Unreachable（network unreachable、3/0）を返す。',
     },
   } satisfies Record<LookupReason, LocalizedText>,
+  /** PC の経路表で経路がないとき。ホストはパケットを送り出せず、ICMP も生まれない */
+  noneOnHost: {
+    en: 'No route matches, so the PC cannot even send the packet. Nothing leaves the PC; the application gets an error (network unreachable).',
+    ja: '一致する経路がないので、PC はパケットを送り出すこともできない。PC からは何も出ていかず、アプリケーションにエラー（network unreachable）が返る。',
+  },
   onLink: (address: string): LocalizedText => ({
     en: `The destination is on a directly connected network: the frame goes to ${address} itself (ARP for ${address}).`,
     ja: `宛先は直接接続のネットワークにある。フレームは ${address} そのものに送る（${address} を ARP で調べる）。`,

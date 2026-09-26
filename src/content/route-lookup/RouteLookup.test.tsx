@@ -72,6 +72,25 @@ describe('RouteLookup', () => {
     ])
   })
 
+  it('PC の経路表で経路がなければ、PC はパケットを送り出せない（ICMP は生まれない）', async () => {
+    const user = userEvent.setup()
+    renderAt('?dst=192.0.2.10&table=pc')
+    await user.click(screen.getByRole('checkbox', { name: 'Use the route 0.0.0.0/0' }))
+    expect(selected()).toBeNull()
+    expect(result().map((p) => p.textContent)).toEqual([
+      'No route matches, so the PC cannot even send the packet. Nothing leaves the PC; the application gets an error (network unreachable).',
+    ])
+  })
+
+  it('比べるビットは、プレフィックス長の分だけ強調する', () => {
+    renderAt('?dst=192.168.1.20&table=pc')
+    const bits = within(screen.getByRole('region', { name: 'Result' })).getAllByText(/^[01]$/)
+    expect(bits).toHaveLength(64)
+    const emphasized = bits.filter((bit) => bit.classList.contains('underline'))
+    // 宛先とプレフィックスの 2 行 × 先頭の 24 ビット
+    expect(emphasized).toHaveLength(48)
+  })
+
   it('経路表を切り替えると、無効にした行は元に戻る', async () => {
     const user = userEvent.setup()
     renderAt('?dst=192.0.2.10')
