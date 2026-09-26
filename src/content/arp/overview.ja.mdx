@@ -1,0 +1,26 @@
+## なぜ ARP が必要か
+
+LAN の中でフレームを届けるのは **MAC アドレス**だが、アプリケーションや IP が知っているのは **IP アドレス**だけ。パケットを Ethernet のフレームに入れる前に、PC は途中の次の機器の MAC アドレスを知る必要がある。それを調べるのが **ARP**（Address Resolution Protocol）。
+
+1. PC は**ネクストホップ**を決める。宛先が同じネットワークにあれば宛先そのもの、なければ**デフォルトゲートウェイ**（ルーター）。
+2. ネクストホップが **ARP キャッシュ**になければ、要求を**ブロードキャスト**する。「192.168.1.1 を持っているのは誰？」
+3. その IP アドレスを持つ機器だけが、**ユニキャスト**で答える。「192.168.1.1 は 00:00:5e:00:53:01」
+4. PC は答えを覚え、待たせていたパケットを送る。
+
+インターネットのサーバー宛てでも、PC がサーバーの MAC アドレスを知ることはない。フレームが届くのはルーターまでで、ルーターが次のリンク用の新しいフレームに入れてパケットを送る。
+
+## ステップ実行で見てほしいところ
+
+- 要求の Ethernet の宛先 **ff:ff:ff:ff:ff:ff** と、**OPER** の 1（要求）と 2（応答）。
+- 別の PC はブロードキャストを受け取るが、無視して送信元を覚えない。PC をキャッシュに加えるのは対象の機器だけ。
+- 「もしも…」のオプションで、同じ LAN の宛先、キャッシュにある場合、対象の電源が切れている場合。
+
+## このページについて
+
+機器をつなぐスイッチは描いていない（スイッチはブロードキャストをすべてのポートに届ける）。キャッシュに残る時間や再送の回数は OS による。Gratuitous ARP、プロキシ ARP、IPv6 で ARP の代わりになる近隣探索（Neighbor Discovery）は扱わない。MAC アドレスは RFC 7042 の説明用の値。
+
+## 参考
+
+- [RFC 826: An Ethernet Address Resolution Protocol](https://www.rfc-editor.org/rfc/rfc826)
+- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §2.3.2（ARP）、§3.3.1（送信するデータグラムの経路）
+- [RFC 7042: IANA Considerations and IETF Protocol and Documentation Usage for IEEE 802 Parameters](https://www.rfc-editor.org/rfc/rfc7042)

@@ -16,9 +16,10 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
 
 /**
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
- * basics: ネットワークの基礎、web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく
+ * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、
+ * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく
  */
-export const THEME_CATEGORIES = ['basics', 'web', 'tcp'] as const
+export const THEME_CATEGORIES = ['basics', 'ip', 'web', 'tcp'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
 
 export interface ThemeMeta {
@@ -137,13 +138,27 @@ export const TCP_CONGESTION_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const ARP_META = {
+  id: 'arp',
+  kind: 'sequence',
+  category: 'ip',
+  title: { en: 'ARP: from IP address to MAC address', ja: 'ARP: IP アドレスから MAC アドレスへ' },
+  summary: {
+    en: 'How your PC finds the MAC address of the next device on the LAN before it can send a packet, and why that device is the router for anything on the Internet.',
+    ja: 'パケットを送る前に、PC が LAN の次の機器の MAC アドレスを調べるしくみと、インターネット宛てならその機器がルーターになる理由。',
+  },
+  difficulty: 'beginner',
+  minutes: 8,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
  */
 export const THEME_META = [
   OSI_MODEL_META,
   SUBNET_CALCULATOR_META,
+  ARP_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,

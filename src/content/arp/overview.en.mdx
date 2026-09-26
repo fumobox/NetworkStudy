@@ -1,0 +1,26 @@
+## Why ARP?
+
+Inside a LAN, frames are delivered by **MAC address**, but applications and IP only know **IP addresses**. Before the PC can put a packet in an Ethernet frame, it needs the MAC address of the next device on the way. **ARP** (Address Resolution Protocol) finds it.
+
+1. The PC decides the **next hop**: the destination itself if it is on the same network, otherwise the **default gateway** (the router).
+2. If the next hop is not in its **ARP cache**, the PC **broadcasts** a request: “Who has 192.168.1.1?”
+3. Only the device with that IP address answers, by **unicast**: “192.168.1.1 is at 00:00:5e:00:53:01.”
+4. The PC stores the answer and sends the waiting packet.
+
+For a server on the Internet, the PC never learns the server’s MAC address. The frame only goes to the router, and the router sends the packet on in a new frame for the next link.
+
+## What to look for in the walkthrough
+
+- The Ethernet destination **ff:ff:ff:ff:ff:ff** of the request, and **OPER** 1 (request) and 2 (reply).
+- The other PC receives the broadcast but ignores it and does not remember the sender. Only the target adds the PC to its cache.
+- In the “What if…” options: a destination on the same LAN, an entry that is already cached, and a target that is turned off.
+
+## About this page
+
+The switch that connects the devices is not drawn (it delivers the broadcast to every port). How long entries stay in the cache and how many times to retry depend on the OS. Gratuitous ARP, proxy ARP, and IPv6’s replacement for ARP (Neighbor Discovery) are not covered. The MAC addresses are the documentation values of RFC 7042.
+
+## References
+
+- [RFC 826: An Ethernet Address Resolution Protocol](https://www.rfc-editor.org/rfc/rfc826)
+- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §2.3.2 (ARP), §3.3.1 (routing outbound datagrams)
+- [RFC 7042: IANA Considerations and IETF Protocol and Documentation Usage for IEEE 802 Parameters](https://www.rfc-editor.org/rfc/rfc7042)

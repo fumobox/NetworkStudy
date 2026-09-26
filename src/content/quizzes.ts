@@ -1,3 +1,4 @@
+import { arpQuiz } from './arp/quiz'
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
 import { httpsOverviewQuiz } from './https-overview/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
@@ -6,6 +7,7 @@ import { tcpCloseQuiz } from './tcp-close/quiz'
 import { tcpCongestionQuiz } from './tcp-congestion/quiz'
 import { tcpHandshakeQuiz } from './tcp-handshake/quiz'
 import {
+  ARP_META,
   DNS_RESOLUTION_META,
   HTTPS_OVERVIEW_META,
   OSI_MODEL_META,
@@ -26,6 +28,7 @@ import type { ThemeModule } from './types'
 export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: OSI_MODEL_META, quiz: osiModelQuiz },
   { meta: SUBNET_CALCULATOR_META, quiz: subnetCalculatorQuiz },
+  { meta: ARP_META, quiz: arpQuiz },
   { meta: DNS_RESOLUTION_META, quiz: dnsResolutionQuiz },
   { meta: TCP_HANDSHAKE_META, quiz: tcpHandshakeQuiz },
   { meta: TLS_HANDSHAKE_META, quiz: tlsHandshakeQuiz },

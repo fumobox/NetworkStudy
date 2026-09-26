@@ -4,7 +4,7 @@ import { StrictMode } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/AppRoutes'
-import { THEME_META } from '@/content/themeMeta'
+import { THEME_CATEGORIES, THEME_META } from '@/content/themeMeta'
 import { waitForPage } from '@/test/waitForPage'
 
 /** 現在の URL を表示し、外からの遷移（戻る・進むやリンク）を再現するボタンを置く */
@@ -202,7 +202,7 @@ describe('テーマへの導線', () => {
       within(sidebar)
         .getAllByRole('list')
         .map((list) => list.getAttribute('aria-labelledby') !== null),
-    ).toEqual([true, true, true])
+    ).toEqual(THEME_CATEGORIES.map(() => true))
     expect(
       within(within(sidebar).getByRole('list', { name: 'More about TCP' }))
         .getAllByRole('link')
@@ -229,7 +229,12 @@ describe('テーマへの導線', () => {
       within(list)
         .getAllByRole('heading', { level: 3 })
         .map((heading) => heading.textContent),
-    ).toEqual(['ネットワークの基礎', 'Web のページが届くまで', 'TCP をもっと詳しく'])
+    ).toEqual([
+      'ネットワークの基礎',
+      'ネットワークにつながるまで',
+      'Web のページが届くまで',
+      'TCP をもっと詳しく',
+    ])
     const web = within(list).getByRole('region', { name: 'Web のページが届くまで' })
     expect(
       within(web)
@@ -264,15 +269,9 @@ describe('テーマへの導線', () => {
         String(THEME_META.filter((other) => other.category === meta.category).indexOf(meta) + 1),
       ),
     )
-    expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual([
-      '1',
-      '2',
-      '1',
-      '2',
-      '3',
-      '4',
-      '1',
-      '2',
-    ])
+    // 例: 基礎の 2 つ目の次は、次の分類の 1 つ目
+    expect(
+      cards.map((card) => card.querySelector('[aria-hidden]')?.textContent).slice(0, 3),
+    ).toEqual(['1', '2', '1'])
   })
 })

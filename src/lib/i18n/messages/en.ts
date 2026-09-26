@@ -105,7 +105,7 @@ export const en = {
   home: {
     orderTitle: 'Where to start',
     orderLead:
-      'Start with the basics, then follow a web page on its way to your browser. The last group looks at TCP in more depth.',
+      'Start with the basics, see how your PC gets on the network, then follow a web page on its way to your browser. The last group looks at TCP in more depth.',
     howToTitle: 'How to use this site',
     howTo: [
       'Read the short overview at the top of each theme.',
@@ -121,6 +121,10 @@ export const en = {
     basics: {
       title: 'Network basics',
       lead: 'How the work of sending data is split into layers, and how IP addresses are divided into networks.',
+    },
+    ip: {
+      title: 'Getting on the network',
+      lead: 'How your PC gets an address (DHCP), finds its neighbours (ARP), tests the path (ICMP), shares one public address (NAT), and how a router picks the next hop.',
     },
     web: {
       title: 'How a web page reaches you',
