@@ -151,14 +151,28 @@ export const ARP_META = {
   minutes: 8,
 } as const satisfies ThemeMeta
 
+export const DHCP_META = {
+  id: 'dhcp',
+  kind: 'sequence',
+  category: 'ip',
+  title: { en: 'DHCP: getting an IP address', ja: 'DHCP: IP アドレスをもらう' },
+  summary: {
+    en: 'How a PC that has just connected gets an IP address, a subnet mask, a gateway, and a DNS server from a DHCP server, and how it keeps the lease.',
+    ja: 'つながったばかりの PC が、DHCP サーバーから IP アドレス、サブネットマスク、ゲートウェイ、DNS サーバーをもらうしくみと、リースを続ける方法。',
+  },
+  difficulty: 'beginner',
+  minutes: 10,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
  */
 export const THEME_META = [
   OSI_MODEL_META,
   SUBNET_CALCULATOR_META,
   ARP_META,
+  DHCP_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
