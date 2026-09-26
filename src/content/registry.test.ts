@@ -5,7 +5,7 @@ import { validateScenario } from '@/engine/validate'
 import { findTextProblems } from '@/lib/i18n/textProblems'
 import { THEME_QUIZZES } from './quizzes'
 import { findTheme, THEMES } from './registry'
-import { THEME_IDS, THEME_META } from './themeMeta'
+import { groupByCategory, THEME_CATEGORIES, THEME_IDS, THEME_META } from './themeMeta'
 
 describe('registry', () => {
   it('themeMeta と同じ順・同じ id のテーマを持つ', () => {
@@ -26,6 +26,14 @@ describe('registry', () => {
         expect(theme.scenario.id).toBe(theme.meta.id)
       }
     }
+  })
+
+  it('テーマは分類（THEME_CATEGORIES）の順にまとめて並び、どの分類にもテーマがある', () => {
+    const order = THEME_META.map((meta) => THEME_CATEGORIES.indexOf(meta.category))
+    expect(order).toEqual([...order].sort((a, b) => a - b))
+    expect(groupByCategory(THEME_META).map((group) => group.category)).toEqual(THEME_CATEGORIES)
+    // groupByCategory は元の順を保つ
+    expect(groupByCategory(THEME_META).flatMap((group) => group.themes)).toEqual(THEME_META)
   })
 
   it('テーマ id は URL とファイルパスに使える形', () => {

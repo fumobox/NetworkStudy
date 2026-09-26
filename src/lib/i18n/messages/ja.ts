@@ -87,7 +87,7 @@ export const ja = {
   home: {
     orderTitle: 'どこから始めるか',
     orderLead:
-      '3 つのテーマはつながっている。ブラウザーはまずサーバーのアドレスを調べ（DNS）、次に接続を開き（TCP）、その接続を安全にする（TLS）。',
+      'まず基礎から始め、次に Web のページがブラウザーに届くまでをたどる。最後のまとまりでは、TCP をもっと詳しく見る。',
     howToTitle: 'このサイトの使い方',
     howTo: [
       '各テーマの最初にある短い概要を読む。',
@@ -97,6 +97,20 @@ export const ja = {
     ],
     notStarted: 'クイズは未挑戦',
     progress: (p) => `クイズ: ${String(p.total)} 問中 ${String(p.correct)} 問正解`,
+  },
+  categories: {
+    basics: {
+      title: 'ネットワークの基礎',
+      lead: 'データを送る仕事を層に分けるしくみと、IP アドレスをネットワークに分けるしくみ。',
+    },
+    web: {
+      title: 'Web のページが届くまで',
+      lead: 'ブラウザーはサーバーのアドレスを調べ（DNS）、接続を開き（TCP）、その接続を安全にして（TLS）、ページを受け取る（HTTPS）。',
+    },
+    tcp: {
+      title: 'TCP をもっと詳しく',
+      lead: '接続の閉じ方と、TCP がネットワークを混ませすぎないしくみ。',
+    },
   },
   theme: {
     difficulty: {

@@ -26,7 +26,8 @@ export function ThemeCard({ theme, order, progress }: ThemeCardProps) {
         </span>
       )}
       <div className="min-w-0">
-        <h3 className="font-heading font-semibold">
+        {/* ホームでは分類の見出し（h3）の下に置く */}
+        <h4 className="font-heading font-semibold">
           {/* カード全体をクリックできるようにする（リンクの名前はタイトルだけにする） */}
           <Link
             to={localePath(locale, `/themes/${theme.id}`)}
@@ -34,7 +35,7 @@ export function ThemeCard({ theme, order, progress }: ThemeCardProps) {
           >
             {t(theme.title)}
           </Link>
-        </h3>
+        </h4>
         <p className="mt-1 text-sm text-muted-foreground">{t(theme.summary)}</p>
         <p className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <span>{m.theme.difficulty[theme.difficulty]}</span>

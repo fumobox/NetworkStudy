@@ -1,6 +1,7 @@
 import { ThemeCard } from '@/components/features/theme-card/ThemeCard'
 import { readQuizAnswers, scoreQuiz } from '@/components/features/quiz/useQuizProgress'
 import { THEME_QUIZZES } from '@/content/quizzes'
+import { groupByCategory } from '@/content/themeMeta'
 import { useDocumentDescription } from '@/lib/hooks/useDocumentDescription'
 import { useMessages } from '@/lib/i18n'
 
@@ -24,26 +25,40 @@ export function HomePage() {
             </h2>
             <p className="text-sm text-muted-foreground">{m.home.orderLead}</p>
           </div>
-          {/*
-            THEME_QUIZZES は推奨の学習順に並んでいる。Tailwind の preflight で list-style を消すと
-            Safari（VoiceOver）はリストの意味を落とすので、role="list" で順序を伝える
-          */}
-          <ol role="list" className="grid gap-4 md:grid-cols-3">
-            {THEME_QUIZZES.map((theme, i) => {
-              // 表示のたびに localStorage を読む（他のタブの回答は、ホームを開き直すまで反映しない）
-              const answers = readQuizAnswers(theme.quiz)
-              const score = scoreQuiz(theme.quiz, answers)
-              return (
-                <li key={theme.meta.id}>
-                  <ThemeCard
-                    theme={theme.meta}
-                    order={i + 1}
-                    progress={score.answered === 0 ? null : score}
-                  />
-                </li>
-              )
-            })}
-          </ol>
+          {groupByCategory(THEME_QUIZZES).map((group) => {
+            const headingId = `home-category-${group.category}`
+            const category = m.categories[group.category]
+            return (
+              <section key={group.category} aria-labelledby={headingId} className="space-y-3">
+                <div className="space-y-1">
+                  <h3 id={headingId} className="font-heading text-lg font-semibold">
+                    {category.title}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">{category.lead}</p>
+                </div>
+                {/*
+                  THEME_QUIZZES は推奨の学習順に並んでいる（番号は分類の中での順）。Tailwind の preflight で
+                  list-style を消すと Safari（VoiceOver）はリストの意味を落とすので、role="list" で順序を伝える
+                */}
+                <ol role="list" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {group.themes.map((theme, i) => {
+                    // 表示のたびに localStorage を読む（他のタブの回答は、ホームを開き直すまで反映しない）
+                    const answers = readQuizAnswers(theme.quiz)
+                    const score = scoreQuiz(theme.quiz, answers)
+                    return (
+                      <li key={theme.meta.id}>
+                        <ThemeCard
+                          theme={theme.meta}
+                          order={i + 1}
+                          progress={score.answered === 0 ? null : score}
+                        />
+                      </li>
+                    )
+                  })}
+                </ol>
+              </section>
+            )
+          })}
         </section>
 
         <section aria-labelledby="home-how-to" className="space-y-3">

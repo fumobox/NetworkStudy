@@ -197,6 +197,17 @@ describe('テーマへの導線', () => {
       'aria-current',
       'page',
     )
+    // サイドバーは分類ごとのリスト（見出しでリストに名前を付ける）
+    expect(
+      within(sidebar)
+        .getAllByRole('list')
+        .map((list) => list.getAttribute('aria-labelledby') !== null),
+    ).toEqual([true, true, true])
+    expect(
+      within(within(sidebar).getByRole('list', { name: 'More about TCP' }))
+        .getAllByRole('link')
+        .map((link) => link.textContent),
+    ).toEqual(['Closing a TCP connection', 'TCP congestion control'])
   })
 
   it('ホームにテーマのカードを表示する', async () => {
@@ -213,11 +224,22 @@ describe('テーマへの導線', () => {
         .getAllByRole('link')
         .map((link) => link.textContent),
     ).toEqual(THEME_META.map((meta) => meta.title.ja))
-    // 推奨の学習順は DNS → TCP → TLS から始まる
-    expect(THEME_META.slice(0, 3).map((meta) => meta.id)).toEqual([
-      'dns-resolution',
-      'tcp-handshake',
-      'tls-handshake',
+    // 分類ごとの節に分かれ、Web のページが届くまでの節は DNS → TCP → TLS → HTTPS の順
+    expect(
+      within(list)
+        .getAllByRole('heading', { level: 3 })
+        .map((heading) => heading.textContent),
+    ).toEqual(['ネットワークの基礎', 'Web のページが届くまで', 'TCP をもっと詳しく'])
+    const web = within(list).getByRole('region', { name: 'Web のページが届くまで' })
+    expect(
+      within(web)
+        .getAllByRole('link')
+        .map((link) => link.getAttribute('href')),
+    ).toEqual([
+      '/ja/themes/dns-resolution',
+      '/ja/themes/tcp-handshake',
+      '/ja/themes/tls-handshake',
+      '/ja/themes/https-overview',
     ])
     expect(screen.getByRole('region', { name: 'このサイトの使い方' })).toBeInTheDocument()
   })
@@ -236,9 +258,21 @@ describe('テーマへの導線', () => {
         meta.id === 'tcp-handshake' ? 'Quiz: 1 of 5 correct' : 'Quiz not taken yet',
       ),
     )
-    // 学習順の番号
+    // 学習順の番号は、分類の中で 1 から振る
     expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual(
-      THEME_META.map((_, index) => String(index + 1)),
+      THEME_META.map((meta) =>
+        String(THEME_META.filter((other) => other.category === meta.category).indexOf(meta) + 1),
+      ),
     )
+    expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual([
+      '1',
+      '2',
+      '1',
+      '2',
+      '3',
+      '4',
+      '1',
+      '2',
+    ])
   })
 })
