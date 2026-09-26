@@ -1,0 +1,28 @@
+## Why DHCP?
+
+To use the network, a PC needs an **IP address**, a **subnet mask**, a **default gateway**, and a **DNS server**. **DHCP** (Dynamic Host Configuration Protocol) hands all of these out automatically when the PC connects.
+
+The first time, it takes four messages (often remembered as “DORA”):
+
+1. **DHCPDISCOVER** — the PC, which has no address yet, broadcasts “Is there a DHCP server?” from 0.0.0.0.
+2. **DHCPOFFER** — a server offers an address and the other settings.
+3. **DHCPREQUEST** — the PC asks for the offered address, still by broadcast.
+4. **DHCPACK** — the server confirms the **lease**.
+
+An address is only **leased**: the PC may use it for a limited time. At **T1** (by default, half of the lease) it asks the same server to extend it, and at **T2** (by default, 7/8 of the lease) it asks any server.
+
+## What to look for in the walkthrough
+
+- The addresses of each message: 0.0.0.0 and 255.255.255.255 while the PC has no address, and unicast when it renews.
+- The **xid** is the same in all messages of one exchange.
+- Which options each message carries, and the client’s state (INIT → SELECTING → REQUESTING → BOUND).
+- In the “What if…” options: renewing at T1, restarting with a remembered address, a refusal (DHCPNAK), and a lost DISCOVER.
+
+## About this page
+
+There is one server; real networks can have several, and each may make an offer. In offices, a **relay agent** on the router forwards DHCP messages to a server on another network (the giaddr field); this is not shown. DHCPDECLINE, DHCPRELEASE, and DHCPINFORM are not covered. The lease of one hour is an example; home routers often use a day. At home, the router is usually also the DHCP server.
+
+## References
+
+- [RFC 2131: Dynamic Host Configuration Protocol](https://www.rfc-editor.org/rfc/rfc2131)
+- [RFC 2132: DHCP Options and BOOTP Vendor Extensions](https://www.rfc-editor.org/rfc/rfc2132)
