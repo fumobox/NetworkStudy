@@ -124,7 +124,7 @@ export const en = {
     },
     ip: {
       title: 'Getting on the network',
-      lead: 'How your PC gets an address (DHCP), finds its neighbours (ARP), tests the path (ICMP), shares one public address (NAT), and how a router picks the next hop.',
+      lead: 'How your PC gets an address (DHCP), finds its neighbors (ARP), tests the path (ICMP), shares one public address (NAT), and how a router picks the next hop.',
     },
     web: {
       title: 'How a web page reaches you',

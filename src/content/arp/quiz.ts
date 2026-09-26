@@ -58,8 +58,8 @@ export const arpQuiz: Quiz = {
       ],
       answerId: 'known',
       explanation: {
-        en: 'The request carries the sender’s MAC address (SHA), so the device that answers can send the reply straight to it.',
-        ja: '要求には送った側の MAC アドレス（SHA）が入っているので、答える機器は応答をその PC に直接送れる。',
+        en: 'The request carries the sender’s MAC address (SHA), so the device that answers can send the reply straight to it. Routers do not matter here: the request and the reply both stay on the LAN.',
+        ja: '要求には送った側の MAC アドレス（SHA）が入っているので、答える機器は応答をその PC に直接送れる。ルーターは関係ない。要求も応答も LAN の中だけでやり取りする。',
       },
     },
     {
