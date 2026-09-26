@@ -1,13 +1,8 @@
 import { useCallback, useMemo } from 'react'
 import { useSearchParams } from 'react-router'
 import type { OptionValue, ScenarioHandle, ScenarioOptions, Step } from '../types'
-import {
-  optionParamsKey,
-  readOptionParams,
-  readStepParam,
-  writeScenarioParams,
-  writeStepParam,
-} from '../url'
+import { optionParamsKey, readOptionParams, writeScenarioParams } from '../url'
+import { useStepParam } from './useStepParam'
 
 export interface ScenarioSession {
   readonly options: ScenarioOptions
@@ -35,7 +30,7 @@ export function useScenarioOptions(handle: ScenarioHandle): ScenarioSession {
     () => handle.resolve(readOptionParams(new URLSearchParams(optionsKey))),
     [handle, optionsKey],
   )
-  const currentStep = readStepParam(params) ?? 0
+  const { urlStepIndex, syncStep } = useStepParam()
 
   const setOption = useCallback(
     (key: string, value: OptionValue) => {
@@ -52,23 +47,12 @@ export function useScenarioOptions(handle: ScenarioHandle): ScenarioSession {
     [handle.optionDefs, resolved.options, setParams],
   )
 
-  const syncStep = useCallback(
-    (stepIndex: number) => {
-      if (stepIndex === currentStep) {
-        return
-      }
-      // ステップだけを書き換える。オプションまで書き直すと、直前のオプション変更を古い値で巻き戻すことがある
-      setParams((previous) => writeStepParam(previous, stepIndex), { replace: true })
-    },
-    [currentStep, setParams],
-  )
-
   return {
     options: resolved.options,
     steps: resolved.steps,
     optionsKey,
-    initialStepIndex: currentStep,
-    urlStepIndex: currentStep,
+    initialStepIndex: urlStepIndex,
+    urlStepIndex,
     setOption,
     syncStep,
   }

@@ -29,7 +29,7 @@
 | TLS 1.3 のメッセージ | ClientHello、ServerHello、EncryptedExtensions、Certificate、CertificateVerify、Finished、Alert |
 | TLS の拡張・値 | key_share、supported_versions、signature_algorithms、server_name（SNI）、certificate_expired、certificate_unknown、unknown_ca |
 | 証明書 | SAN（subjectAltName）、CA、X.509 |
-| その他 | IP、IPv4、HTTP、HTTPS、URL、RFC、OSI、CIDR |
+| その他 | IP、IPv4、HTTP、HTTPS、URL、RFC、OSI、CIDR、Ethernet、Wi-Fi、MAC、FCS、UDP、UTF-8 |
 
 ## 3. 訳語の対応表
 
@@ -93,6 +93,16 @@
 | key exchange | 鍵交換 | |
 | header | ヘッダー | |
 | encapsulation | カプセル化 | |
+| OSI reference model | OSI 参照モデル | |
+| TCP/IP model | TCP/IP モデル | |
+| application / presentation / session layer | アプリケーション層／プレゼンテーション層／セッション層 | OSI の第 7〜5 層 |
+| transport / network / data link / physical layer | トランスポート層／ネットワーク層／データリンク層／物理層 | OSI の第 4〜1 層 |
+| internet layer / link layer | インターネット層／リンク層 | TCP/IP の層 |
+| frame | フレーム | データリンク層の単位 |
+| trailer | トレーラー | |
+| MAC address | MAC アドレス | |
+| routing | 経路制御 | |
+| network card | ネットワークカード | |
 | layer | 層 | 「レイヤー」は UI の説明など一般的な文脈に限る |
 | subnet | サブネット | |
 | subnet mask | サブネットマスク | |

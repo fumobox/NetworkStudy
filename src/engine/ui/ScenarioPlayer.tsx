@@ -1,12 +1,13 @@
 import { domAnimation, LazyMotion } from 'motion/react'
-import { useEffect, useEffectEvent, useMemo, useRef, type ReactNode } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useMessages } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
-import { clampStepIndex, deriveState } from '../derive'
+import { deriveState } from '../derive'
 import { diagramWidth, hasTimers } from '../diagram'
 import { useScenarioOptions, type ScenarioSession } from '../hooks/useScenarioOptions'
 import { useScenarioPlayer } from '../hooks/useScenarioPlayer'
 import { useStepKeyboard } from '../hooks/useStepKeyboard'
+import { useStepUrlSync } from '../hooks/useStepUrlSync'
 import type { DerivedState, ScenarioHandle, ScenarioOptions, StateKey } from '../types'
 import { ActorStatePanel } from './ActorStatePanel'
 import { PacketInspector } from './PacketInspector'
@@ -76,32 +77,13 @@ function PlayerBody({ scenario, session, renderPanels, hiddenStateKeys }: Player
   const [state, dispatch] = useScenarioPlayer(steps.length, session.initialStepIndex)
   useStepKeyboard(dispatch)
 
-  // プレイヤー → URL: ステップが変わったら書き戻す。最後に書いた値を覚えておき、外からの変更と区別する
-  const lastWrittenStep = useRef(state.stepIndex)
-  const writeStep = useEffectEvent((stepIndex: number) => {
-    lastWrittenStep.current = stepIndex
-    session.syncStep(stepIndex)
+  useStepUrlSync({
+    stepCount: steps.length,
+    state,
+    dispatch,
+    urlStepIndex: session.urlStepIndex,
+    syncStep: session.syncStep,
   })
-  useEffect(() => {
-    writeStep(state.stepIndex)
-  }, [state.stepIndex])
-
-  // URL → プレイヤー: 戻る・進むやリンクで ?step= だけが外から変わったら、そのステップへ移る
-  const { urlStepIndex } = session
-  const followUrl = useEffectEvent((stepIndex: number) => {
-    if (stepIndex === lastWrittenStep.current) {
-      return
-    }
-    if (clampStepIndex(steps.length, stepIndex) === state.stepIndex) {
-      // 範囲外の値が来ても丸めると今のステップのままなら、プレイヤーは変わらないので URL だけ正規化する
-      writeStep(state.stepIndex)
-    } else {
-      dispatch({ type: 'jump', stepIndex })
-    }
-  })
-  useEffect(() => {
-    followUrl(urlStepIndex)
-  }, [urlStepIndex])
 
   const derived = useMemo(
     () => deriveState(scenario.actors, steps, state.stepIndex),

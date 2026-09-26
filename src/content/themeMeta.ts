@@ -97,7 +97,19 @@ export const HTTPS_OVERVIEW_META = {
   minutes: 15,
 } as const satisfies ThemeMeta
 
-/** サイトで案内する学習順（DNS → TCP → TLS → それらをつなげた HTTPS の全体像 → TCP の接続の終了、その後に計算ツール）に並べる */
+export const OSI_MODEL_META = {
+  id: 'osi-model',
+  kind: 'custom',
+  title: { en: 'The OSI model and encapsulation', ja: 'OSI 参照モデルとカプセル化' },
+  summary: {
+    en: 'How the seven layers of the OSI model split up the work of sending data, and how each layer adds its header on the way down and removes it on the way up.',
+    ja: 'OSI 参照モデルの 7 つの層が、データを送る仕事をどう分け合うか。各層が、下りるときにヘッダーを付け、上るときに外すカプセル化の流れ。',
+  },
+  difficulty: 'beginner',
+  minutes: 10,
+} as const satisfies ThemeMeta
+
+/** サイトで案内する学習順（DNS → TCP → TLS → それらをつなげた HTTPS の全体像 → TCP の接続の終了、その後に計算ツールと OSI 参照モデル）に並べる */
 export const THEME_META = [
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
@@ -105,6 +117,7 @@ export const THEME_META = [
   HTTPS_OVERVIEW_META,
   TCP_CLOSE_META,
   SUBNET_CALCULATOR_META,
+  OSI_MODEL_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']

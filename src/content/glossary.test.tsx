@@ -4,6 +4,9 @@ import { describe, expect, it } from 'vitest'
 import { collectQuizTexts } from '@/components/features/quiz/validate'
 import { collectLocalizedTexts } from '@/engine/validate'
 import { ja } from '@/lib/i18n/messages/ja'
+import { OSI_LAYERS, TCPIP_LAYER_NAMES } from './osi-model/layers'
+import { layerLabel, OSI_TEXT } from './osi-model/osiText'
+import { OSI_STEPS } from './osi-model/steps'
 import { THEMES } from './registry'
 import { binarySplitText, SUBNET_TEXT } from './subnet-calculator/subnetText'
 import { CERT_CHAIN_TEXT } from './tls-handshake/certChainText'
@@ -115,6 +118,11 @@ describe('用語集（docs/glossary.md）の表記', () => {
       ]),
       ...collectJapanese(CERT_CHAIN_TEXT, 'tls-handshake.CertChainPanel'),
       ...collectJapanese(SUBNET_TEXT, 'subnet-calculator.SubnetCalculator'),
+      ...collectJapanese(OSI_TEXT, 'osi-model.OsiWalkthrough'),
+      ...collectJapanese(OSI_LAYERS, 'osi-model.layers'),
+      ...collectJapanese(TCPIP_LAYER_NAMES, 'osi-model.tcpIpLayers'),
+      ...collectJapanese(OSI_STEPS, 'osi-model.steps'),
+      ...collectJapanese(layerLabel(4), 'osi-model.layerLabel'),
       ...collectJapanese(binarySplitText(26), 'subnet-calculator.binarySplitText'),
       ...THEMES.flatMap((theme) =>
         [

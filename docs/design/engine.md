@@ -349,6 +349,7 @@ ID の一意性などは型ではなく `validateScenario(handle): readonly Scen
   - select: `z.enum([...]).catch('open')`
 - URL: `?step=`（1 始まり）と `opt.<key>=<value>`。デフォルト値と同じオプションは URL から省く
 - オプションを変えたら、プレイヤーを最初のステップに戻す（`reset`）
+- `?step=` の読み書きは `useStepParam`、プレイヤーとの双方向の同期（ステップが変わったら書き戻し、戻る・進むで外から変わったらそのステップへ移る）は `useStepUrlSync` が受け持つ。どちらもシナリオを使わないステップ実行（OSI 参照モデルのテーマ）でも使える
 
 ## シナリオの記述例（TCP、抜粋）
 

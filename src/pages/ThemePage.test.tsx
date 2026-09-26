@@ -4,6 +4,7 @@ import { StrictMode } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from '@/app/AppRoutes'
+import { THEME_META } from '@/content/themeMeta'
 import { waitForPage } from '@/test/waitForPage'
 
 /** 現在の URL を表示し、外からの遷移（戻る・進むやリンク）を再現するボタンを置く */
@@ -206,18 +207,17 @@ describe('テーマへの導線', () => {
       '/ja/themes/tcp-handshake',
     )
     expect(within(list).getAllByText('初級').length).toBeGreaterThan(0)
-    // サイトで案内する学習順（DNS → TCP → TLS、その後に計算ツール）に並ぶ
+    // サイトで案内する学習順（themeMeta.ts の THEME_META の順）に並ぶ
     expect(
       within(list)
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual([
-      'DNS の名前解決',
-      'TCP 3 ウェイハンドシェイク',
-      'TLS 1.3 のハンドシェイクと証明書',
-      'HTTPS の全体像',
-      'TCP の接続の終了',
-      'サブネット計算',
+    ).toEqual(THEME_META.map((meta) => meta.title.ja))
+    // 推奨の学習順は DNS → TCP → TLS から始まる
+    expect(THEME_META.slice(0, 3).map((meta) => meta.id)).toEqual([
+      'dns-resolution',
+      'tcp-handshake',
+      'tls-handshake',
     ])
     expect(screen.getByRole('region', { name: 'このサイトの使い方' })).toBeInTheDocument()
   })
@@ -231,22 +231,14 @@ describe('テーマへの導線', () => {
     const cards = within(screen.getByRole('region', { name: 'Where to start' })).getAllByRole(
       'listitem',
     )
-    expect(cards.map((card) => within(card).getByText(/^Quiz/).textContent)).toEqual([
-      'Quiz not taken yet',
-      'Quiz: 1 of 5 correct',
-      'Quiz not taken yet',
-      'Quiz not taken yet',
-      'Quiz not taken yet',
-      'Quiz not taken yet',
-    ])
+    expect(cards.map((card) => within(card).getByText(/^Quiz/).textContent)).toEqual(
+      THEME_META.map((meta) =>
+        meta.id === 'tcp-handshake' ? 'Quiz: 1 of 5 correct' : 'Quiz not taken yet',
+      ),
+    )
     // 学習順の番号
-    expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual([
-      '1',
-      '2',
-      '3',
-      '4',
-      '5',
-      '6',
-    ])
+    expect(cards.map((card) => card.querySelector('[aria-hidden]')?.textContent)).toEqual(
+      THEME_META.map((_, index) => String(index + 1)),
+    )
   })
 })

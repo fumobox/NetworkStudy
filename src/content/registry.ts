@@ -1,5 +1,6 @@
 import { dnsResolutionTheme } from './dns-resolution'
 import { httpsOverviewTheme } from './https-overview'
+import { osiModelTheme } from './osi-model'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { tcpCloseTheme } from './tcp-close'
 import { tcpHandshakeTheme } from './tcp-handshake'
@@ -14,6 +15,7 @@ export const THEMES: readonly ThemeModule[] = [
   httpsOverviewTheme,
   tcpCloseTheme,
   subnetCalculatorTheme,
+  osiModelTheme,
 ]
 
 export function findTheme(id: string | undefined): ThemeModule | undefined {
