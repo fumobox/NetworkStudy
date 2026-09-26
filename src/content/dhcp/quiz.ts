@@ -93,7 +93,7 @@ export const dhcpQuiz: Quiz = {
           id: 'restart',
           text: {
             en: 'Stops using the address and starts again from DHCPDISCOVER',
-            ja: 'アドレスを使わず、DHCPDISCOVER からやり直す',
+            ja: 'アドレスを使うのをやめ、DHCPDISCOVER からやり直す',
           },
         },
       ],
