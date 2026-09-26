@@ -32,6 +32,7 @@
 | その他 | IP、IPv4、HTTP、HTTPS、URL、RFC、OSI、CIDR、Ethernet、Wi-Fi、MAC、FCS、UDP、UTF-8 |
 | ARP | ARP、who-has、is-at、HTYPE、PTYPE、HLEN、PLEN、OPER、SHA、SPA、THA、TPA、EtherType、LAN |
 | ICMP | ICMP、ping、traceroute、tracert、Echo Request、Echo Reply、Time Exceeded、Destination Unreachable、host unreachable、port unreachable、type / code、TTL |
+| NAT | NAT、NAPT、ALG、UPnP、PCP |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
 
 ## 3. 訳語の対応表
@@ -105,6 +106,11 @@
 | relay agent | リレーエージェント | |
 | option (DHCP) | オプション | 番号で呼ぶ（オプション 53 など） |
 | router | ルーター | |
+| private address / public address | プライベートアドレス／グローバルアドレス | public は「グローバル」と訳す |
+| NAT table (mapping) | NAT の変換表（対応） | |
+| port forwarding | ポートフォワーディング | |
+| carrier-grade NAT | キャリアグレード NAT | |
+| hairpinning | ヘアピン | |
 | home router / ISP router | 家庭のルーター／ISP のルーター | |
 | hop | ホップ | |
 | probe | プローブ | traceroute が送るパケット |
