@@ -151,7 +151,7 @@ describe('arpScenario', () => {
     expect(build({ cached: true, reply: 'none' })).toEqual(steps)
   })
 
-  it('応答がなければ 1 秒おきに 3 回尋ね、あきらめてパケットを捨てる', () => {
+  it('応答がなければ 1 秒おきに 3 回尋ね、3 回目の 1 秒後にあきらめてパケットを捨てる', () => {
     const steps = build({ reply: 'none' })
     expect(steps.map((step) => step.id)).toEqual([
       'decide',
@@ -172,7 +172,7 @@ describe('arpScenario', () => {
       pending: 'dropped',
       pc: [['192.168.1.1', '(failed)']],
       router: [],
-      elapsedMs: 2000,
+      elapsedMs: 3000,
     })
   })
 })

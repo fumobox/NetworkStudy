@@ -30,6 +30,7 @@
 | TLS の拡張・値 | key_share、supported_versions、signature_algorithms、server_name（SNI）、certificate_expired、certificate_unknown、unknown_ca |
 | 証明書 | SAN（subjectAltName）、CA、X.509 |
 | その他 | IP、IPv4、HTTP、HTTPS、URL、RFC、OSI、CIDR、Ethernet、Wi-Fi、MAC、FCS、UDP、UTF-8 |
+| ARP | ARP、who-has、is-at、HTYPE、PTYPE、HLEN、PLEN、OPER、SHA、SPA、THA、TPA、EtherType、LAN |
 
 ## 3. 訳語の対応表
 
@@ -95,6 +96,11 @@
 | key exchange | 鍵交換 | |
 | header | ヘッダー | |
 | encapsulation | カプセル化 | |
+| ARP cache | ARP キャッシュ | |
+| ARP request / reply | ARP の要求／応答 | |
+| next hop | ネクストホップ | |
+| default gateway | デフォルトゲートウェイ | |
+| broadcast / unicast | ブロードキャスト／ユニキャスト | |
 | OSI reference model | OSI 参照モデル | |
 | TCP/IP model | TCP/IP モデル | |
 | application / presentation / session layer | アプリケーション層／プレゼンテーション層／セッション層 | OSI の第 7〜5 層 |

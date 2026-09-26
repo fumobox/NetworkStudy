@@ -17,7 +17,6 @@ import type {
   Actor,
   ActorId,
   Message,
-  PacketField,
   Scenario,
   StateKey,
   StateTable,
@@ -177,8 +176,8 @@ function replyMessage(target: Host): Message {
     label: `ARP is-at ${target.mac}`,
     status: 'delivered',
     description: {
-      en: `The ARP reply: “${target.ip} is at ${target.mac}.” It goes only to the PC that asked (unicast), because the reply knows its address.`,
-      ja: `ARP の応答。「${target.ip} は ${target.mac}」。尋ねた PC のアドレスがわかっているので、その PC にだけ送る（ユニキャスト）。`,
+      en: `The ARP reply: “${target.ip} is at ${target.mac}.” It goes only to the PC that asked (unicast), because the replying device already knows the PC’s MAC address from the request (SHA).`,
+      ja: `ARP の応答。「${target.ip} は ${target.mac}」。要求の SHA で尋ねた PC の MAC アドレスがわかっているので、その PC にだけ送る（ユニキャスト）。`,
     },
     fields: [
       { name: 'Eth Dst', value: ADDRESSES.pc.mac, highlight: true, description: FIELD_TEXT.ethDst },
@@ -265,7 +264,7 @@ function ipMessage(target: Host, destinationIp: string): Message {
         name: 'TTL',
         value: '64',
         description: { en: 'Time to live', ja: '生存時間（TTL）' },
-      } satisfies PacketField,
+      },
     ],
   }
 }
@@ -316,8 +315,8 @@ function buildSteps(options: ArpOptions): readonly Step[] {
           ja: 'MAC アドレスはキャッシュにある',
         },
         description: {
-          en: `The ARP cache already has ${target.ip} → ${target.mac} from an earlier exchange, so no ARP request is needed. Entries expire after a while (RFC 1122 asks for a timeout; the length depends on the OS).`,
-          ja: `ARP キャッシュには、前のやり取りで調べた ${target.ip} → ${target.mac} がすでにあるので、ARP の要求は要らない。行はしばらくすると消える（RFC 1122 は有効期限を求めている。長さは OS による）。`,
+          en: `The ARP cache already has ${target.ip} → ${target.mac} from an earlier exchange, so no ARP request is needed. Old entries are removed after a while (RFC 1122 requires a way to flush stale entries, usually a timeout; the length depends on the OS).`,
+          ja: `ARP キャッシュには、前のやり取りで調べた ${target.ip} → ${target.mac} がすでにあるので、ARP の要求は要らない。古い行はしばらくすると消える（RFC 1122 は古い行を消す仕組みを求めている。多くは有効期限で、長さは OS による）。`,
         },
         events: [],
       },
@@ -360,8 +359,8 @@ function buildSteps(options: ArpOptions): readonly Step[] {
     id: 'request',
     title: { en: 'The PC broadcasts an ARP request', ja: 'PC が ARP の要求をブロードキャストする' },
     description: {
-      en: `The request goes to the broadcast MAC address ff:ff:ff:ff:ff:ff, so both the router and the other PC receive it. ${bystander.id === PC2 ? 'The other PC' : 'The router'} is not the target (TPA is not its address), so it ignores the request and does not add the PC to its cache.${answered ? '' : ` ${target.id === ROUTER ? 'The router' : 'The other PC'} is turned off, so nobody answers.`}`,
-      ja: `要求はブロードキャストの MAC アドレス ff:ff:ff:ff:ff:ff 宛てなので、ルーターと別の PC の両方に届く。${bystander.id === PC2 ? '別の PC は' : 'ルーターは'}対象ではない（TPA が自分のアドレスではない）ので、要求を無視し、PC をキャッシュに加えない。${answered ? '' : `${target.id === ROUTER ? 'ルーターは' : '別の PC は'}電源が切れていて、誰も答えない。`}`,
+      en: `The request goes to the broadcast MAC address ff:ff:ff:ff:ff:ff, so ${answered ? 'both the router and the other PC receive it' : 'every device on the LAN that is turned on receives it'}. ${bystander.id === PC2 ? 'The other PC' : 'The router'} is not the target (TPA is not its address), so it ignores the request and does not add the PC to its cache.${answered ? '' : ` ${target.id === ROUTER ? 'The router' : 'The other PC'} is turned off, so nobody answers.`}`,
+      ja: `要求はブロードキャストの MAC アドレス ff:ff:ff:ff:ff:ff 宛てなので、${answered ? 'ルーターと別の PC の両方に届く' : '電源の入っている LAN のすべての機器に届く'}。${bystander.id === PC2 ? '別の PC は' : 'ルーターは'}対象ではない（TPA が自分のアドレスではない）ので、要求を無視し、PC をキャッシュに加えない。${answered ? '' : `${target.id === ROUTER ? 'ルーターは' : '別の PC は'}電源が切れていて、誰も答えない。`}`,
     },
     events: requestEvents('', false),
   })
@@ -388,10 +387,14 @@ function buildSteps(options: ArpOptions): readonly Step[] {
       id: 'failed',
       title: { en: 'ARP fails: the packet is dropped', ja: 'ARP に失敗: パケットを捨てる' },
       description: {
-        en: `After three requests without a reply, the PC gives up. It marks the entry as failed, drops the waiting packet, and the application gets an error such as “Destination Host Unreachable”.`,
-        ja: '3 回尋ねても応答がないので、PC はあきらめる。行を失敗として記録し、待たせていたパケットを捨てる。アプリケーションには「Destination Host Unreachable」などのエラーが返る。',
+        en: `One second after the third request, still without a reply, the PC gives up. It marks the entry as failed, drops the waiting packet, and the application gets an error such as “Destination Host Unreachable”.`,
+        ja: '3 回目の要求から 1 秒たっても応答がないので、PC はあきらめる。行を失敗として記録し、待たせていたパケットを捨てる。アプリケーションには「Destination Host Unreachable」などのエラーが返る。',
       },
-      events: [set(PC, CACHE, table([[target.ip, '(failed)']])), set(PC, PENDING, 'dropped')],
+      events: [
+        { kind: 'timer', actorId: PC, name: 'ARP retry', durationMs: RETRY_MS },
+        set(PC, CACHE, table([[target.ip, '(failed)']])),
+        set(PC, PENDING, 'dropped'),
+      ],
     })
     return steps
   }
