@@ -379,8 +379,14 @@ function nakSteps(
       id: 'restart',
       title: { en: 'The client starts over', ja: 'クライアントは最初からやり直す' },
       description: {
-        en: `The client must stop using ${ciaddr === ZERO ? 'the address' : ciaddr} at once, goes back to INIT, and starts again with DHCPDISCOVER.`,
-        ja: `クライアントは ${ciaddr === ZERO ? 'そのアドレス' : ciaddr} をすぐに使うのをやめ、INIT に戻って DHCPDISCOVER からやり直す。`,
+        en:
+          ciaddr === ZERO
+            ? 'The client must not use the address. It goes back to INIT and starts again with DHCPDISCOVER.'
+            : `The client must stop using ${ciaddr} at once, goes back to INIT, and starts again with DHCPDISCOVER.`,
+        ja:
+          ciaddr === ZERO
+            ? 'クライアントはそのアドレスを使えない。INIT に戻り、DHCPDISCOVER からやり直す。'
+            : `クライアントは ${ciaddr} をすぐに使うのをやめ、INIT に戻って DHCPDISCOVER からやり直す。`,
       },
       events: [
         set(PC, STATE, 'INIT'),
@@ -580,8 +586,8 @@ function renewFlow(options: DhcpOptions): Step[] {
       id: 'request',
       title: { en: 'The PC asks the server directly', ja: 'PC がサーバーに直接頼む' },
       description: {
-        en: 'Now the PC has an address and knows the server, so it sends DHCPREQUEST by unicast from 192.168.1.10 and puts its address in ciaddr. In this state the request must not contain option 50 or option 54.',
-        ja: 'PC はもうアドレスがあり、サーバーもわかっているので、DHCPREQUEST を 192.168.1.10 からユニキャストで送り、ciaddr に自分のアドレスを入れる。この状態の要求には、オプション 50 と 54 を入れてはならない。',
+        en: 'Now the PC has an address and knows the server, so it sends DHCPREQUEST by unicast from 192.168.1.10 and puts its address in ciaddr. In this state the request must not contain option 50 or option 54. It repeats the list of wanted settings (option 55) from DISCOVER.',
+        ja: 'PC はもうアドレスがあり、サーバーもわかっているので、DHCPREQUEST を 192.168.1.10 からユニキャストで送り、ciaddr に自分のアドレスを入れる。この状態の要求には、オプション 50 と 54 を入れてはならない。DISCOVER と同じ、欲しい設定の一覧（オプション 55）は繰り返す。',
       },
       events: [
         send(
@@ -595,7 +601,7 @@ function renewFlow(options: DhcpOptions): Step[] {
             ciaddr: VALUES.offered,
             yiaddr: ZERO,
             broadcastFlag: false,
-            options: [OPT.type('DHCPREQUEST'), OPT.clientId],
+            options: [OPT.type('DHCPREQUEST'), OPT.clientId, OPT.paramList],
             description: {
               en: '“Can I keep using 192.168.1.10?”',
               ja: '「192.168.1.10 を使い続けてよいですか？」',

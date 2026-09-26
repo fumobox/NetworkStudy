@@ -144,8 +144,13 @@ describe('dhcpScenario', () => {
       expect(field(request, 'Eth Dst')).toBe('00:00:5e:00:53:01')
       expect(field(request, 'ciaddr')).toBe('192.168.1.10')
       expect(field(request, 'flags')).toBe('0x0000')
-      expect(optionCodes(request)).toEqual([53, 61])
+      // 50・54 は入れない。DISCOVER で送った 55 は繰り返す（RFC 2131 §3.5、§4.3.2）
+      expect(optionCodes(request)).toEqual([53, 61, 55])
       expect(field(ack, 'IP Src → Dst')).toBe('192.168.1.1 → 192.168.1.10')
+      expect([field(ack, 'Eth Dst'), field(ack, 'ciaddr')]).toEqual([
+        '00:00:5e:00:53:0a',
+        '192.168.1.10',
+      ])
       expect(states(steps)).toEqual(['BOUND', 'RENEWING', 'RENEWING', 'RENEWING', 'BOUND'])
       expect(finalPc(steps).elapsedMs).toBe(1_800_000)
     })
