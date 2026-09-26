@@ -14,6 +14,7 @@ Getting on the network / ネットワークにつながるまで
 
 - ARP: from IP address to MAC address / ARP: IP アドレスから MAC アドレスへ
 - DHCP: getting an IP address / DHCP: IP アドレスをもらう
+- ICMP: ping and traceroute / ICMP: ping と traceroute
 
 How a web page reaches you / Web のページが届くまで
 

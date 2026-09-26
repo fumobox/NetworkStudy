@@ -1,0 +1,34 @@
+## What ICMP is for
+
+IP only delivers packets; it does not report problems. **ICMP** (Internet Control Message Protocol) carries the reports and tests that go with IP. Every ICMP message has a **type** and a **code**:
+
+| Type / code | Name | When |
+|---|---|---|
+| 8 / 0 | Echo Request | ping asks “are you there?” |
+| 0 / 0 | Echo Reply | the answer to an Echo Request |
+| 11 / 0 | Time Exceeded | a router dropped a packet because its TTL reached 0 |
+| 3 / 1 | Destination Unreachable (host unreachable) | the last router could not deliver to the host |
+| 3 / 3 | Destination Unreachable (port unreachable) | nothing listens on that UDP port |
+
+## ping and traceroute
+
+- **ping** sends Echo Requests and waits for Echo Replies. A reply means the host is reachable; the TTL in the reply hints at how many routers it passed.
+- **traceroute** uses **TTL**, which every router decreases by 1. A probe with TTL 1 dies at the first router, TTL 2 at the second, and so on. Each router answers with Time Exceeded from its own address, so traceroute can list the hops.
+
+Windows `tracert` sends ICMP Echo probes; Linux `traceroute` sends UDP probes to ports 33434 and above by default, and the destination ends the trace with Port Unreachable. Ordinary packets such as ping’s Echo Request start with TTL 128 on Windows and 64 on Linux.
+
+## What to look for in the walkthrough
+
+- The **TTL** column: it goes down by 1 at every router.
+- The source address of each ICMP error: it is the router that sent it, not the server.
+- In the “What if…” options: an unreachable server (Destination Unreachable), a missing answer (a lost reply in ping, `*` at hop 2 in traceroute), and UDP probes that end with Port Unreachable.
+
+## About this page
+
+The home router’s NAT is left out, so the PC’s private address appears along the whole path (see the NAT theme). traceroute sends one probe per hop here; the real command sends three and shows three times. Round-trip times are not shown, because this site does not model delay. Many hosts and routers limit or block ICMP, so a missing answer does not always mean a problem.
+
+## References
+
+- [RFC 792: Internet Control Message Protocol](https://www.rfc-editor.org/rfc/rfc792)
+- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §3.2.1.7, §3.2.2, §4.1.3.1
+- [RFC 1812: Requirements for IP Version 4 Routers](https://www.rfc-editor.org/rfc/rfc1812) — §4.3, §5.3.1

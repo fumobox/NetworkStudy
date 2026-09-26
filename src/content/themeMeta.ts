@@ -164,15 +164,29 @@ export const DHCP_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
+export const ICMP_META = {
+  id: 'icmp',
+  kind: 'sequence',
+  category: 'ip',
+  title: { en: 'ICMP: ping and traceroute', ja: 'ICMP: ping と traceroute' },
+  summary: {
+    en: 'How ping checks that a host is reachable, and how traceroute uses TTL and Time Exceeded to find every router on the path.',
+    ja: 'ping がホストに届くかを確かめるしくみと、traceroute が TTL と Time Exceeded を使って途中のルーターを調べるしくみ。',
+  },
+  difficulty: 'beginner',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
  */
 export const THEME_META = [
   OSI_MODEL_META,
   SUBNET_CALCULATOR_META,
   ARP_META,
   DHCP_META,
+  ICMP_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
