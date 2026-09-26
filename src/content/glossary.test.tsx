@@ -8,6 +8,7 @@ import { OSI_LAYERS, TCPIP_LAYER_NAMES } from './osi-model/layers'
 import { layerLabel, OSI_TEXT } from './osi-model/osiText'
 import { OSI_STEPS } from './osi-model/steps'
 import { THEMES } from './registry'
+import { ROUTE_TEXT } from './route-lookup/routeText'
 import { CWND_TEXT, cwndSummary } from './tcp-congestion/cwndText'
 import { binarySplitText, SUBNET_TEXT } from './subnet-calculator/subnetText'
 import { CERT_CHAIN_TEXT } from './tls-handshake/certChainText'
@@ -127,6 +128,11 @@ describe('用語集（docs/glossary.md）の表記', () => {
       ...collectJapanese(CWND_TEXT, 'tcp-congestion.CwndGraph'),
       ...collectJapanese(cwndSummary([1, 2, 4]), 'tcp-congestion.cwndSummary'),
       ...collectJapanese(binarySplitText(26), 'subnet-calculator.binarySplitText'),
+      ...collectJapanese(ROUTE_TEXT, 'route-lookup.RouteLookup'),
+      ...collectJapanese(ROUTE_TEXT.routeLabel('X'), 'route-lookup.routeLabel'),
+      ...collectJapanese(ROUTE_TEXT.onLink('X'), 'route-lookup.onLink'),
+      ...collectJapanese(ROUTE_TEXT.viaGateway('X'), 'route-lookup.viaGateway'),
+      ...collectJapanese(ROUTE_TEXT.binaryLead(24), 'route-lookup.binaryLead'),
       ...THEMES.flatMap((theme) =>
         [
           ...(theme.kind === 'sequence' ? collectLocalizedTexts(theme.scenario) : []),

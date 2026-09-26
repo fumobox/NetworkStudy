@@ -1,0 +1,28 @@
+## How a router chooses where to send a packet
+
+A router has a **routing table**: a list of **prefixes** (such as `192.168.1.0/24`), each with a **next hop** and an interface. For every packet, the router compares the destination address with the prefixes and picks one route:
+
+1. **Match**: a route matches when the first bits of the destination (as many as the prefix length) are equal to the prefix.
+2. **Longest match**: of all matching routes, the one with the **longest prefix** wins, because it is the most specific.
+3. **Metric**: if several routes are equally long, the one with the smaller **metric** wins.
+
+The **default route** `0.0.0.0/0` matches every address, but it is the shortest possible prefix, so it is only used when nothing else matches. If no route matches at all, the router drops the packet and sends back ICMP Destination Unreachable.
+
+A route whose next hop is “directly connected” means the destination is on one of the router’s own networks: the router sends the frame to the destination itself (ARP for the destination). Otherwise it sends the frame to the next hop (ARP for the next hop), and the IP destination stays the same.
+
+Your PC has a routing table too, usually with just two routes: its own network, and a default route to the home router.
+
+## What to try
+
+- The example destinations: `/24` beats `/16`, a `/32` host route beats the default route, and the metric decides between two `/8` routes.
+- Turn routes off to see which one is used next, and what happens when there is no route at all.
+- Switch to the PC’s table and compare.
+
+## About this page
+
+When two routes are equal in length and metric, this tool takes the first one in the table; real routers may split traffic between them (ECMP) or use other rules. Administrative distance (preferring routes learned from one source over another), routing protocols such as OSPF and BGP, and IPv6 are not covered.
+
+## References
+
+- [RFC 1812: Requirements for IP Version 4 Routers](https://www.rfc-editor.org/rfc/rfc1812) — §5.2.4.3 “Next Hop Address”
+- [RFC 4632: Classless Inter-domain Routing (CIDR)](https://www.rfc-editor.org/rfc/rfc4632) — §5.1

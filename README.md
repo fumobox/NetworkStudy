@@ -16,6 +16,7 @@ Getting on the network / ネットワークにつながるまで
 - DHCP: getting an IP address / DHCP: IP アドレスをもらう
 - ICMP: ping and traceroute / ICMP: ping と traceroute
 - NAT: sharing one public address / NAT: 1 つのグローバルアドレスを共有する
+- Route lookup: longest prefix match / 経路の検索: 最長一致
 
 How a web page reaches you / Web のページが届くまで
 
