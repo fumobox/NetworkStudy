@@ -11,7 +11,7 @@ The sender keeps a **congestion window (cwnd)**: how much data it may have sent 
 
 ## Reacting to loss
 
-- **Three duplicate ACKs** mean one segment was lost but later ones still arrive, so the path is not badly congested. The sender retransmits the missing segment right away (**fast retransmit**), sets ssthresh to half of the data in flight, and continues in congestion avoidance (**fast recovery**).
+- **Three duplicate ACKs** mean one segment was lost but later ones still arrive, so the path is not badly congested. The sender retransmits the missing segment right away (**fast retransmit**), sets ssthresh to half of the data in flight, and, instead of going back to slow start, resumes from that smaller window (**fast recovery**), then continues in congestion avoidance.
 - An **RTO** (retransmission timeout) means nothing came back at all. The sender assumes heavy congestion, sets ssthresh to half of the data in flight, drops cwnd to one segment, and starts slow start again.
 
 This “increase slowly, cut in half on loss” pattern is called **AIMD** (additive increase, multiplicative decrease) and gives the sawtooth shape in the graph.

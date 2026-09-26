@@ -1,7 +1,5 @@
 import type { LocalizedText } from '@/lib/i18n/locale'
-import type { EVENTS } from './scenario'
-
-type EventName = (typeof EVENTS)[keyof typeof EVENTS]
+import type { EventName } from './scenario'
 
 /** cwnd のグラフ（CwndGraph）の文言。用語集のテスト（glossary.test.tsx）でも検査する */
 export const CWND_TEXT = {

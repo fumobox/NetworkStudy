@@ -51,8 +51,8 @@ export const tcpCongestionQuiz: Quiz = {
     {
       id: 'dupack',
       prompt: {
-        en: 'What does the sender do when three duplicate ACKs arrive?',
-        ja: '重複 ACK が 3 つ届いたとき、送信側はどうする？',
+        en: 'In TCP Reno (RFC 5681), what does the sender do when three duplicate ACKs arrive?',
+        ja: 'TCP Reno（RFC 5681）で重複 ACK が 3 つ届いたとき、送信側はどうする？',
       },
       choices: [
         {
@@ -72,8 +72,8 @@ export const tcpCongestionQuiz: Quiz = {
         {
           id: 'fast',
           text: {
-            en: 'Retransmits the missing segment at once and halves ssthresh',
-            ja: '失われたセグメントをすぐに再送し、ssthresh を半分にする',
+            en: 'Retransmits the missing segment at once and sets ssthresh to half of the data in flight',
+            ja: '失われたセグメントをすぐに再送し、ssthresh を送信中のデータの半分にする',
           },
         },
       ],

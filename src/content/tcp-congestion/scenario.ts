@@ -52,6 +52,7 @@ export const EVENTS = {
   fastRetransmit: '3 dup ACKs',
   rto: 'RTO',
 } as const
+export type EventName = (typeof EVENTS)[keyof typeof EVENTS]
 
 const actors: readonly Actor[] = [
   {

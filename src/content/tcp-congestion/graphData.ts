@@ -1,8 +1,6 @@
 import type { StateTable, StateValue } from '@/engine/types'
 import type { CWND_HISTORY_COLUMNS } from './scenario'
-import { EVENTS } from './scenario'
-
-type EventName = (typeof EVENTS)[keyof typeof EVENTS]
+import { EVENTS, type EventName } from './scenario'
 
 export interface CwndRound {
   readonly round: number
