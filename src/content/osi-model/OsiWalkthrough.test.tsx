@@ -1,5 +1,7 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MotionConfig } from 'motion/react'
+import type { ReactNode } from 'react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { describe, expect, it } from 'vitest'
 import { LocaleProvider, type Locale } from '@/lib/i18n'
@@ -9,11 +11,11 @@ function Location() {
   return <output data-testid="location">{useLocation().search}</output>
 }
 
-function renderAt(search: string, locale: Locale = 'en') {
+function renderAt(search: string, locale: Locale = 'en', wrap = (node: ReactNode) => node) {
   render(
     <MemoryRouter initialEntries={[`/${locale}/themes/osi-model${search}`]}>
       <LocaleProvider locale={locale}>
-        <OsiWalkthrough />
+        {wrap(<OsiWalkthrough />)}
         <Location />
       </LocaleProvider>
     </MemoryRouter>,
@@ -82,5 +84,30 @@ describe('OsiWalkthrough', () => {
   it('物理層では信号として送られることを示す', () => {
     renderAt('?step=6')
     expect(screen.getByText('Sent as electrical signals (bits) on the cable')).toBeInTheDocument()
+  })
+
+  it('外したヘッダーは、次のステップでアニメーションの後に消える', async () => {
+    const user = userEvent.setup()
+    renderAt('?step=8')
+    expect(carried().map(([unit]) => unit)).toEqual(['eth', 'ip', 'tcp', 'http', 'fcs'])
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    await waitFor(() => {
+      expect(carried()).toEqual([
+        ['ip', 'removed'],
+        ['tcp', null],
+        ['http', null],
+      ])
+    })
+  })
+
+  it('視差効果を減らす設定では、すぐに入れ替わる', async () => {
+    const user = userEvent.setup()
+    renderAt('?step=8', 'en', (node) => <MotionConfig reducedMotion="always">{node}</MotionConfig>)
+    await user.click(screen.getByRole('button', { name: 'Next' }))
+    expect(carried()).toEqual([
+      ['ip', 'removed'],
+      ['tcp', null],
+      ['http', null],
+    ])
   })
 })
