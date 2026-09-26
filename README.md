@@ -10,6 +10,10 @@ Network basics / ネットワークの基礎
 - The OSI model and encapsulation / OSI 参照モデルとカプセル化
 - Subnet calculator / サブネット計算
 
+Getting on the network / ネットワークにつながるまで
+
+- ARP: from IP address to MAC address / ARP: IP アドレスから MAC アドレスへ
+
 How a web page reaches you / Web のページが届くまで
 
 - DNS name resolution / DNS の名前解決
