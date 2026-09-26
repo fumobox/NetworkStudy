@@ -19,7 +19,7 @@ const REMOVED_MARK = '−'
 
 /** ヘッダーが付く・外れるアニメーションの長さ（秒） */
 const UNIT_DURATION_S = 0.35
-/** 今の層の強調が移るアニメーションの長さ（秒） */
+/** 今の層の強調が現れるアニメーションの長さ（秒） */
 const HIGHLIGHT_DURATION_S = 0.3
 
 /** OSI 参照モデルのカプセル化を、1 層ずつステップ実行で見せる。?step= と同期する */
@@ -34,7 +34,8 @@ export function OsiWalkthrough() {
   // OS の「視差効果を減らす」設定と、MotionConfig の reducedMotion を尊重する
   const animate = useReducedMotionConfig() !== true
 
-  // m コンポーネントとアニメーション機能（domAnimation）だけを使う。機能は同期的に渡す（ScenarioPlayer と同じ。#52）
+  // m コンポーネントとアニメーション機能（domAnimation）だけを使う。機能は同期的に渡す（ScenarioPlayer と同じ。#52）。
+  // domAnimation にはレイアウトのアニメーション（layout / layoutId）が含まれないので使わない（domMax は約 45 kB 増える）
   return (
     <LazyMotion features={domAnimation} strict>
       <section aria-labelledby={titleId} className="space-y-6">
@@ -84,12 +85,17 @@ function LayerStack({ side, step, animate }: AnimatedProps & { side: Side }) {
                 current && 'font-semibold',
               )}
             >
-              {/* 今の層の強調（枠と背景）。層やステップが変わると、次の層（送信側から受信側へも）に移って見える */}
+              {/* 今の層の強調（枠と背景）。層が変わると、新しい層にふわっと現れる */}
               {current && (
                 <m.span
                   aria-hidden
-                  {...(animate ? { layoutId: 'osi-current-layer' } : {})}
-                  transition={{ duration: HIGHLIGHT_DURATION_S, ease: 'easeOut' }}
+                  {...(animate
+                    ? {
+                        initial: { opacity: 0 },
+                        animate: { opacity: 1 },
+                        transition: { duration: HIGHLIGHT_DURATION_S, ease: 'easeOut' },
+                      }
+                    : {})}
                   className="absolute inset-0 -z-10 rounded-md border border-primary bg-accent"
                 />
               )}
@@ -129,8 +135,8 @@ function CarriedData({ step, animate }: AnimatedProps) {
       </h3>
       {step.onWire && <p className="font-mono text-sm">{t(TEXT.onWire)}</p>}
       <ol className="flex flex-wrap gap-1 text-sm">
-        {/* 付いたヘッダーは外側（Ethernet は左、FCS は右）から入り、外したものは消える。並びが変わるときは位置も動かす */}
-        <AnimatePresence initial={false} mode="popLayout">
+        {/* 付いたヘッダーは外側（Ethernet は左、FCS は右）から入り、外したものは消えてから詰まる */}
+        <AnimatePresence initial={false}>
           {shown.map((unit) => {
             const changed = step.changed.includes(unit)
             const removed = changed && !step.stack.includes(unit)
@@ -140,7 +146,6 @@ function CarriedData({ step, animate }: AnimatedProps) {
                 key={unit}
                 {...(animate
                   ? {
-                      layout: true,
                       initial: { opacity: 0, x: unit === 'fcs' ? 16 : -16 },
                       animate: { opacity: 1, x: 0 },
                       exit: { opacity: 0, y: -8 },
