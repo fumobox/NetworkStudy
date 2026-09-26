@@ -1,6 +1,7 @@
 import { arpTheme } from './arp'
 import { dhcpTheme } from './dhcp'
 import { dnsResolutionTheme } from './dns-resolution'
+import { icmpTheme } from './icmp'
 import { httpsOverviewTheme } from './https-overview'
 import { osiModelTheme } from './osi-model'
 import { subnetCalculatorTheme } from './subnet-calculator'
@@ -16,6 +17,7 @@ export const THEMES: readonly ThemeModule[] = [
   subnetCalculatorTheme,
   arpTheme,
   dhcpTheme,
+  icmpTheme,
   dnsResolutionTheme,
   tcpHandshakeTheme,
   tlsHandshakeTheme,
