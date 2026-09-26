@@ -3,6 +3,7 @@ import { dhcpTheme } from './dhcp'
 import { dnsResolutionTheme } from './dns-resolution'
 import { httpsOverviewTheme } from './https-overview'
 import { icmpTheme } from './icmp'
+import { natTheme } from './nat'
 import { osiModelTheme } from './osi-model'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { tcpCloseTheme } from './tcp-close'
@@ -18,6 +19,7 @@ export const THEMES: readonly ThemeModule[] = [
   arpTheme,
   dhcpTheme,
   icmpTheme,
+  natTheme,
   dnsResolutionTheme,
   tcpHandshakeTheme,
   tlsHandshakeTheme,

@@ -1,0 +1,28 @@
+## Why NAT?
+
+A home network usually has one **public address** from the ISP, but many devices. They use **private addresses** (RFC 1918, such as 192.168.1.0/24), which are not routed on the Internet. The router’s **NAT** (network address translation) lets them all share the public address.
+
+Home routers use **NAPT**, which translates ports as well as addresses:
+
+1. When the PC opens a connection, the router picks a free port on its public address and writes the pair into the **NAT table**: `192.168.1.10:49152` ↔ `203.0.113.5:40001`.
+2. On the way out, the router rewrites the **source**; on the way back, it looks up the external port and rewrites the **destination**.
+3. The router recomputes the IP and TCP checksums, because they cover the addresses and ports.
+
+Because each connection gets its own external port, two PCs using the same source port can still share one address.
+
+## What NAT cannot do by itself
+
+A packet from the Internet that matches no row cannot be delivered: the router does not know which PC it is for. To run a server at home, you set up **port forwarding** (a static mapping). Mappings also expire when a connection is idle: RFC 4787 asks for at least 2 minutes for UDP, and RFC 5382 at least 2 hours 4 minutes for an established TCP connection.
+
+Many ISPs now also share one public address among their customers with **carrier-grade NAT**, using the shared address range 100.64.0.0/10 (RFC 6598). IPv6 has enough addresses that NAT is not needed.
+
+## About this page
+
+Only NAPT is shown. External ports are chosen in order (40001, 40002) for readability; real routers should pick them unpredictably (RFC 6056). TCP sequence numbers and Ethernet are left out; see the TCP and ARP themes. Hairpinning, ALGs, and UPnP / PCP are not covered.
+
+## References
+
+- [RFC 1918: Address Allocation for Private Internets](https://www.rfc-editor.org/rfc/rfc1918)
+- [RFC 3022: Traditional IP Network Address Translator](https://www.rfc-editor.org/rfc/rfc3022)
+- [RFC 4787: NAT Behavioral Requirements for Unicast UDP](https://www.rfc-editor.org/rfc/rfc4787)
+- [RFC 5382: NAT Behavioral Requirements for TCP](https://www.rfc-editor.org/rfc/rfc5382)

@@ -177,9 +177,22 @@ export const ICMP_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const NAT_META = {
+  id: 'nat',
+  kind: 'sequence',
+  category: 'ip',
+  title: { en: 'NAT: sharing one public address', ja: 'NAT: 1 つのグローバルアドレスを共有する' },
+  summary: {
+    en: 'How a home router rewrites addresses and ports so that many devices with private addresses can share one public address.',
+    ja: '家庭のルーターがアドレスとポートを書き換え、プライベートアドレスの機器たちが 1 つのグローバルアドレスを共有するしくみ。',
+  },
+  difficulty: 'intermediate',
+  minutes: 10,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -187,6 +200,7 @@ export const THEME_META = [
   ARP_META,
   DHCP_META,
   ICMP_META,
+  NAT_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
