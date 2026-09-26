@@ -15,7 +15,13 @@ IP はパケットを届けるだけで、問題を知らせない。IP と一�
 - **ping** は Echo Request を送り、Echo Reply を待つ。答えがあればホストに届く。答えの TTL から、いくつのルーターを通ったかの見当がつく。
 - **traceroute** は、ルーターが 1 ずつ減らす **TTL** を使う。TTL 1 のプローブは最初のルーターで、TTL 2 は 2 つ目のルーターで尽きる。各ルーターが自分のアドレスから Time Exceeded で答えるので、traceroute はホップを並べられる。
 
-Windows の `tracert` は ICMP の Echo をプローブにし、Linux の `traceroute` は既定で 33434 番以降のポートへの UDP を送る（宛先の Port Unreachable で終わる）。TTL は Windows が 128、Linux が 64 から始める。
+Windows の `tracert` は ICMP の Echo をプローブにし、Linux の `traceroute` は既定で 33434 番以降のポートへの UDP を送る（宛先の Port Unreachable で終わる）。通常のパケット（ping の Echo Request など）の TTL は、Windows が 128、Linux が 64 から始まる。
+
+## ステップ実行で見てほしいところ
+
+- **TTL** の列。ルーターを通るたびに 1 ずつ減る。
+- ICMP のエラーの送信元アドレス。サーバーではなく、エラーを送ったルーターのアドレスになる。
+- 「もしも…」のオプションで、サーバーに届かない場合（Destination Unreachable）、答えが返らない場合（ping では応答のロス、traceroute では 2 ホップ目の `*`）、Port Unreachable で終わる UDP のプローブ。
 
 ## このページについて
 
@@ -24,5 +30,5 @@ Windows の `tracert` は ICMP の Echo をプローブにし、Linux の `trace
 ## 参考
 
 - [RFC 792: Internet Control Message Protocol](https://www.rfc-editor.org/rfc/rfc792)
-- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §3.2.2
+- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §3.2.1.7、§3.2.2、§4.1.3.1
 - [RFC 1812: Requirements for IP Version 4 Routers](https://www.rfc-editor.org/rfc/rfc1812) — §4.3、§5.3.1

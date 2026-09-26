@@ -1,6 +1,6 @@
 import type { Quiz } from '@/components/features/quiz/types'
 
-/** ICMP の理解度クイズ（根拠: RFC 792、RFC 1122 §4.1.3.1、RFC 1812 §4.3.2.4、§4.3.2.8、§5.3.1） */
+/** ICMP の理解度クイズ（根拠: RFC 792、RFC 1122 §3.2.1.7、§4.1.3.1、RFC 1812 §4.3.2.4、§4.3.2.8、§5.3.1） */
 export const icmpQuiz: Quiz = {
   id: 'icmp',
   questions: [
@@ -117,8 +117,8 @@ export const icmpQuiz: Quiz = {
       ],
       answerId: 'closed',
       explanation: {
-        en: 'A host must not discard a packet just because its TTL is 1, so the last probe is delivered. Nothing listens on port 33434 and above, so the destination answers with Port Unreachable (3/3), and traceroute knows it has arrived.',
-        ja: 'ホストは TTL が 1 というだけではパケットを捨てないので、最後のプローブは届く。33434 番以降のポートでは誰も待ち受けていないので、宛先が Port Unreachable（3/3）で答え、traceroute は着いたことを知る。',
+        en: 'A host must not discard a packet just because its TTL is 1, so the last probe is delivered. Nothing is expected to listen on port 33434 and above, so the destination answers with Port Unreachable (3/3), and traceroute knows it has arrived.',
+        ja: 'ホストは TTL が 1 というだけではパケットを捨てないので、最後のプローブは届く。33434 番以降のポートでは普通は誰も待ち受けていないので、宛先が Port Unreachable（3/3）で答え、traceroute は着いたことを知る。',
       },
     },
   ],

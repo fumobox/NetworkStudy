@@ -1,8 +1,8 @@
 import { arpQuiz } from './arp/quiz'
 import { dhcpQuiz } from './dhcp/quiz'
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
-import { icmpQuiz } from './icmp/quiz'
 import { httpsOverviewQuiz } from './https-overview/quiz'
+import { icmpQuiz } from './icmp/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
 import { tcpCloseQuiz } from './tcp-close/quiz'
@@ -11,9 +11,9 @@ import { tcpHandshakeQuiz } from './tcp-handshake/quiz'
 import {
   ARP_META,
   DHCP_META,
-  ICMP_META,
   DNS_RESOLUTION_META,
   HTTPS_OVERVIEW_META,
+  ICMP_META,
   OSI_MODEL_META,
   SUBNET_CALCULATOR_META,
   TCP_CLOSE_META,
