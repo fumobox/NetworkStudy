@@ -8,6 +8,7 @@ import { OSI_LAYERS, TCPIP_LAYER_NAMES } from './osi-model/layers'
 import { layerLabel, OSI_TEXT } from './osi-model/osiText'
 import { OSI_STEPS } from './osi-model/steps'
 import { THEMES } from './registry'
+import { CWND_TEXT, cwndSummary } from './tcp-congestion/cwndText'
 import { binarySplitText, SUBNET_TEXT } from './subnet-calculator/subnetText'
 import { CERT_CHAIN_TEXT } from './tls-handshake/certChainText'
 import { THEME_META } from './themeMeta'
@@ -123,6 +124,8 @@ describe('用語集（docs/glossary.md）の表記', () => {
       ...collectJapanese(TCPIP_LAYER_NAMES, 'osi-model.tcpIpLayers'),
       ...collectJapanese(OSI_STEPS, 'osi-model.steps'),
       ...collectJapanese(layerLabel(4), 'osi-model.layerLabel'),
+      ...collectJapanese(CWND_TEXT, 'tcp-congestion.CwndGraph'),
+      ...collectJapanese(cwndSummary([1, 2, 4]), 'tcp-congestion.cwndSummary'),
       ...collectJapanese(binarySplitText(26), 'subnet-calculator.binarySplitText'),
       ...THEMES.flatMap((theme) =>
         [

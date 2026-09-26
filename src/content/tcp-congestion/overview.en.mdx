@@ -1,0 +1,27 @@
+## Why congestion control?
+
+TCP makes sure data arrives, but it also has to avoid sending more than the network can carry. If every sender pushed data as fast as it could, router queues would overflow, packets would be dropped, and the retransmissions would make things even worse. **Congestion control** lets each sender find a fair share of the available capacity by itself.
+
+The sender keeps a **congestion window (cwnd)**: how much data it may have sent without an acknowledgment. It adjusts cwnd from what it observes: ACKs mean the path is fine, and losses mean it is overloaded.
+
+## Slow start and congestion avoidance
+
+- In **slow start**, cwnd grows by one segment for each ACK, so it doubles every round trip. Despite the name, this grows quickly.
+- When cwnd reaches the **slow start threshold (ssthresh)**, the sender switches to **congestion avoidance** and grows cwnd by only about one segment per round trip.
+
+## Reacting to loss
+
+- **Three duplicate ACKs** mean one segment was lost but later ones still arrive, so the path is not badly congested. The sender retransmits the missing segment right away (**fast retransmit**), sets ssthresh to half of the data in flight, and continues in congestion avoidance (**fast recovery**).
+- An **RTO** (retransmission timeout) means nothing came back at all. The sender assumes heavy congestion, sets ssthresh to half of the data in flight, drops cwnd to one segment, and starts slow start again.
+
+This “increase slowly, cut in half on loss” pattern is called **AIMD** (additive increase, multiplicative decrease) and gives the sawtooth shape in the graph.
+
+## About this page
+
+This page follows TCP Reno as described in RFC 5681 and simplifies it: it counts segments instead of bytes, summarizes each round trip as one step, and starts from cwnd = 1 and ssthresh = 8. Today’s operating systems usually use other algorithms, such as CUBIC (RFC 9438) on Linux, but the reactions to duplicate ACKs and timeouts are the same idea.
+
+## References
+
+- [RFC 5681: TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681)
+- [RFC 6298: Computing TCP’s Retransmission Timer](https://www.rfc-editor.org/rfc/rfc6298)
+- [RFC 9438: CUBIC for Fast and Long-Distance Networks](https://www.rfc-editor.org/rfc/rfc9438)
