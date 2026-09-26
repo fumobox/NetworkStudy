@@ -3,7 +3,9 @@
  *
  * 根拠:
  * - ISO/IEC 7498-1（OSI 参照モデル）: 7 層の名前と役割
- * - RFC 1122 §1.1.3（Internet Protocol Suite）: TCP/IP の層（Application、Transport、Internet、Link）
+ * - RFC 1122 §1.1.3（Internet Protocol Suite）: TCP/IP の層（Application、Transport、Internet、Link）。
+ *   RFC 1122 は、TCP/IP のアプリケーション層が OSI の第 6・7 層（プレゼンテーション層とアプリケーション層）に当たるとする。
+ *   第 5 層（セッション層）も、TCP/IP に独立した層がなくアプリケーションが受け持つので、慣例に従ってアプリケーション層に含める
  */
 import type { ProtocolTerm } from '@/engine/types'
 import type { LocalizedText } from '@/lib/i18n/locale'

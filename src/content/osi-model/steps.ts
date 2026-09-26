@@ -214,7 +214,7 @@ export const OSI_STEPS: readonly OsiStep[] = [
     side: 'receiver',
     layers: [7],
     stack: DATA,
-    changed: ['http'],
+    changed: [],
     onWire: false,
     title: {
       en: 'Layer 7: the web server reads the request',

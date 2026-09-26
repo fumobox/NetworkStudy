@@ -18,10 +18,7 @@ describe('OSI 参照モデルのステップ', () => {
 
   it('送信側で付けたものを、受信側は逆の順に外す（往路と復路が対称）', () => {
     const added = sender.flatMap((step) => step.changed)
-    // 受信側の第 7 層の changed は「アプリケーションに渡った」ことの強調で、外すものではない
-    const removed = receiver.flatMap((step) =>
-      step.changed.filter((unit) => !step.stack.includes(unit)),
-    )
+    const removed = receiver.flatMap((step) => step.changed)
     expect(added).toEqual(['http', 'tcp', 'ip', 'eth', 'fcs'])
     expect(removed).toEqual(['eth', 'fcs', 'ip', 'tcp'])
     // 各層で、送信側がその層を通った後に運んでいるものを、受信側はその層に来たときに受け取る
@@ -40,7 +37,7 @@ describe('OSI 参照モデルのステップ', () => {
       const expected =
         step.side === 'sender'
           ? UNIT_IDS.filter((unit) => before.includes(unit) || step.changed.includes(unit))
-          : before.filter((unit) => !step.changed.includes(unit) || step.id === 'receive-7')
+          : before.filter((unit) => !step.changed.includes(unit))
       expect(step.stack, step.id).toEqual(expected)
     })
   })

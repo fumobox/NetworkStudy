@@ -1,6 +1,9 @@
 import type { Quiz } from '@/components/features/quiz/types'
 
-/** OSI 参照モデルの理解度クイズ（根拠: ISO/IEC 7498-1、RFC 1122 §1.1.3） */
+/**
+ * OSI 参照モデルの理解度クイズ（根拠: ISO/IEC 7498-1、RFC 1122 §1.1.3）。
+ * RFC 1122 はアプリケーション層を OSI の第 6・7 層に対応させ、第 5 層は慣例で含める（layers.ts を参照）
+ */
 export const osiModelQuiz: Quiz = {
   id: 'osi-model',
   questions: [
