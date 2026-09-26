@@ -190,9 +190,22 @@ export const NAT_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
+export const ROUTE_LOOKUP_META = {
+  id: 'route-lookup',
+  kind: 'custom',
+  category: 'ip',
+  title: { en: 'Route lookup: longest prefix match', ja: '経路の検索: 最長一致' },
+  summary: {
+    en: 'How a router picks where to send each packet: compare the destination with every prefix in the routing table, and the longest match wins.',
+    ja: 'ルーターがパケットごとに送り先を決めるしくみ。宛先を経路表のプレフィックスと比べ、いちばん長く一致した経路を使う。',
+  },
+  difficulty: 'beginner',
+  minutes: 10,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -201,6 +214,7 @@ export const THEME_META = [
   DHCP_META,
   ICMP_META,
   NAT_META,
+  ROUTE_LOOKUP_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,

@@ -126,6 +126,12 @@
 | trailer | トレーラー | |
 | MAC address | MAC アドレス | |
 | routing | 経路制御 | |
+| routing table / route | 経路表／経路 | 「ルーティングテーブル」は初出の言い換えに限る |
+| longest prefix match | 最長一致 | |
+| default route | デフォルト経路 | `0.0.0.0/0` |
+| directly connected | 直接接続 | |
+| metric | メトリック | |
+| interface | インターフェース | |
 | network card | ネットワークカード | |
 | layer | 層 | 「レイヤー」は UI の説明など一般的な文脈に限る |
 | subnet | サブネット | |

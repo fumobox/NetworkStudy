@@ -5,6 +5,7 @@ import { httpsOverviewTheme } from './https-overview'
 import { icmpTheme } from './icmp'
 import { natTheme } from './nat'
 import { osiModelTheme } from './osi-model'
+import { routeLookupTheme } from './route-lookup'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { tcpCloseTheme } from './tcp-close'
 import { tcpCongestionTheme } from './tcp-congestion'
@@ -20,6 +21,7 @@ export const THEMES: readonly ThemeModule[] = [
   dhcpTheme,
   icmpTheme,
   natTheme,
+  routeLookupTheme,
   dnsResolutionTheme,
   tcpHandshakeTheme,
   tlsHandshakeTheme,

@@ -5,6 +5,7 @@ import { httpsOverviewQuiz } from './https-overview/quiz'
 import { icmpQuiz } from './icmp/quiz'
 import { natQuiz } from './nat/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
+import { routeLookupQuiz } from './route-lookup/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
 import { tcpCloseQuiz } from './tcp-close/quiz'
 import { tcpCongestionQuiz } from './tcp-congestion/quiz'
@@ -16,6 +17,7 @@ import {
   HTTPS_OVERVIEW_META,
   ICMP_META,
   NAT_META,
+  ROUTE_LOOKUP_META,
   OSI_MODEL_META,
   SUBNET_CALCULATOR_META,
   TCP_CLOSE_META,
@@ -38,6 +40,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: DHCP_META, quiz: dhcpQuiz },
   { meta: ICMP_META, quiz: icmpQuiz },
   { meta: NAT_META, quiz: natQuiz },
+  { meta: ROUTE_LOOKUP_META, quiz: routeLookupQuiz },
   { meta: DNS_RESOLUTION_META, quiz: dnsResolutionQuiz },
   { meta: TCP_HANDSHAKE_META, quiz: tcpHandshakeQuiz },
   { meta: TLS_HANDSHAKE_META, quiz: tlsHandshakeQuiz },
