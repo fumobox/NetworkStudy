@@ -183,6 +183,10 @@ describe('labelLaneWidth', () => {
     expect(labelLaneWidth(['a', 'b', 'c', 'd'], [step('x'.repeat(30), 'b', 'c')])).toBe(66)
   })
 
+  it('端に近い側で決まる（4 レーンの 2 と 3 の間は、右端からレーン 1 本分）', () => {
+    expect(labelLaneWidth(['a', 'b', 'c', 'd'], [step('x'.repeat(30), 'c', 'd')])).toBe(132)
+  })
+
   it('再送の印の分も含め、いちばん広く要るものを返す', () => {
     const steps = [step('short', 'a', 'b'), step('x'.repeat(30), 'b', 'a', 'orig')]
     expect(labelLaneWidth(['a', 'b'], steps)).toBe(Math.ceil((216 + 14.4) / 2 + 24))

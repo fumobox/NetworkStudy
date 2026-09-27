@@ -10,7 +10,9 @@ import {
   diagramRows,
   estimateTextWidth,
   hasTimers,
+  LABEL_FONT_SIZE,
   labelLaneWidth,
+  messageCaption,
   laneWidthFor,
   rowLayout,
   sectionStartLabels,
@@ -43,7 +45,6 @@ const ICON_SIZE = 14
 // 図の中の記号（翻訳しない）。意味は aria-label で伝える
 const LOST_MARK = '×'
 const REJECTED_MARK = '✗'
-const RETRANSMIT_MARK = '↻'
 
 interface SequenceDiagramProps {
   actors: readonly Actor[]
@@ -277,8 +278,7 @@ function MessageArrow({
   const isRejected = message.status === 'rejected'
   const midX = (x1 + x2) / 2
   const endX = isLost ? midX : x2
-  const caption =
-    message.retransmitOf === undefined ? message.label : `${message.label} ${RETRANSMIT_MARK}`
+  const caption = messageCaption(message)
   const toggle = () => {
     onSelect(isSelected ? null : message.id)
   }
@@ -295,7 +295,7 @@ function MessageArrow({
       {message.encrypted === true && (
         <Lock
           // ラベルは中央揃えなので、見積もったラベルの幅から左隣の位置を求める（狭い画面でも重ならない）
-          x={midX - estimateTextWidth(caption, 12) / 2 - ICON_SIZE - 3}
+          x={midX - estimateTextWidth(caption, LABEL_FONT_SIZE) / 2 - ICON_SIZE - 3}
           y={y - 8 - ICON_SIZE + 2}
           size={ICON_SIZE}
           className="stroke-current"

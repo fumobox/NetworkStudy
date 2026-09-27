@@ -59,11 +59,16 @@ export function diagramWidth(actorCount: number, withTimers: boolean, labelWidth
   )
 }
 
-/** ラベルの文字の大きさ（text-xs）と、ラベルの両側に要る余白（鍵のアイコンと SVG の端までの間）（px） */
-const LABEL_FONT_SIZE = 12
+/** メッセージのラベルの文字の大きさ（text-xs、px） */
+export const LABEL_FONT_SIZE = 12
+/** 再送のメッセージのラベルの後ろに付ける印 */
+export const RETRANSMIT_MARK = '↻'
+/** 図に描くメッセージのラベル（再送なら印を付ける） */
+export function messageCaption(message: Pick<Message, 'label' | 'retransmitOf'>): string {
+  return message.retransmitOf === undefined ? message.label : `${message.label} ${RETRANSMIT_MARK}`
+}
+/** ラベルの両側に要る余白（鍵のアイコンと SVG の端までの間、px） */
 const LABEL_MARGIN = 24
-/** 再送の印（ ↻）の分の文字数 */
-const RETRANSMIT_MARK_CHARS = 2
 
 /**
  * すべてのメッセージのラベルが SVG の中に収まるのに要るレーンの幅（px）。
@@ -83,11 +88,8 @@ export function labelLaneWidth(actorIds: readonly ActorId[], steps: readonly Ste
       if (i < 0 || j < 0) {
         continue
       }
-      const chars = event.message.retransmitOf === undefined ? 0 : RETRANSMIT_MARK_CHARS
       const half =
-        (estimateTextWidth(event.message.label, LABEL_FONT_SIZE) + chars * LABEL_FONT_SIZE * 0.6) /
-          2 +
-        LABEL_MARGIN
+        estimateTextWidth(messageCaption(event.message), LABEL_FONT_SIZE) / 2 + LABEL_MARGIN
       const lanes = Math.min(i + j + 1, 2 * n - i - j - 1) / 2
       width = Math.max(width, Math.ceil(half / lanes))
     }
