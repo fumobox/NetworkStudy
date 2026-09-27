@@ -1,0 +1,36 @@
+## Every link has a maximum size
+
+Each link can carry IP packets only up to a certain size, its **MTU** (Maximum Transmission Unit). Ethernet’s is 1500 bytes. A PPPoE link, common for home fiber and DSL, adds 8 bytes of headers (PPPoE and PPP) inside the Ethernet frame, so its MTU is only **1492**. The smallest MTU along the whole route is the **path MTU**.
+
+TCP’s **MSS** is announced in the SYN segments, and each side usually derives it from its own link: 1500 − 40 = 1460 (20 bytes of IP header and 20 bytes of TCP header). The MSS says nothing about the links in between.
+
+## Path MTU discovery
+
+With **path MTU discovery**, the sender sets the **DF** (Don’t Fragment) flag on every packet. A router that cannot forward a packet because the next link is too small drops it and sends back an ICMP **Destination Unreachable, code 4 (Fragmentation Needed)**. The message carries the **Next-Hop MTU** and the beginning of the dropped packet, so the sender can find the TCP connection it belongs to.
+
+The sender records the smaller path MTU for that destination, and TCP resends the data in smaller segments (1492 − 40 = 1452 bytes). After about 10 minutes, the sender may try a larger size again.
+
+## The black hole
+
+If a firewall drops **all** ICMP, the Fragmentation Needed never arrives. Small packets such as the handshake get through, but every full-sized packet disappears, and the retransmissions are dropped too. The connection opens and then hangs: a **path MTU black hole**.
+
+The fixes are to let ICMP type 3 code 4 through, to have the router rewrite the MSS in SYN segments (**MSS clamping**), or to have hosts probe the path themselves without relying on ICMP (**PLPMTUD**, RFC 4821 / RFC 8899).
+
+## Fragmentation
+
+Without DF, a router may split a packet into **fragments** instead. Each fragment gets its own IP header, the same **Identification**, a **Fragment offset** in units of 8 bytes, and the **MF** (More Fragments) flag on every fragment except the last. Only the destination puts them back together.
+
+Fragmentation costs routers work, and losing any one fragment loses the whole packet, so TCP today avoids it with path MTU discovery. IPv6 routers never fragment: they send ICMPv6 **Packet Too Big** instead (RFC 8201), and every IPv6 link must carry at least 1280 bytes.
+
+## What to watch in the step-by-step view
+
+- The packet with **DF** that the router drops, the **Next-Hop MTU** in the ICMP, and the PC’s path MTU and MSS going down.
+- In “What if…”, a firewall that blocks the ICMP (the **black hole**) and a packet sent **without DF** (the router fragments it).
+
+## References
+
+- [RFC 1191: Path MTU Discovery](https://www.rfc-editor.org/rfc/rfc1191)
+- [RFC 791: Internet Protocol](https://www.rfc-editor.org/rfc/rfc791) — §3.2 “Discussion” (fragmentation and reassembly)
+- [RFC 1812: Requirements for IP Version 4 Routers](https://www.rfc-editor.org/rfc/rfc1812) — §5.2.6 “Fragmentation and Reassembly”
+- [RFC 2923: TCP Problems with Path MTU Discovery](https://www.rfc-editor.org/rfc/rfc2923)
+- [RFC 8899: Packetization Layer Path MTU Discovery for Datagram Transports](https://www.rfc-editor.org/rfc/rfc8899)

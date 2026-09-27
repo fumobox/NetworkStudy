@@ -207,6 +207,22 @@ export const ICMP_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const PMTUD_META = {
+  id: 'pmtud',
+  kind: 'sequence',
+  category: 'ip',
+  title: {
+    en: 'Path MTU discovery: when a packet is too big',
+    ja: 'パス MTU 探索: パケットが大きすぎるとき',
+  },
+  summary: {
+    en: 'How a host learns the largest packet that fits the whole path from ICMP Fragmentation Needed, what happens when that ICMP is blocked, and how routers fragment packets without DF.',
+    ja: 'ホストが ICMP の Fragmentation Needed から経路全体に入る最大のパケットを知るしくみと、その ICMP が遮られたときに起きること、DF のないパケットをルーターが分割するしくみ。',
+  },
+  difficulty: 'intermediate',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
 export const NAT_META = {
   id: 'nat',
   kind: 'sequence',
@@ -369,6 +385,7 @@ export const THEME_META = [
   ARP_META,
   DHCP_META,
   ICMP_META,
+  PMTUD_META,
   NAT_META,
   ROUTE_LOOKUP_META,
   SWITCHING_META,

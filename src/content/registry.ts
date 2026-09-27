@@ -9,6 +9,7 @@ import { icmpTheme } from './icmp'
 import { ipv6AddressTheme } from './ipv6-address'
 import { ipv6NdTheme } from './ipv6-nd'
 import { natTheme } from './nat'
+import { pmtudTheme } from './pmtud'
 import { osiModelTheme } from './osi-model'
 import { quicTheme } from './quic'
 import { routeLookupTheme } from './route-lookup'
@@ -31,6 +32,7 @@ export const THEMES: readonly ThemeModule[] = [
   arpTheme,
   dhcpTheme,
   icmpTheme,
+  pmtudTheme,
   natTheme,
   routeLookupTheme,
   switchingTheme,

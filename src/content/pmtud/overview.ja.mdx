@@ -1,0 +1,36 @@
+## リンクごとに最大の大きさがある
+
+リンクが運べる IP のパケットには、大きさの上限がある。これが **MTU**（Maximum Transmission Unit）で、Ethernet では 1500 バイト。家庭の光回線や DSL でよく使う PPPoE では、Ethernet のフレームの中に 8 バイトのヘッダー（PPPoE と PPP）が加わるので、MTU は **1492** しかない。経路全体での最小の MTU が**パス MTU**。
+
+TCP の **MSS** は SYN のセグメントで知らせ、ふつうはそれぞれが自分のリンクから決める（1500 − 40 = 1460。IP のヘッダー 20 バイトと TCP のヘッダー 20 バイト）。MSS は、途中のリンクのことは何も表さない。
+
+## パス MTU 探索
+
+**パス MTU 探索**では、送信側はどのパケットにも **DF**（Don’t Fragment）のフラグを立てる。次のリンクが小さくてパケットを転送できないルーターは、パケットを捨て、ICMP の **Destination Unreachable、code 4（Fragmentation Needed）** を返す。このメッセージには**次のリンクの MTU**（Next-Hop MTU）と、捨てたパケットの先頭が入っているので、送信側はどの TCP の接続のパケットかがわかる。
+
+送信側はその宛先のパス MTU を小さい値で記録し、TCP は同じデータを小さなセグメントで送り直す（1492 − 40 = 1452 バイト）。10 分ほどたつと、送信側はまた大きい値を試すことがある。
+
+## ブラックホール
+
+ファイアウォールが ICMP を**すべて**捨てていると、Fragmentation Needed は届かない。ハンドシェイクのような小さなパケットは通るが、満杯の大きさのパケットはどれも消え、再送も捨てられる。接続はできるのに止まってしまう。これが**パス MTU のブラックホール**。
+
+対策は、ICMP の type 3 code 4 を通す、ルーターが SYN の MSS を書き換える（**MSS clamping**）、ホストが ICMP に頼らず自分で経路を試す（**PLPMTUD**、RFC 4821 / RFC 8899）のいずれか。
+
+## フラグメント化
+
+DF が立っていなければ、ルーターは代わりにパケットを**フラグメント**に分割してよい。どのフラグメントにも IP のヘッダーが付き、同じ **Identification**、8 バイト単位の **Fragment offset** を持ち、最後以外には **MF**（More Fragments）のフラグが立つ。組み立て直すのは宛先だけ。
+
+フラグメント化はルーターの負担になり、フラグメントが 1 つでも失われるとパケット全体が失われるので、今の TCP はパス MTU 探索で避ける。IPv6 のルーターは分割せず、代わりに ICMPv6 の **Packet Too Big** を返す（RFC 8201）。IPv6 のリンクは、どれも少なくとも 1280 バイトを運べなければならない。
+
+## ステップ実行で見てほしいところ
+
+- ルーターが捨てる **DF** の立ったパケット、ICMP の **Next-Hop MTU**、PC のパス MTU と MSS が下がること。
+- 「もしも…」のオプションで、ファイアウォールが ICMP を遮る場合（**ブラックホール**）と、**DF を立てず**に送る場合（ルーターが分割する）。
+
+## 参考
+
+- [RFC 1191: Path MTU Discovery](https://www.rfc-editor.org/rfc/rfc1191)
+- [RFC 791: Internet Protocol](https://www.rfc-editor.org/rfc/rfc791) — §3.2「Discussion」（分割と組み立て直し）
+- [RFC 1812: Requirements for IP Version 4 Routers](https://www.rfc-editor.org/rfc/rfc1812) — §5.2.6「Fragmentation and Reassembly」
+- [RFC 2923: TCP Problems with Path MTU Discovery](https://www.rfc-editor.org/rfc/rfc2923)
+- [RFC 8899: Packetization Layer Path MTU Discovery for Datagram Transports](https://www.rfc-editor.org/rfc/rfc8899)
