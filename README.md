@@ -16,6 +16,7 @@ Getting on the network / ネットワークにつながるまで
 - ARP: from IP address to MAC address / ARP: IP アドレスから MAC アドレスへ
 - DHCP: getting an IP address / DHCP: IP アドレスをもらう
 - ICMP: ping and traceroute / ICMP: ping と traceroute
+- Path MTU discovery: when a packet is too big / パス MTU 探索: パケットが大きすぎるとき
 - NAT: sharing one public address / NAT: 1 つのグローバルアドレスを共有する
 - Route lookup: longest prefix match / 経路の検索: 最長一致
 

@@ -10,6 +10,7 @@ import { ipv6AddressQuiz } from './ipv6-address/quiz'
 import { ipv6NdQuiz } from './ipv6-nd/quiz'
 import { natQuiz } from './nat/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
+import { pmtudQuiz } from './pmtud/quiz'
 import { quicQuiz } from './quic/quiz'
 import { routeLookupQuiz } from './route-lookup/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
@@ -32,6 +33,7 @@ import {
   IPV6_ND_META,
   NAT_META,
   OSI_MODEL_META,
+  PMTUD_META,
   QUIC_META,
   ROUTE_LOOKUP_META,
   SUBNET_CALCULATOR_META,
@@ -60,6 +62,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: ARP_META, quiz: arpQuiz },
   { meta: DHCP_META, quiz: dhcpQuiz },
   { meta: ICMP_META, quiz: icmpQuiz },
+  { meta: PMTUD_META, quiz: pmtudQuiz },
   { meta: NAT_META, quiz: natQuiz },
   { meta: ROUTE_LOOKUP_META, quiz: routeLookupQuiz },
   { meta: SWITCHING_META, quiz: switchingQuiz },
