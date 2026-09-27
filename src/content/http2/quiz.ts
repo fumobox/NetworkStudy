@@ -1,6 +1,6 @@
 import type { Quiz } from '@/components/features/quiz/types'
 
-/** HTTP/2 の理解度クイズ（根拠: RFC 9112 §9.3、RFC 9113 §5.1、§5.1.1、§6.1、RFC 7541 §2.3、RFC 9000 §1） */
+/** HTTP/2 の理解度クイズ（根拠: RFC 9112 §9.3、RFC 9113 §5.1、§5.1.1、§6.1、RFC 7541 §2.3、RFC 9114 §1） */
 export const http2Quiz: Quiz = {
   id: 'http2',
   questions: [
@@ -49,8 +49,8 @@ export const http2Quiz: Quiz = {
         {
           id: 'client',
           text: {
-            en: 'Streams opened by the client use odd IDs; even IDs are for the server',
-            ja: 'クライアントが開くストリームは奇数、偶数はサーバーが開く用',
+            en: 'Streams opened by the client use odd IDs; even IDs are for the server (server push)',
+            ja: 'クライアントが開くストリームは奇数、偶数はサーバーが開く用（サーバープッシュ）',
           },
         },
         {
