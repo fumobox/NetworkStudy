@@ -1,6 +1,6 @@
 import { clampStepIndex } from './derive'
 import type { LocalizedText } from '@/lib/i18n/locale'
-import type { Message, Step, TimerEvent } from './types'
+import type { ActorId, Message, Step, TimerEvent } from './types'
 
 export type DiagramRow =
   | {
@@ -51,9 +51,50 @@ export function laneWidthFor(actorCount: number): number {
   return actorCount > MAX_ACTORS_AT_FULL_WIDTH ? NARROW_LANE_WIDTH : LANE_WIDTH
 }
 
-/** 通常の幅で描いたときのシーケンス図の幅（px） */
-export function diagramWidth(actorCount: number, withTimers: boolean): number {
-  return (withTimers ? TIME_COLUMN_WIDTH : 0) + actorCount * laneWidthFor(actorCount)
+/** 通常の幅で描いたときのシーケンス図の幅（px）。labelWidth は labelLaneWidth の値 */
+export function diagramWidth(actorCount: number, withTimers: boolean, labelWidth = 0): number {
+  return (
+    (withTimers ? TIME_COLUMN_WIDTH : 0) +
+    actorCount * Math.max(laneWidthFor(actorCount), labelWidth)
+  )
+}
+
+/** メッセージのラベルの文字の大きさ（text-xs、px） */
+export const LABEL_FONT_SIZE = 12
+/** 再送のメッセージのラベルの後ろに付ける印 */
+export const RETRANSMIT_MARK = '↻'
+/** 図に描くメッセージのラベル（再送なら印を付ける） */
+export function messageCaption(message: Pick<Message, 'label' | 'retransmitOf'>): string {
+  return message.retransmitOf === undefined ? message.label : `${message.label} ${RETRANSMIT_MARK}`
+}
+/** ラベルの両側に要る余白（鍵のアイコンと SVG の端までの間、px） */
+const LABEL_MARGIN = 24
+
+/**
+ * すべてのメッセージのラベルが SVG の中に収まるのに要るレーンの幅（px）。
+ * ラベルは送信元と宛先の中点に中央揃えで描くので、中点から SVG の左右の端までの距離が、ラベルの幅の半分と余白より長ければよい。
+ * i 番目と j 番目のレーンの間の中点は、左端からレーン (i + j + 1) / 2 本分、右端から (2n - i - j - 1) / 2 本分のところにある
+ */
+export function labelLaneWidth(actorIds: readonly ActorId[], steps: readonly Step[]): number {
+  const n = actorIds.length
+  let width = 0
+  for (const step of steps) {
+    for (const event of step.events) {
+      if (event.kind !== 'message') {
+        continue
+      }
+      const i = actorIds.indexOf(event.message.from)
+      const j = actorIds.indexOf(event.message.to)
+      if (i < 0 || j < 0) {
+        continue
+      }
+      const half =
+        estimateTextWidth(messageCaption(event.message), LABEL_FONT_SIZE) / 2 + LABEL_MARGIN
+      const lanes = Math.min(i + j + 1, 2 * n - i - j - 1) / 2
+      width = Math.max(width, Math.ceil(half / lanes))
+    }
+  }
+  return width
 }
 
 /**

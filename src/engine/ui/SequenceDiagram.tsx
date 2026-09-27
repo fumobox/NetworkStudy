@@ -10,6 +10,9 @@ import {
   diagramRows,
   estimateTextWidth,
   hasTimers,
+  LABEL_FONT_SIZE,
+  labelLaneWidth,
+  messageCaption,
   laneWidthFor,
   rowLayout,
   sectionStartLabels,
@@ -42,7 +45,6 @@ const ICON_SIZE = 14
 // 図の中の記号（翻訳しない）。意味は aria-label で伝える
 const LOST_MARK = '×'
 const REJECTED_MARK = '✗'
-const RETRANSMIT_MARK = '↻'
 
 interface SequenceDiagramProps {
   actors: readonly Actor[]
@@ -71,7 +73,14 @@ export function SequenceDiagram({
   const compact = useMediaQuery(COMPACT_MEDIA_QUERY)
   // OS の「視差効果を減らす」設定と、MotionConfig の reducedMotion を尊重する
   const animate = useReducedMotionConfig() !== true
-  const laneWidth = compact ? COMPACT_LANE_WIDTH : laneWidthFor(actors.length)
+  // ラベルがレーンより長ければ、レーンを広げて SVG の端で切れないようにする（はみ出す分は図の中で横にスクロール）
+  const laneWidth = Math.max(
+    compact ? COMPACT_LANE_WIDTH : laneWidthFor(actors.length),
+    labelLaneWidth(
+      actors.map((actor) => actor.id),
+      steps,
+    ),
+  )
   const offsetX = showElapsed ? TIME_COLUMN_WIDTH : 0
   const width = offsetX + actors.length * laneWidth
   // 区間（TLS の「暗号化なし」「ハンドシェイク用の鍵で暗号化」など）の始まりの行の上に、名前を入れる
@@ -269,8 +278,7 @@ function MessageArrow({
   const isRejected = message.status === 'rejected'
   const midX = (x1 + x2) / 2
   const endX = isLost ? midX : x2
-  const caption =
-    message.retransmitOf === undefined ? message.label : `${message.label} ${RETRANSMIT_MARK}`
+  const caption = messageCaption(message)
   const toggle = () => {
     onSelect(isSelected ? null : message.id)
   }
@@ -287,7 +295,7 @@ function MessageArrow({
       {message.encrypted === true && (
         <Lock
           // ラベルは中央揃えなので、見積もったラベルの幅から左隣の位置を求める（狭い画面でも重ならない）
-          x={midX - estimateTextWidth(caption, 12) / 2 - ICON_SIZE - 3}
+          x={midX - estimateTextWidth(caption, LABEL_FONT_SIZE) / 2 - ICON_SIZE - 3}
           y={y - 8 - ICON_SIZE + 2}
           size={ICON_SIZE}
           className="stroke-current"

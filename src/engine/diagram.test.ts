@@ -5,6 +5,7 @@ import {
   diagramWidth,
   estimateTextWidth,
   hasTimers,
+  labelLaneWidth,
   laneWidthFor,
   rowLayout,
   sectionStartLabels,
@@ -145,5 +146,53 @@ describe('laneWidthFor / diagramWidth', () => {
     expect(diagramWidth(5, false)).toBe(900)
     expect(diagramWidth(6, false)).toBe(900)
     expect(diagramWidth(2, true)).toBe(72 + 360)
+    // ラベルに要る幅のほうが大きければ、それを使う
+    expect(diagramWidth(2, false, 200)).toBe(400)
+  })
+})
+
+describe('labelLaneWidth', () => {
+  const text = (en: string) => ({ en, ja: en })
+  const step = (label: string, from: string, to: string, retransmitOf?: string): Step => ({
+    id: label,
+    title: text(label),
+    description: text(label),
+    events: [
+      {
+        kind: 'message',
+        message: {
+          id: label,
+          from,
+          to,
+          label,
+          status: 'delivered',
+          fields: [],
+          ...(retransmitOf === undefined ? {} : { retransmitOf }),
+        },
+      },
+    ],
+  })
+
+  it('隣り合う 2 レーンでは、中点から端までレーン 1 本分なので、ラベルの半分と余白の幅が要る', () => {
+    // 30 文字 × 12px × 0.6 = 216px → 半分 108 + 余白 24 = 132
+    expect(labelLaneWidth(['a', 'b'], [step('x'.repeat(30), 'a', 'b')])).toBe(132)
+  })
+
+  it('中央寄りのレーンの間なら、端までの距離が長いので狭くてよい', () => {
+    // 4 レーンの 1 と 2 の間の中点は、左右の端からレーン 2 本分
+    expect(labelLaneWidth(['a', 'b', 'c', 'd'], [step('x'.repeat(30), 'b', 'c')])).toBe(66)
+  })
+
+  it('端に近い側で決まる（4 レーンの 2 と 3 の間は、右端からレーン 1 本分）', () => {
+    expect(labelLaneWidth(['a', 'b', 'c', 'd'], [step('x'.repeat(30), 'c', 'd')])).toBe(132)
+  })
+
+  it('再送の印の分も含め、いちばん広く要るものを返す', () => {
+    const steps = [step('short', 'a', 'b'), step('x'.repeat(30), 'b', 'a', 'orig')]
+    expect(labelLaneWidth(['a', 'b'], steps)).toBe(Math.ceil((216 + 14.4) / 2 + 24))
+  })
+
+  it('メッセージがなければ 0', () => {
+    expect(labelLaneWidth(['a', 'b'], [])).toBe(0)
   })
 })
