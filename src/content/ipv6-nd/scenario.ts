@@ -10,7 +10,8 @@
  *   §6.2.6（要請された RA は、ふつうすべてのノードへのマルチキャスト）、§6.3.4（RA の送信元リンク層アドレスで近隣キャッシュを STALE にする）、
  *   §6.3.7（RS は最大 3 回、4 秒おき）、§7.2.2（アドレス解決は対象の要請ノードマルチキャストへの NS。キャッシュは INCOMPLETE）、
  *   §7.2.4（送信元が :: の NS への NA は、すべてのノードへ）、§7.2.5（NA を受け取ると REACHABLE）、§10（RetransTimer 1 秒、
- *   RTR_SOLICITATION_INTERVAL 4 秒、MAX_RTR_SOLICITATIONS 3）
+ *   RTR_SOLICITATION_INTERVAL 4 秒、MAX_RTR_SOLICITATIONS 3、
+ *   MAX_RTR_SOLICITATION_DELAY 1 秒。§6.3.7: 最後の RS から 1 秒待っても RA がなければ、ルーターはないとみなす）
  * - RFC 4291 §2.5.6（fe80::/10）、§2.7.1（ff02::1、ff02::2、要請ノードマルチキャスト）、付録 A（EUI-64）
  * - RFC 2464 §3（EtherType 0x86dd）、§4（インターフェース ID）、§7（33:33 で始まるマルチキャストの MAC アドレス）
  * - RFC 4443（ICMPv6）、RFC 8106 §5.1（RDNSS、オプション 25）、RFC 3849（文書用 2001:db8::/32）、RFC 9542（説明用の MAC アドレス）
@@ -56,6 +57,7 @@ export const NEIGHBOR_COLUMNS = ['Neighbor', 'MAC', 'State'] as const
 export const RETRANS_TIMER_MS = 1000
 export const RTR_SOLICITATION_INTERVAL_MS = 4000
 export const MAX_RTR_SOLICITATIONS = 3
+export const MAX_RTR_SOLICITATION_DELAY_MS = 1000
 
 /** アドレス（RFC 3849、RFC 9542 §2.1.2）。インターフェース ID は MAC アドレスからの EUI-64 */
 export const HOSTS = {
@@ -223,7 +225,7 @@ function icmp(
   }
 }
 
-/** マルチキャストを、ほかのすべてのレーンに描く（参加している機器は delivered、NIC が捨てる機器は rejected） */
+/** マルチキャストを、ほかのすべてのレーンに描く（受け取って処理する機器は delivered、NIC が捨てるか、受け取っても処理しない機器は rejected） */
 function multicast(
   id: string,
   from: ActorId,
@@ -347,8 +349,8 @@ function buildSteps(options: Ipv6NdOptions): readonly Step[] {
         id: 'duplicate-found',
         title: { en: 'The PC gives up the address', ja: 'PC はアドレスをあきらめる' },
         description: {
-          en: 'The address is duplicated, so the PC must not use it. With an EUI-64 interface ID the OS usually disables IPv6 on the interface and logs an error; with random interface IDs (RFC 7217) it can try another one. Duplicate MAC-based addresses are rare; this case usually means a manually configured address.',
-          ja: 'アドレスが重複しているので、PC はそれを使ってはいけない。EUI-64 のインターフェース ID なら、OS はふつうそのインターフェースの IPv6 を止めてエラーを記録する。ランダムなインターフェース ID（RFC 7217）なら、別の ID を試せる。MAC アドレスから作ったアドレスが重なることはまれで、ふつうは手で設定したアドレスが原因。',
+          en: 'The address is duplicated, so the PC must not use it. With an EUI-64 interface ID the OS should stop using the address, and may disable IPv6 on the interface, and logs an error; with random interface IDs (RFC 7217) it can try another one. A duplicated MAC-based address usually means a duplicated MAC address (such as a cloned virtual machine) or a manually configured address.',
+          ja: 'アドレスが重複しているので、PC はそれを使ってはいけない。EUI-64 のインターフェース ID なら、OS はそのアドレスを使うのをやめ（インターフェースの IPv6 を止めることもある）、エラーを記録する。ランダムなインターフェース ID（RFC 7217）なら、別の ID を試せる。MAC アドレスから作ったアドレスが重なるのは、ふつう MAC アドレスの重複（複製した仮想マシンなど）か、手で設定したアドレスが原因。',
         },
         events: [set(PC, ADDRESSES, addressTable([[HOSTS.pc.linkLocal, 'duplicate']]))],
       },
@@ -402,17 +404,17 @@ function buildSteps(options: Ipv6NdOptions): readonly Step[] {
       id: 'no-router',
       title: { en: 'No router: link-local only', ja: 'ルーターがない: リンクローカルだけ' },
       description: {
-        en: 'No Router Advertisement came, so the PC has no global address and no default router. It can still talk to other devices on the same LAN with link-local addresses, but it cannot reach the Internet over IPv6.',
-        ja: 'Router Advertisement が来なかったので、PC にはグローバルアドレスもデフォルトルーターもない。リンクローカルアドレスで同じ LAN の機器とは話せるが、IPv6 でインターネットには出られない。',
+        en: 'One second after the third Router Solicitation there is still no Router Advertisement, so the PC concludes there is no router. It has no global address and no default router. It can still talk to other devices on the same LAN with link-local addresses, but it cannot reach the Internet over IPv6.',
+        ja: '3 回目の Router Solicitation から 1 秒たっても Router Advertisement が来ないので、PC はルーターがないと判断する。PC にはグローバルアドレスもデフォルトルーターもない。リンクローカルアドレスで同じ LAN の機器とは話せるが、IPv6 でインターネットには出られない。',
       },
       events: [
         {
           kind: 'timer',
           actorId: PC,
-          name: 'RTR_SOLICITATION_INTERVAL',
-          durationMs: RTR_SOLICITATION_INTERVAL_MS,
+          name: 'MAX_RTR_SOLICITATION_DELAY',
+          durationMs: MAX_RTR_SOLICITATION_DELAY_MS,
         },
-        set(PC, DEFAULT_ROUTER, 'none'),
+        set(PC, DEFAULT_ROUTER, '-'),
       ],
     })
     return steps
@@ -487,7 +489,7 @@ function buildSteps(options: Ipv6NdOptions): readonly Step[] {
         set(PC, DEFAULT_ROUTER, HOSTS.router.linkLocal),
         set(PC, DNS, HOSTS.router.dns),
         set(PC, NEIGHBORS, neighborTable([pcRouterEntry])),
-        set(PC2, LAST_PACKET, 'RA (prefix learned)'),
+        set(PC2, LAST_PACKET, 'RA'),
       ],
     },
     {
@@ -549,7 +551,7 @@ function buildSteps(options: Ipv6NdOptions): readonly Step[] {
           { pc2: true },
         ),
         set(PC, NEIGHBORS, neighborTable([pcRouterEntry, [HOSTS.pc2.global, '-', 'INCOMPLETE']])),
-        set(PC2, LAST_PACKET, 'NS (for me)'),
+        set(PC2, LAST_PACKET, 'NS'),
       ],
     },
     {
@@ -613,7 +615,7 @@ function buildSteps(options: Ipv6NdOptions): readonly Step[] {
             { name: 'Hop Limit', value: '64' },
           ],
         }),
-        set(PC2, LAST_PACKET, 'IPv6 packet (for me)'),
+        set(PC2, LAST_PACKET, 'IPv6'),
       ],
     },
   )

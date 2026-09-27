@@ -116,6 +116,28 @@ describe('ipv6NdScenario', () => {
       expect(field(ra, 'Flags')).toBe('M 0, O 0')
     })
 
+    it('RS には送信元リンク層アドレスがあり、ルーターの近隣キャッシュは STALE になる。DAD の NS にはない', () => {
+      const steps = build()
+      const rs = messages(steps).find((m) => m.id === 'rs-router')
+      expect(field(rs, 'Source link-layer address')).toBe('00:00:5e:00:53:0a')
+      expect(field(messages(steps)[0], 'Source link-layer address')).toBeUndefined()
+      const index = steps.findIndex((step) => step.id === 'rs')
+      const router = deriveState(ipv6NdScenario.actors, steps, index).actorStates.router?.values
+      const cache = router?.neighbors
+      expect(typeof cache === 'object' ? cache.rows : null).toEqual([
+        ['fe80::200:5eff:fe00:530a', '00:00:5e:00:53:0a', 'STALE'],
+      ])
+    })
+
+    it('アドレス解決の NS は、グローバルの送信元から、PC 2 の要請ノードマルチキャストへ', () => {
+      const ns = messages(build()).find((m) => m.id === 'resolve-pc2')
+      expect(
+        ['IPv6 Src', 'IPv6 Dst', 'Eth Dst', 'Source link-layer address'].map((name) =>
+          field(ns, name),
+        ),
+      ).toEqual([GLOBAL, 'ff02::1:ff00:5314', '33:33:ff:00:53:14', '00:00:5e:00:53:0a'])
+    })
+
     it('アドレス解決: 近隣キャッシュは INCOMPLETE → REACHABLE', () => {
       const steps = build()
       expect(pcAt(steps, 'resolve').neighbors?.at(-1)).toEqual([PC2, '-', 'INCOMPLETE'])
@@ -144,10 +166,10 @@ describe('ipv6NdScenario', () => {
       expect(messages(steps).every((m) => m.status === 'rejected')).toBe(true)
       expect(pcAt(steps, 'no-router')).toMatchObject({
         addresses: [[LL, 'preferred']],
-        defaultRouter: 'none',
+        defaultRouter: '-',
       })
-      // DAD の 1 秒と、RS の間の 4 秒 × 2、最後の待ち 4 秒
-      expect(deriveState(ipv6NdScenario.actors, steps, steps.length - 1).elapsedMs).toBe(13_000)
+      // DAD の 1 秒と、RS の間の 4 秒 × 2、最後の RS のあとの 1 秒（MAX_RTR_SOLICITATION_DELAY）
+      expect(deriveState(ipv6NdScenario.actors, steps, steps.length - 1).elapsedMs).toBe(10_000)
     })
 
     it('ラベルは短い', () => {
