@@ -349,7 +349,7 @@ function buildSteps(options: Ipv6NdOptions): readonly Step[] {
         id: 'duplicate-found',
         title: { en: 'The PC gives up the address', ja: 'PC はアドレスをあきらめる' },
         description: {
-          en: 'The address is duplicated, so the PC must not use it. With an EUI-64 interface ID the OS should stop using the address, and may disable IPv6 on the interface, and logs an error; with random interface IDs (RFC 7217) it can try another one. A duplicated MAC-based address usually means a duplicated MAC address (such as a cloned virtual machine) or a manually configured address.',
+          en: 'The address is duplicated, so the PC must not use it. With an EUI-64 interface ID the OS should stop using the address and log an error, and may disable IPv6 on the interface; with random interface IDs (RFC 7217) it can try another one. A duplicated MAC-based address usually means a duplicated MAC address (such as a cloned virtual machine) or a manually configured address.',
           ja: 'アドレスが重複しているので、PC はそれを使ってはいけない。EUI-64 のインターフェース ID なら、OS はそのアドレスを使うのをやめ（インターフェースの IPv6 を止めることもある）、エラーを記録する。ランダムなインターフェース ID（RFC 7217）なら、別の ID を試せる。MAC アドレスから作ったアドレスが重なるのは、ふつう MAC アドレスの重複（複製した仮想マシンなど）か、手で設定したアドレスが原因。',
         },
         events: [set(PC, ADDRESSES, addressTable([[HOSTS.pc.linkLocal, 'duplicate']]))],

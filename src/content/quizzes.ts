@@ -7,6 +7,7 @@ import { http2Quiz } from './http2/quiz'
 import { httpsOverviewQuiz } from './https-overview/quiz'
 import { icmpQuiz } from './icmp/quiz'
 import { ipv6AddressQuiz } from './ipv6-address/quiz'
+import { ipv6NdQuiz } from './ipv6-nd/quiz'
 import { natQuiz } from './nat/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
 import { quicQuiz } from './quic/quiz'
@@ -26,6 +27,7 @@ import {
   HTTPS_OVERVIEW_META,
   ICMP_META,
   IPV6_ADDRESS_META,
+  IPV6_ND_META,
   NAT_META,
   OSI_MODEL_META,
   QUIC_META,
@@ -58,6 +60,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: ROUTE_LOOKUP_META, quiz: routeLookupQuiz },
   { meta: SWITCHING_META, quiz: switchingQuiz },
   { meta: VLAN_META, quiz: vlanQuiz },
+  { meta: IPV6_ND_META, quiz: ipv6NdQuiz },
   { meta: DNS_RESOLUTION_META, quiz: dnsResolutionQuiz },
   { meta: TCP_HANDSHAKE_META, quiz: tcpHandshakeQuiz },
   { meta: TLS_HANDSHAKE_META, quiz: tlsHandshakeQuiz },
