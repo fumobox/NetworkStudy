@@ -3,12 +3,14 @@
  *
  * 根拠（IEEE の規格は RFC のように本文へ直接リンクできないので、規格名・年・節の題名で引く）:
  * - IEEE Std 802.1Q-2022
- *   - clause 9 "Tagged frame format"（9.5 "Tag Protocol Identification"、9.6 "VLAN Tag Control Information"）: タグは TPID 0x8100 と
+ *   - clause 9 "Tagged frame format"（9.5 "Tag Protocol Identifier (TPID) formats"、9.6 "VLAN Tag Control Information"）: タグは TPID 0x8100 と
  *     TCI（PCP 3 ビット、DEI 1 ビット、VID 12 ビット）。VID 0 は優先度だけのタグ、4095（0xFFF）は予約
  *   - clause 8.6 "The Forwarding Process"、8.8 "The Filtering Database": フレームは同じ VLAN のポートにだけ転送し、流す。
- *     MAC アドレステーブルは VLAN ごとに持つ
+ *     MAC アドレステーブルは VLAN ごとに持つ（IVL。VID ごとに FID を分ける場合）
  *   - アクセスポートはタグなし（その VLAN に属する）、トランクポートは複数の VLAN のフレームをタグ付きで運ぶ
- * - RFC 1812 §5.2（ルーターは直接つながったネットワークの間でパケットを転送し、TTL を 1 減らす）
+ * - RFC 1812 §5.2（ルーターは直接つながったネットワークの間でパケットを転送する）、§5.3.1（転送するパケットの TTL を 1 減らす）、
+ *   §5.2.7.2（ICMP Redirect は、来たのと同じインターフェースに出し、送信元が次のホップと同じ論理サブネットのときだけ。
+ *   VLAN を使わない場合もサブネットが違うので Redirect は送らない）
  * - RFC 826（ARP）、RFC 9542 §2.1.2（説明用の MAC アドレス）、RFC 1918（プライベートアドレス）
  * - VLAN ID には説明用の範囲がないので 10 と 20 を使う（1 は既定の VLAN、0 と 4095 は予約）
  *
@@ -216,8 +218,14 @@ function buildSteps(options: VlanOptions): readonly Step[] {
     : { id: PC_B, ...HOSTS.pcB }
   const bystander = other ? PC_B : ROUTER
   const rows: [number, string, number][] = []
+  // 同じ VLAN と MAC アドレスの行がすでにあれば、足さずに新しくする（ポートを書き換える）
   const learn = (vlan: number, mac: string, port: number) => {
-    rows.push([vlan, mac, port])
+    const existing = rows.find(([rowVlan, rowMac]) => rowVlan === vlan && rowMac === mac)
+    if (existing === undefined) {
+      rows.push([vlan, mac, port])
+    } else {
+      existing[2] = port
+    }
     return set(SWITCH, MAC_TABLE, macTable(rows))
   }
 
@@ -334,7 +342,7 @@ function buildSteps(options: VlanOptions): readonly Step[] {
       id: 'flood',
       title: vlans
         ? { en: 'Flooded only inside VLAN 10', ja: 'VLAN 10 の中にだけ流す' }
-        : { en: 'Flooded to every port', ja: 'すべてのポートに流す' },
+        : { en: 'Flooded to every other port', ja: 'ほかの全ポートに流す' },
       description: vlans
         ? {
             en: `A broadcast is flooded only to the ports of the same VLAN: port 2 and the trunk, port 4. On the trunk the switch adds an 802.1Q tag with VLAN ID 10, so the router knows which VLAN the frame came from. Port 3 is in VLAN 20, so PC C receives nothing. ${other ? 'PC B is not the target and ignores the request.' : 'The router is not the target and ignores the request.'}`,
@@ -373,10 +381,15 @@ function buildSteps(options: VlanOptions): readonly Step[] {
       id: 'reply',
       title: { en: 'The ARP reply comes back', ja: 'ARP の応答が戻る' },
       description: other
-        ? {
-            en: `The router answers on its VLAN 10 subinterface. The reply comes back on the trunk${vlans ? ' tagged with VLAN 10, and the switch removes the tag before sending it out of access port 1' : ''}. The switch learns the router in VLAN ${String(v10)} on port 4.`,
-            ja: `ルーターは VLAN 10 のサブインターフェースで答える。応答はトランクで戻り${vlans ? '（VLAN 10 のタグ付き）、スイッチはアクセスポートの 1 に送る前にタグを外す' : ''}。スイッチはルーターを VLAN ${String(v10)} のポート 4 として学習する。`,
-          }
+        ? vlans
+          ? {
+              en: `The router answers on its VLAN 10 subinterface. The reply comes back on the trunk tagged with VLAN 10, and the switch removes the tag before sending it out of access port 1. The switch learns the router in VLAN 10 on port 4.`,
+              ja: `ルーターは VLAN 10 のサブインターフェースで答える。応答はトランクで戻り（VLAN 10 のタグ付き）、スイッチはアクセスポートの 1 に送る前にタグを外す。スイッチはルーターを VLAN 10 のポート 4 として学習する。`,
+            }
+          : {
+              en: 'The router answers. The switch learns the router on port 4 and sends the reply to port 1 only.',
+              ja: 'ルーターが答える。スイッチはルーターをポート 4 として学習し、応答をポート 1 にだけ送る。',
+            }
         : {
             en: `PC B answers. The switch learns PC B on port 2 and sends the reply to port 1 only.`,
             ja: 'PC B が答える。スイッチは PC B をポート 2 として学習し、応答をポート 1 にだけ送る。',
@@ -399,10 +412,12 @@ function buildSteps(options: VlanOptions): readonly Step[] {
   if (!other) {
     steps.push({
       id: 'send',
-      title: {
-        en: 'Within one VLAN, the switch delivers directly',
-        ja: '同じ VLAN の中なら、スイッチが直接届ける',
-      },
+      title: vlans
+        ? {
+            en: 'Within one VLAN, the switch delivers directly',
+            ja: '同じ VLAN の中なら、スイッチが直接届ける',
+          }
+        : { en: 'The switch delivers directly', ja: 'スイッチが直接届ける' },
       description: {
         en: 'PC A sends the packet to PC B’s MAC address. The switch forwards it from port 1 to port 2. The router is never involved: traffic inside one VLAN is just switched.',
         ja: 'PC A は PC B の MAC アドレスにパケットを送る。スイッチはポート 1 からポート 2 に転送する。ルーターは関わらない。同じ VLAN の中の通信は、スイッチが運ぶだけ。',

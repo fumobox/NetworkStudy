@@ -48,7 +48,7 @@ describe('vlanScenario', () => {
     expect(handle.resolve({ destination: 'router', vlans: 'x' }).options).toEqual(defaults)
   })
 
-  describe('VLAN 間の通信（IEEE 802.1Q clause 8.6、9、RFC 1812 §5.2）', () => {
+  describe('VLAN 間の通信（IEEE 802.1Q clause 8.6、9、RFC 1812 §5.2、§5.3.1）', () => {
     it('ブロードキャストは VLAN 10 の中だけ、VLAN 20 へはルーターを通り、トランクではタグが付く', () => {
       expect(frames(build())).toEqual([
         'pcA→switch ARP who-has 192.168.10.1 delivered',
@@ -144,6 +144,46 @@ describe('vlanScenario', () => {
       const labels = messages(build({ vlans: false })).map((m) => `${m.from}→${m.to}`)
       expect(labels).toContain('router→switch')
       expect(switchAt(build({ vlans: false }), 'route').decision).toBe('flood: ports 1, 2, 3')
+    })
+
+    it('VLAN がなければ表は VLAN 1 だけで、ルーターの行は 1 つ（重ねずに新しくする）', () => {
+      expect(switchAt(build({ vlans: false }), 'route').table).toEqual([
+        ['1', '00:00:5e:00:53:0a', '1'],
+        ['1', '00:00:5e:00:53:01', '4'],
+      ])
+    })
+
+    it('VLAN がなければ、説明にトランク・サブインターフェース・タグは出てこない', () => {
+      for (const destination of ['other', 'same'] as const) {
+        for (const step of build({ destination, vlans: false })) {
+          const text = `${step.title.en} ${step.description.en}`
+          expect(text, step.id).not.toMatch(/trunk|subinterface|tag/i)
+        }
+      }
+    })
+
+    it('同じ VLAN の宛先なら、ルーターは ARP の要求を無視する', () => {
+      const steps = build({ destination: 'same' })
+      const index = steps.findIndex((step) => step.id === 'flood')
+      const router = deriveState(vlanScenario.actors, steps, index).actorStates.router
+      expect(router?.values.lastFrame).toBe('ignored (not the target)')
+    })
+
+    it('ポートと VLAN の表、ルーターのインターフェース', () => {
+      const steps = build()
+      const values = deriveState(vlanScenario.actors, steps, 0).actorStates
+      const rowsOf = (value: unknown) =>
+        typeof value === 'object' && value !== null && 'rows' in value ? value.rows : null
+      expect(rowsOf(values.switch?.values.vlanTable)).toEqual([
+        ['1', 'access', '10'],
+        ['2', 'access', '10'],
+        ['3', 'access', '20'],
+        ['4', 'trunk', '10, 20'],
+      ])
+      expect(rowsOf(values.router?.values.interfaces)).toEqual([
+        ['eth0.10', '10', '192.168.10.1'],
+        ['eth0.20', '20', '192.168.20.1'],
+      ])
     })
 
     it('ラベルは短い', () => {
