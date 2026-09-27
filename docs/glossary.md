@@ -23,7 +23,7 @@
 |---|---|
 | TCP のフラグ・セグメント | SYN、ACK、SYN, ACK、RST、RST, ACK、FIN |
 | TCP の状態 | CLOSED、LISTEN、SYN-SENT、SYN-RECEIVED、ESTABLISHED、FIN-WAIT-1、FIN-WAIT-2、CLOSE-WAIT、CLOSING、LAST-ACK、TIME-WAIT |
-| TCP の変数・パラメーター | ISS、IRS、SND.NXT、RCV.NXT、MSS、RTO、RTT、MSL、cwnd、ssthresh |
+| TCP の変数・パラメーター | ISS、IRS、SND.NXT、RCV.NXT、MSS、RTO、RTT、MSL、cwnd、ssthresh、SND.UNA、SND.WND、RCV.WND、RCV.BUFF、win、Window probe、persist、Window Scale、SWS、Nagle |
 | DNS のメッセージ・フィールド | QNAME、QTYPE、ID、QR、RD、RA、AA、RCODE、NOERROR、NXDOMAIN、SERVFAIL、TTL |
 | DNS のレコード | A、AAAA、NS、CNAME、SOA、MX |
 | TLS 1.3 のメッセージ | ClientHello、ServerHello、EncryptedExtensions、Certificate、CertificateVerify、Finished、Alert |
@@ -176,6 +176,14 @@
 | early data | 早期データ（0-RTT のデータ） | |
 | session ticket / resumption | セッションチケット／再開 | |
 | probe timeout (PTO) | プローブタイムアウト（PTO） | |
+| flow control | フロー制御 | |
+| receive window / advertised window | 受信ウィンドウ | |
+| send window / usable window | 送信ウィンドウ／使えるウィンドウ | |
+| zero window | ゼロウィンドウ | |
+| window probe / persist timer | ウィンドウプローブ／パーシストタイマー | |
+| window update | ウィンドウの更新 | |
+| silly window syndrome | シリーウィンドウシンドローム（SWS） | |
+| delayed ACK | 遅延 ACK | |
 | Neighbor Discovery | 近隣探索 | |
 | neighbor cache | 近隣キャッシュ | |
 | duplicate address detection | 重複アドレス検出（DAD） | |
