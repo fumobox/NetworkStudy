@@ -61,8 +61,8 @@ export const switchingQuiz: Quiz = {
       ],
       answerId: 'flood',
       explanation: {
-        en: 'This is flooding. The right device receives the frame and the others drop it. When the destination answers, the switch learns its port from the answer’s source address.',
-        ja: 'これがフラッディング。正しい機器はフレームを受け取り、ほかの機器は捨てる。宛先が答えれば、スイッチはその答えの送信元のアドレスからポートを学習する。スイッチは ARP を使わない。',
+        en: 'This is flooding. The right device receives the frame and the others drop it. When the destination answers, the switch learns its port from the answer’s source address. A switch does not use ARP to find the destination.',
+        ja: 'これがフラッディング。正しい機器はフレームを受け取り、ほかの機器は捨てる。宛先が答えれば、スイッチはその答えの送信元のアドレスからポートを学習する。スイッチは宛先を探すのに ARP を使わない。',
       },
     },
     {
@@ -94,7 +94,7 @@ export const switchingQuiz: Quiz = {
       answerId: 'all',
       explanation: {
         en: 'ff:ff:ff:ff:ff:ff is the broadcast address: the frame is meant for every device, so the switch always floods it, whatever its table says. This is how ARP requests reach everyone.',
-        ja: 'ff:ff:ff:ff:ff:ff はブロードキャストのアドレスで、すべての機器に宛てたもの。スイッチは表の内容に関係なく、いつも全ポートに流す。ARP の要求がみんなに届くのはこのため。',
+        ja: 'ff:ff:ff:ff:ff:ff はブロードキャストのアドレスで、すべての機器に宛てたもの。スイッチは表の内容に関係なく、いつも入ってきたポート以外の全ポートに流す。ARP の要求がみんなに届くのはこのため。',
       },
     },
     {
@@ -112,8 +112,11 @@ export const switchingQuiz: Quiz = {
           },
         },
         {
-          id: 'security',
-          text: { en: 'To encrypt the table', ja: '表を暗号化するため' },
+          id: 'lease',
+          text: {
+            en: 'Because entries expire like a DHCP lease and each device has to renew its own',
+            ja: 'DHCP のリースのように期限があり、機器が自分の行を更新する必要があるから',
+          },
         },
         {
           id: 'speed',

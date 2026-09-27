@@ -1,6 +1,6 @@
 ## What a switch does
 
-Devices on a LAN are plugged into a **switch**. The switch reads the destination MAC address of each Ethernet frame and sends it out of the right port, so that a frame between two devices does not reach everyone else. (An old **hub** simply repeated every frame to every port.)
+Devices on a LAN are plugged into a **switch**. The switch reads the destination MAC address of each Ethernet frame and sends it out of the right port, so that a frame between two devices does not reach everyone else. (An old **hub** simply repeated every frame to every other port.)
 
 To know which port is right, the switch keeps a **MAC address table**:
 
@@ -18,9 +18,9 @@ As devices talk, the table fills up by itself and flooding becomes rare. Entries
 
 ## About this page
 
-There is one switch and no loops, so the Spanning Tree Protocol is left out. VLANs are covered in the VLAN theme, and the ICMP and ARP messages themselves in their own themes. Real switches also handle full-duplex links, a full table, and much more.
+There is one switch and no loops, so the Spanning Tree Protocol is left out. VLANs are not covered here, and the ICMP and ARP messages themselves are explained in their own themes. Real switches also handle full-duplex links, a full table, and much more.
 
 ## References
 
-- IEEE Std 802.1Q-2022, *Bridges and Bridged Networks* — clause 8.6 “The Forwarding Process”, 8.7 “The Learning Process”, 8.8 “The Filtering Database” (the bridging rules of IEEE 802.1D were merged into 802.1Q in 2014). IEEE standards cannot be linked page by page like RFCs; 802.1 standards can be read free of charge after registering through the [IEEE GET Program](https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68). See also the [IEEE SA page](https://standards.ieee.org/ieee/802.1Q/10323/).
+- IEEE Std 802.1Q-2022, *Bridges and Bridged Networks* — clause 8.6 “The Forwarding Process”, 8.7 “The Learning Process”, 8.8 “The Filtering Database” (the bridging rules of IEEE 802.1D were merged into 802.1Q in 2014). IEEE standards cannot be linked page by page like RFCs; IEEE 802 standards, including 802.1Q, can be read free of charge after registering through the [IEEE GET Program](https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68). See also the [IEEE SA page](https://standards.ieee.org/ieee/802.1Q/10323/).
 - [RFC 4188: Definitions of Managed Objects for Bridges](https://www.rfc-editor.org/rfc/rfc4188) — `dot1dTpFdbTable`, `dot1dTpAgingTime`

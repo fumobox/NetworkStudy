@@ -1,6 +1,6 @@
 ## スイッチがすること
 
-LAN の機器は**スイッチ**につながっている。スイッチは Ethernet のフレームごとに宛先の MAC アドレスを読み、正しいポートにだけ送る。そのため、2 台の機器の間のフレームがほかの全員に届くことはない（昔の**ハブ**は、すべてのフレームを全ポートにそのまま流していた）。
+LAN の機器は**スイッチ**につながっている。スイッチは Ethernet のフレームごとに宛先の MAC アドレスを読み、正しいポートにだけ送る。そのため、2 台の機器の間のフレームがほかの全員に届くことはない（昔の**ハブ**は、すべてのフレームをほかの全ポートにそのまま流していた）。
 
 どのポートが正しいかを知るため、スイッチは **MAC アドレステーブル**を持っている。
 
@@ -18,9 +18,9 @@ LAN の機器は**スイッチ**につながっている。スイッチは Ether
 
 ## このページについて
 
-スイッチは 1 台でループはないので、スパニングツリープロトコル（STP）は扱わない。VLAN は VLAN のテーマで、ICMP と ARP のメッセージそのものはそれぞれのテーマで扱う。実際のスイッチは、全二重のリンクや表があふれた場合なども扱う。
+スイッチは 1 台でループはないので、スパニングツリープロトコル（STP）は扱わない。VLAN はここでは扱わない。ICMP と ARP のメッセージそのものは、それぞれのテーマで説明している。実際のスイッチは、全二重のリンクや表があふれた場合なども扱う。
 
 ## 参考
 
-- IEEE Std 802.1Q-2022, *Bridges and Bridged Networks* — clause 8.6 “The Forwarding Process”、8.7 “The Learning Process”、8.8 “The Filtering Database”（IEEE 802.1D のブリッジの規定は 2014 年に 802.1Q に取り込まれた）。IEEE の規格は RFC のようにページごとにリンクできない。802.1 の規格は、[IEEE GET Program](https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68) で登録すると無料で読める。[IEEE SA のページ](https://standards.ieee.org/ieee/802.1Q/10323/)も参照。
+- IEEE Std 802.1Q-2022, *Bridges and Bridged Networks* — clause 8.6 “The Forwarding Process”、8.7 “The Learning Process”、8.8 “The Filtering Database”（IEEE 802.1D のブリッジの規定は 2014 年に 802.1Q に取り込まれた）。IEEE の規格は RFC のようにページごとにリンクできない。802.1Q を含む IEEE 802 の規格は、[IEEE GET Program](https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68) で登録すると無料で読める。[IEEE SA のページ](https://standards.ieee.org/ieee/802.1Q/10323/)も参照。
 - [RFC 4188: Definitions of Managed Objects for Bridges](https://www.rfc-editor.org/rfc/rfc4188) — `dot1dTpFdbTable`、`dot1dTpAgingTime`
