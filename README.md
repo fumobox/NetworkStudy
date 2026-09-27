@@ -36,6 +36,7 @@ More about TCP / TCP をもっと詳しく
 
 - Closing a TCP connection / TCP の接続の終了
 - TCP congestion control / TCP の輻輳制御
+- TCP flow control: the receive window / TCP のフロー制御: 受信ウィンドウ
 
 HTTP for web developers / Web 開発で出会う HTTP
 

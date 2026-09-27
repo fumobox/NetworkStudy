@@ -16,6 +16,7 @@ import { subnetCalculatorTheme } from './subnet-calculator'
 import { switchingTheme } from './switching'
 import { tcpCloseTheme } from './tcp-close'
 import { tcpCongestionTheme } from './tcp-congestion'
+import { tcpFlowControlTheme } from './tcp-flow-control'
 import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
 import { vlanTheme } from './vlan'
@@ -40,6 +41,7 @@ export const THEMES: readonly ThemeModule[] = [
   httpsOverviewTheme,
   tcpCloseTheme,
   tcpCongestionTheme,
+  tcpFlowControlTheme,
   httpCachingTheme,
   corsTheme,
   http2Theme,

@@ -207,7 +207,11 @@ describe('テーマへの導線', () => {
       within(within(sidebar).getByRole('list', { name: 'More about TCP' }))
         .getAllByRole('link')
         .map((link) => link.textContent),
-    ).toEqual(['Closing a TCP connection', 'TCP congestion control'])
+    ).toEqual([
+      'Closing a TCP connection',
+      'TCP congestion control',
+      'TCP flow control: the receive window',
+    ])
   })
 
   it('ホームにテーマのカードを表示する', async () => {
