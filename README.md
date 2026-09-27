@@ -9,6 +9,7 @@ Network basics / ネットワークの基礎
 
 - The OSI model and encapsulation / OSI 参照モデルとカプセル化
 - Subnet calculator / サブネット計算
+- IPv6 addresses: notation and kinds / IPv6 アドレス: 表記と種類
 
 Getting on the network / ネットワークにつながるまで
 

@@ -6,6 +6,7 @@ import { httpCachingQuiz } from './http-caching/quiz'
 import { http2Quiz } from './http2/quiz'
 import { httpsOverviewQuiz } from './https-overview/quiz'
 import { icmpQuiz } from './icmp/quiz'
+import { ipv6AddressQuiz } from './ipv6-address/quiz'
 import { natQuiz } from './nat/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
 import { quicQuiz } from './quic/quiz'
@@ -24,6 +25,7 @@ import {
   HTTP2_META,
   HTTPS_OVERVIEW_META,
   ICMP_META,
+  IPV6_ADDRESS_META,
   NAT_META,
   OSI_MODEL_META,
   QUIC_META,
@@ -46,6 +48,7 @@ import type { ThemeModule } from './types'
 export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: OSI_MODEL_META, quiz: osiModelQuiz },
   { meta: SUBNET_CALCULATOR_META, quiz: subnetCalculatorQuiz },
+  { meta: IPV6_ADDRESS_META, quiz: ipv6AddressQuiz },
   { meta: ARP_META, quiz: arpQuiz },
   { meta: DHCP_META, quiz: dhcpQuiz },
   { meta: ICMP_META, quiz: icmpQuiz },

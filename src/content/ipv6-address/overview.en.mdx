@@ -1,0 +1,46 @@
+## How an IPv6 address is written
+
+An IPv6 address is 128 bits long, four times as long as IPv4. It is written as eight groups of 16 bits in hexadecimal, separated by colons: `2001:0db8:0001:0000:0200:5eff:fe00:530a`. Two rules make it shorter:
+
+- **Leading zeros** in a group may be dropped: `0db8` → `db8`, `0000` → `0`.
+- **One run** of consecutive zero groups may be replaced by `::`. It can be used only once, or the address would be ambiguous.
+
+Because the same address can be written in several ways, RFC 5952 recommends one form: lower case, no leading zeros, and `::` for the longest run of two or more zero groups (the first one if there is a tie).
+
+## Prefix and interface ID
+
+Like IPv4, an address has a network part, the **prefix**, written with a slash (`2001:db8:1::/64`). On a LAN the prefix is almost always /64, and the remaining 64 bits are the **interface ID** of the device.
+
+## Kinds of addresses
+
+| Prefix | Kind | Used for |
+|---|---|---|
+| `::1/128` | Loopback | the device itself |
+| `fe80::/10` | Link-local | one link only; every interface has one |
+| `fc00::/7` | Unique local | inside an organization, like IPv4 private addresses |
+| `2000::/3` | Global unicast | the Internet |
+| `ff00::/8` | Multicast | a group of devices |
+| `2001:db8::/32` | Documentation | examples in books and manuals |
+
+IPv6 has **no broadcast**. Packets for every device on the link go to the multicast group `ff02::1`, and Neighbor Discovery uses the **solicited-node multicast address** (`ff02::1:ff` plus the last 24 bits of the address) so that only a few devices need to look at each question.
+
+## Interface IDs from MAC addresses
+
+An interface ID can be made from the 48-bit MAC address (**EUI-64**): insert `ff:fe` in the middle and flip the U/L bit of the first byte. It is easy to understand and still used on routers, but a fixed ID lets anyone recognize the device everywhere, so most operating systems now use random interface IDs instead.
+
+## What to try
+
+- The example buttons: a global address, its link-local twin, loopback, multicast, and an IPv4-mapped address.
+- Type an address in a long form and see its recommended form, or change the prefix length and watch the bits.
+- Make a link-local address from a MAC address.
+
+## About this page
+
+Zone IDs (`fe80::1%eth0`), 6to4 and Teredo, the deprecated site-local range, and the rules for random interface IDs (RFC 7217, RFC 8981) are left out.
+
+## References
+
+- [RFC 4291: IP Version 6 Addressing Architecture](https://www.rfc-editor.org/rfc/rfc4291) — §2.2, §2.4, §2.5, §2.7, Appendix A
+- [RFC 5952: A Recommendation for IPv6 Address Text Representation](https://www.rfc-editor.org/rfc/rfc5952)
+- [RFC 3849: IPv6 Address Prefix Reserved for Documentation](https://www.rfc-editor.org/rfc/rfc3849)
+- [RFC 2464: Transmission of IPv6 Packets over Ethernet Networks](https://www.rfc-editor.org/rfc/rfc2464) — §4, §7

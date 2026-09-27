@@ -35,6 +35,7 @@
 | VLAN | VLAN、802.1Q、TPID、TCI、PCP（Priority Code Point）、DEI、VID、PVID、access、trunk、eth0.10（サブインターフェースの名前）、on-link、gateway |
 | ICMP | ICMP、ping、traceroute、tracert、Echo Request、Echo Reply、Time Exceeded、Destination Unreachable、network unreachable、host unreachable、port unreachable、type / code、TTL |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
+| IPv6 アドレス | IPv6、EUI-64、U/L ビット、ff:fe、RFC 5952 |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
 | HTTP のキャッシュ | Cache-Control、max-age、no-cache、no-store、s-maxage、Vary、ETag、If-None-Match、Last-Modified、If-Modified-Since、Expires、Age、Date、200 OK、304 Not Modified、GET、fresh、stale、hit、miss |
 | CORS | CORS、Origin、Access-Control-Allow-Origin、Access-Control-Allow-Credentials、Access-Control-Allow-Methods、Access-Control-Allow-Headers、Access-Control-Request-Method、Access-Control-Request-Headers、Access-Control-Max-Age、OPTIONS、POST、204 No Content、201 Created、fetch()、TypeError、credentials: include、preflight required、no preflight required、Cookie、CSRF、Access-Control-Expose-Headers、Private Network Access |
@@ -80,6 +81,15 @@
 | timer | タイマー | |
 | loss / lost | ロス／失われる | |
 | port | ポート | スイッチのポートにも使う（TCP のポート番号とは文脈で区別する） |
+| link-local address | リンクローカルアドレス | fe80::/10 |
+| global unicast address | グローバルユニキャストアドレス | |
+| unique local address | ユニークローカルアドレス | fc00::/7 |
+| unspecified / loopback address | 未指定アドレス／ループバックアドレス | |
+| IPv4-mapped address | IPv4 射影アドレス | ::ffff:0:0/96 |
+| multicast / multicast scope | マルチキャスト／マルチキャストの範囲（scope） | |
+| solicited-node multicast address | 要請ノードマルチキャストアドレス | |
+| interface ID | インターフェース ID | |
+| documentation address | 文書用のアドレス | RFC 3849、RFC 9637、RFC 5737 |
 | congestion control | 輻輳制御 | |
 | sender / receiver | 送信側／受信側 | |
 | round (round trip) | ラウンド（往復） | 輻輳制御のテーマで、1 RTT 分のやり取り |

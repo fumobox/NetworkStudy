@@ -329,6 +329,15 @@ export function eui64FromMac(mac: MacBytes): InterfaceId64 {
   return [((a ^ UL_BIT) << 8) | b, (c << 8) | 0xff, 0xfe00 | d, (e << 8) | f]
 }
 
+/** インターフェース ID が EUI-64（中央に ff:fe）なら、もとの MAC アドレス。そうでなければ null */
+export function macFromEui64(groups: Groups): MacBytes | null {
+  const [, , , , g4, g5, g6, g7] = groups
+  if ((g5 & 0xff) !== 0xff || g6 >> 8 !== 0xfe) {
+    return null
+  }
+  return [(g4 >> 8) ^ UL_BIT, g4 & 0xff, g5 >> 8, g6 & 0xff, g7 >> 8, g7 & 0xff]
+}
+
 /** MAC アドレスから作るリンクローカルアドレス（fe80::/64 と EUI-64） */
 export function linkLocalFromMac(mac: MacBytes): Groups {
   const [g4, g5, g6, g7] = eui64FromMac(mac)

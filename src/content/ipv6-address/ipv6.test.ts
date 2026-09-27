@@ -10,6 +10,7 @@ import {
   formatMac,
   interfaceId,
   linkLocalFromMac,
+  macFromEui64,
   multicastMac,
   multicastScope,
   networkPrefix,
@@ -207,6 +208,12 @@ describe('MAC アドレスと EUI-64（RFC 4291 付録 A、RFC 2464 §4）', () 
     // U/L ビットがもともと 1 なら 0 になる
     const local = parseMac('02-00-5E-00-53-01')
     expect(local === null ? null : eui64FromMac(local)[0]).toBe(0x0000)
+  })
+
+  it('EUI-64 のインターフェース ID から MAC アドレスを戻す', () => {
+    const mac = macFromEui64(groups(DEFAULT_ADDRESS))
+    expect(mac === null ? null : formatMac(mac)).toBe('00:00:5e:00:53:0a')
+    expect(macFromEui64(groups('2001:db8::1'))).toBeNull()
   })
 
   it('MAC アドレスの表記', () => {
