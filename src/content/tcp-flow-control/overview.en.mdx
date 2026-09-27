@@ -16,11 +16,11 @@ The window starts at SND.UNA, not at SND.NXT, so the bytes it can still send are
 
 ## When the window drops to zero
 
-If the application is busy, the buffer fills and the receiver advertises a window of **0**. Later the application reads, and the receiver sends an ACK with a larger window. But ACKs are never retransmitted: if that ACK is lost, the sender would wait for an update and the receiver would wait for data, forever.
+If the application is busy, the buffer fills and the receiver advertises a window of **0**. Later the application reads, and the receiver sends an ACK with a larger window. But pure ACKs (with no data) are never retransmitted: if that ACK is lost, the sender would wait for an update and the receiver would wait for data, forever.
 
 To avoid this, the sender keeps sending a small **window probe** while the window is 0, with the interval doubling each time. The receiver answers every probe with its current window.
 
-## Silly window syndrome
+## Silly window syndrome (SWS)
 
 If the receiver reopened the window as soon as a few bytes were free, the sender would send tiny segments, each with 40 bytes of headers. To avoid this, the receiver does not reopen the window until at least min(half the buffer, one MSS) is free. On the sender side, Nagle’s algorithm (RFC 896) holds back small segments while data is unacknowledged.
 

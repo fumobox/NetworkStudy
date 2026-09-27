@@ -50,8 +50,8 @@ export const tcpFlowControlQuiz: Quiz = {
       ],
       answerId: 'probe',
       explanation: {
-        en: 'ACKs are never retransmitted, so if the ACK that reopens the window is lost, both sides would wait forever. The sender keeps sending window probes, with the interval doubling each time, and the reply to a probe tells it the current window.',
-        ja: 'ACK は再送されないので、ウィンドウを開く ACK が失われると、両方が永遠に待つことになる。送信側は間隔を倍にしながらウィンドウのプローブを送り続け、その応答で今のウィンドウを知る。',
+        en: 'Pure ACKs (with no data) are never retransmitted, so if the ACK that reopens the window is lost, both sides would wait forever. The sender keeps sending window probes, with the interval doubling each time, and the reply to a probe tells it the current window.',
+        ja: 'データのない ACK は再送されないので、ウィンドウを開く ACK が失われると、両方が永遠に待つことになる。送信側は間隔を倍にしながらウィンドウプローブを送り続け、その応答で今のウィンドウを知る。',
       },
     },
     {
@@ -121,7 +121,7 @@ export const tcpFlowControlQuiz: Quiz = {
       answerId: 'sws',
       explanation: {
         en: 'This is receiver-side silly window syndrome avoidance: the window is reopened only when at least min(half the buffer, one MSS) is free, so the sender can send full-sized segments.',
-        ja: '受信側の SWS（silly window syndrome）回避。空きが min(バッファーの半分, 1 MSS) 以上になるまでウィンドウを開かないので、送信側は満杯のセグメントを送れる。',
+        ja: '受信側のシリーウィンドウシンドローム（SWS）回避。空きが min(バッファーの半分, 1 MSS) 以上になるまでウィンドウを開かないので、送信側は満杯のセグメントを送れる。',
       },
     },
   ],
