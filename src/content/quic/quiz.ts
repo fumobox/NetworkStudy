@@ -1,6 +1,6 @@
 import type { Quiz } from '@/components/features/quiz/types'
 
-/** QUIC の理解度クイズ（根拠: RFC 9000 §7、§12.3、§13.3、RFC 9001 §5.2、§9.2、RFC 9114 §1） */
+/** QUIC の理解度クイズ（根拠: RFC 9000 §7、§12.3、§13.3、RFC 9001 §5.2、§9.2、RFC 9002 §4.2、RFC 9114 §1） */
 export const quicQuiz: Quiz = {
   id: 'quic',
   questions: [
@@ -65,7 +65,7 @@ export const quicQuiz: Quiz = {
       answerId: 'get',
       explanation: {
         en: 'An attacker can record 0-RTT data and send it to the server again (a replay). So 0-RTT should carry only requests that do no harm if they are processed twice, such as a GET.',
-        ja: '攻撃者は 0-RTT のデータを記録して、サーバーにもう一度送れる（再送攻撃）。そのため 0-RTT には、GET のように 2 回処理されても害のない要求だけを載せる。',
+        ja: '攻撃者は 0-RTT のデータを記録して、サーバーにもう一度送れる（リプレイ攻撃）。そのため 0-RTT には、GET のように 2 回処理されても害のない要求だけを載せる。',
       },
     },
     {
@@ -123,7 +123,7 @@ export const quicQuiz: Quiz = {
       answerId: 'new',
       explanation: {
         en: 'QUIC retransmits information, not packets: the lost STREAM data goes into a new packet with a new number. This way an acknowledgment always tells exactly which packet arrived, unlike TCP’s ambiguous retransmissions.',
-        ja: 'QUIC が送り直すのはパケットではなく情報。失われた STREAM のデータは、新しい番号の新しいパケットに入れる。こうすると確認応答が、どのパケットが届いたかを必ず正確に示す。TCP の再送のようにあいまいにならない。',
+        ja: 'QUIC が送り直すのはパケットではなく情報。失われた STREAM のデータは、新しい番号の新しいパケットに入れる。こうすると確認応答が、どのパケットが届いたかを必ず正確に示す。TCP の再送のように、元と再送のどちらが届いたかわからなくなることがない。',
       },
     },
   ],
