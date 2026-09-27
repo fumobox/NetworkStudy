@@ -55,8 +55,8 @@ export const ipv6NdQuiz: Quiz = {
       ],
       answerId: 'll',
       explanation: {
-        en: 'The router sends the Router Advertisement from its link-local address, and hosts use that address as the default router. It stays valid even if the global prefix changes.',
-        ja: 'ルーターは Router Advertisement をリンクローカルアドレスから送り、ホストはそのアドレスをデフォルトルーターにする。グローバルのプレフィックスが変わっても使い続けられる。',
+        en: 'The router sends the Router Advertisement from its link-local address, and hosts use that address as the default router. That address does not change even if the global prefix changes.',
+        ja: 'ルーターは Router Advertisement をリンクローカルアドレスから送り、ホストはそのアドレスをデフォルトルーターにする。グローバルのプレフィックスが変わっても、このアドレスは変わらない。',
       },
     },
     {
@@ -113,8 +113,8 @@ export const ipv6NdQuiz: Quiz = {
       ],
       answerId: 'self',
       explanation: {
-        en: 'The Router Advertisement only carries the prefix, with the A flag allowing autoconfiguration. The PC builds the address itself, so no server has to keep track of it. The M and O flags tell hosts when DHCPv6 is needed instead or as well.',
-        ja: 'Router Advertisement が運ぶのはプレフィックスだけで、A フラグが自動設定を許す。アドレスは PC が自分で作るので、それを管理するサーバーは要らない。代わりに、または一緒に DHCPv6 を使うときは、M と O のフラグで知らせる。',
+        en: 'The Router Advertisement carries a prefix, not an address; the A flag allows autoconfiguration from it. The PC builds the address itself, so no server has to keep track of it. The M and O flags tell hosts when DHCPv6 is needed instead or as well.',
+        ja: 'Router Advertisement が運ぶのはアドレスではなくプレフィックスで、A フラグがそこからの自動設定を許す。アドレスは PC が自分で作るので、それを管理するサーバーは要らない。代わりに、または一緒に DHCPv6 を使うときは、M と O のフラグで知らせる。',
       },
     },
   ],
