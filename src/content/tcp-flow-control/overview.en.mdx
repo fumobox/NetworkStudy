@@ -24,7 +24,7 @@ To avoid this, the sender keeps sending a small **window probe** while the windo
 
 If the receiver reopened the window as soon as a few bytes were free, the sender would send tiny segments, each with 40 bytes of headers. To avoid this, the receiver does not reopen the window until at least min(half the buffer, one MSS) is free. On the sender side, Nagle’s algorithm (RFC 896) holds back small segments while data is unacknowledged.
 
-## What to watch in the step-by-step view
+## What to look for in the walkthrough
 
 - How the **usable window** shrinks as segments are sent and grows again with each ACK.
 - The ACK with **win=0**, the **window probe**, and the ACK that reopens the window.
