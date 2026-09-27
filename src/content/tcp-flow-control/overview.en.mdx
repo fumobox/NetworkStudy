@@ -1,0 +1,37 @@
+## Why the receiver needs a say
+
+TCP hands received data to the application only when the application reads it. Until then, the data waits in the receiver’s **buffer**. If the sender sent as fast as it could, a slow application would let the buffer overflow.
+
+So every segment the receiver sends carries a **Window** field: the number of bytes, counted from the Ack number, that the receiver is still willing to accept. This is **flow control**. It protects the receiver. Protecting the network is a different job, done by congestion control, and the sender sends at most min(cwnd, receive window).
+
+## The sender’s window
+
+The sender keeps three variables:
+
+- **SND.UNA**: the first byte not yet acknowledged.
+- **SND.NXT**: the next byte to send.
+- **SND.WND**: the window from the last ACK.
+
+The window starts at SND.UNA, not at SND.NXT, so the bytes it can still send are **SND.UNA + SND.WND − SND.NXT**. When that reaches 0, the sender stops and waits for an ACK, even if the application has more to send.
+
+## When the window drops to zero
+
+If the application is busy, the buffer fills and the receiver advertises a window of **0**. Later the application reads, and the receiver sends an ACK with a larger window. But ACKs are never retransmitted: if that ACK is lost, the sender would wait for an update and the receiver would wait for data, forever.
+
+To avoid this, the sender keeps sending a small **window probe** while the window is 0, with the interval doubling each time. The receiver answers every probe with its current window.
+
+## Silly window syndrome
+
+If the receiver reopened the window as soon as a few bytes were free, the sender would send tiny segments, each with 40 bytes of headers. To avoid this, the receiver does not reopen the window until at least min(half the buffer, one MSS) is free. On the sender side, Nagle’s algorithm (RFC 896) holds back small segments while data is unacknowledged.
+
+## What to watch in the step-by-step view
+
+- How the **usable window** shrinks as segments are sent and grows again with each ACK.
+- The ACK with **win=0**, the **window probe**, and the ACK that reopens the window.
+- In “What if…”, a **lost window update** recovered by the next probe, an application that reads **immediately**, and one that reads **500 bytes at a time** (silly window avoidance).
+
+## References
+
+- [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.8.6 “Managing the Window”
+- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §4.2.2.17 “Probing Zero Windows”, §4.2.3.3 “When to Send a Window Update”
+- [RFC 7323: TCP Extensions for High Performance](https://www.rfc-editor.org/rfc/rfc7323) — §2 “TCP Window Scale Option” (for windows larger than 65,535 bytes)

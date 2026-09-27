@@ -136,7 +136,7 @@ export const en = {
     },
     tcp: {
       title: 'More about TCP',
-      lead: 'How a connection is closed, and how TCP avoids overloading the network.',
+      lead: 'How a connection is closed, and how TCP avoids overloading the network and the receiver.',
     },
     http: {
       title: 'HTTP for web developers',

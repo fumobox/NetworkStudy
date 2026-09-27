@@ -139,6 +139,19 @@ export const TCP_CONGESTION_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const TCP_FLOW_CONTROL_META = {
+  id: 'tcp-flow-control',
+  kind: 'sequence',
+  category: 'tcp',
+  title: { en: 'TCP flow control: the receive window', ja: 'TCP のフロー制御: 受信ウィンドウ' },
+  summary: {
+    en: 'How a TCP receiver uses the window in every ACK to keep the sender from overrunning its buffer, and what happens when the window drops to zero.',
+    ja: 'TCP の受信側が、ACK のたびに知らせるウィンドウで、送信側がバッファーをあふれさせないようにするしくみと、ウィンドウが 0 になったときの動き。',
+  },
+  difficulty: 'intermediate',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
 export const ARP_META = {
   id: 'arp',
   kind: 'sequence',
@@ -351,6 +364,7 @@ export const THEME_META = [
   HTTPS_OVERVIEW_META,
   TCP_CLOSE_META,
   TCP_CONGESTION_META,
+  TCP_FLOW_CONTROL_META,
   HTTP_CACHING_META,
   CORS_META,
   HTTP2_META,

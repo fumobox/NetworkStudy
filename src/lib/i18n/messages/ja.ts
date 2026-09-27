@@ -117,7 +117,7 @@ export const ja = {
     },
     tcp: {
       title: 'TCP をもっと詳しく',
-      lead: '接続の閉じ方と、TCP がネットワークを混ませすぎないしくみ。',
+      lead: '接続の閉じ方と、TCP がネットワークと受信側に送りすぎないしくみ。',
     },
     http: {
       title: 'Web 開発で出会う HTTP',
