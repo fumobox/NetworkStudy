@@ -6,7 +6,7 @@ An **origin** is the scheme, host and port of a URL: `https://app.example.com` a
 
 ## Preflight
 
-Some requests are checked before they are sent. A GET, HEAD or POST with only simple headers (for POST, a `Content-Type` of a form encoding or `text/plain`) goes out directly. Anything else, such as a POST with `Content-Type: application/json` or a custom header, first needs a **preflight**:
+Some requests are checked before they are sent. A GET, HEAD or POST with only simple headers (a `Content-Type`, if any, must be a form encoding or `text/plain`) goes out directly. Anything else, such as a POST with `Content-Type: application/json` or a custom header, first needs a **preflight**:
 
 1. The browser sends `OPTIONS` with `Origin`, `Access-Control-Request-Method` and `Access-Control-Request-Headers`, and no cookies.
 2. The server answers with `Access-Control-Allow-Origin`, `-Allow-Methods`, `-Allow-Headers`, and optionally `-Max-Age` (how long the browser may remember the answer).

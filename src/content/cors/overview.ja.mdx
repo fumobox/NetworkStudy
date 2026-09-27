@@ -6,7 +6,7 @@
 
 ## プリフライト
 
-要求によっては、送る前に確かめる。GET・HEAD・POST で、ヘッダーが決まったものだけ（POST の `Content-Type` はフォームの形式か `text/plain`）なら、そのまま送る。それ以外、たとえば `Content-Type: application/json` の POST や独自のヘッダー付きの要求は、先に**プリフライト**が要る。
+要求によっては、送る前に確かめる。GET・HEAD・POST で、ヘッダーが決まったものだけ（`Content-Type` を付けるなら、フォームの形式か `text/plain`）なら、そのまま送る。それ以外、たとえば `Content-Type: application/json` の POST や独自のヘッダー付きの要求は、先に**プリフライト**が要る。
 
 1. ブラウザーが `OPTIONS` に `Origin`、`Access-Control-Request-Method`、`Access-Control-Request-Headers` を付けて送る。Cookie は付けない。
 2. サーバーが `Access-Control-Allow-Origin`、`-Allow-Methods`、`-Allow-Headers` と、必要なら `-Max-Age`（ブラウザーが答えを覚えておいてよい時間）を返す。

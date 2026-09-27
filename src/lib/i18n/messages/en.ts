@@ -136,7 +136,7 @@ export const en = {
     },
     http: {
       title: 'HTTP for web developers',
-      lead: 'Things you meet as soon as you build for the web: how the browser caches responses and checks whether they are still valid, and why a request to another origin can be blocked.',
+      lead: 'Things you meet as soon as you build for the web: how the browser caches responses and checks whether they are still valid, and why the browser may not let a page read a response from another origin.',
     },
   },
   theme: {
