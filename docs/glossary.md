@@ -31,6 +31,7 @@
 | 証明書 | SAN（subjectAltName）、CA、X.509 |
 | その他 | IP、IPv4、HTTP、HTTPS、URL、RFC、OSI、CIDR、Ethernet、Wi-Fi、MAC、FCS、UDP、UTF-8 |
 | ARP | ARP、who-has、is-at、HTYPE、PTYPE、HLEN、PLEN、OPER、SHA、SPA、THA、TPA、EtherType、LAN |
+| スイッチ | Ingress port、Egress port、learn、flood、forward、refresh、aged out、accepted、dropped (not my MAC)、ignored (not the target)、STP |
 | ICMP | ICMP、ping、traceroute、tracert、Echo Request、Echo Reply、Time Exceeded、Destination Unreachable、network unreachable、host unreachable、port unreachable、type / code、TTL |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
@@ -77,7 +78,7 @@
 | exponential backoff | 指数バックオフ | |
 | timer | タイマー | |
 | loss / lost | ロス／失われる | |
-| port | ポート | |
+| port | ポート | スイッチのポートにも使う（TCP のポート番号とは文脈で区別する） |
 | congestion control | 輻輳制御 | |
 | sender / receiver | 送信側／受信側 | |
 | round (round trip) | ラウンド（往復） | 輻輳制御のテーマで、1 RTT 分のやり取り |
@@ -115,6 +116,14 @@
 | port forwarding | ポートフォワーディング | |
 | carrier-grade NAT | キャリアグレード NAT | |
 | hairpinning | ヘアピン | |
+| switch | スイッチ | |
+| MAC address table | MAC アドレステーブル | |
+| learning | 学習 | スイッチが送信元の MAC アドレスとポートを記録すること |
+| flooding | フラッディング | 初出で「（ほかの全ポートに流す）」と説明する |
+| ageing / ageing time | エージング／エージングタイム | |
+| forwarding / filtering | 転送／フィルタリング | |
+| unknown unicast | 宛先不明のユニキャスト | |
+| hub | ハブ | |
 | fresh / stale | 新しい／古い | 状態の値としては fresh / stale のまま書く |
 | revalidation / conditional request | 再検証（確かめる）／条件付きの要求 | |
 | private cache / shared cache | プライベートキャッシュ／共有キャッシュ | |
