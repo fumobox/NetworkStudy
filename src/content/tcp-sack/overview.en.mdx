@@ -12,9 +12,9 @@ If two segments from the same window are lost, duplicate ACKs only reveal the fi
 
 ## SACK
 
-With **SACK** (Selective Acknowledgment), both sides agree in the SYN segments (SACK-Permitted), and each ACK can carry up to a few **blocks** of data received after the hole. A block is written as the first byte received and the first byte **not** received after it, for example `3001-5001`. The first block is the one that holds the segment that just arrived.
+With **SACK** (Selective Acknowledgment), both sides agree in the SYN segments (SACK-Permitted), and each ACK can carry up to four **blocks** (three when the Timestamps option is also used) of data received after the hole. A block is written as the first byte received and the first byte **not** received after it, for example `3001-5001`. The first block is the one that holds the segment that just arrived.
 
-The sender keeps a **scoreboard** of which segments are SACKed. When enough data after a segment has been SACKed (more than (3 − 1) × MSS bytes), it treats that segment as lost and resends it, without waiting for a partial ACK. All holes can be repaired in the same round trip.
+The sender keeps a **scoreboard** of which segments are SACKed. When enough data after a segment has been SACKed (more than (3 − 1) × MSS bytes), it treats that segment as lost and resends it, without waiting for a partial ACK. Several holes can be repaired in the same round trip.
 
 ## When nothing comes after
 
@@ -32,6 +32,6 @@ How cwnd and ssthresh change during recovery is shown in the congestion control 
 
 - [RFC 5681: TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681) — §3.2 “Fast Retransmit/Fast Recovery”
 - [RFC 2018: TCP Selective Acknowledgment Options](https://www.rfc-editor.org/rfc/rfc2018)
-- [RFC 6675: A Conservative Loss Recovery Algorithm Based on SACK for TCP](https://www.rfc-editor.org/rfc/rfc6675)
+- [RFC 6675: A Conservative Loss Recovery Algorithm Based on Selective Acknowledgment (SACK) for TCP](https://www.rfc-editor.org/rfc/rfc6675)
 - [RFC 6582: The NewReno Modification to TCP’s Fast Recovery Algorithm](https://www.rfc-editor.org/rfc/rfc6582)
 - [RFC 8985: The RACK-TLP Loss Detection Algorithm for TCP](https://www.rfc-editor.org/rfc/rfc8985)

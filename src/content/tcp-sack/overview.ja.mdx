@@ -12,9 +12,9 @@ TCP の ACK は**累積**の確認応答で、Ack の番号は、受信側がま
 
 ## SACK
 
-**SACK**（選択的確認応答）を使うと、両者は SYN のセグメントで合意し（SACK-Permitted）、ACK には抜けの後に受け取ったデータの**ブロック**をいくつか載せられる。ブロックは、受け取った最初のバイトと、その後の受け取って**いない**最初のバイトで表す（例: `3001-5001`）。最初のブロックは、いま届いたセグメントを含むもの。
+**SACK**（選択的確認応答）を使うと、両者は SYN のセグメントで合意し（SACK-Permitted）、ACK には抜けの後に受け取ったデータの**ブロック**を最大 4 つ（Timestamps のオプションも使うときは 3 つ）載せられる。ブロックは、受け取った最初のバイトと、その後の受け取って**いない**最初のバイトで表す（例: `3001-5001`）。最初のブロックは、いま届いたセグメントを含むもの。
 
-送信側は、どのセグメントが SACK されたかを**スコアボード**に記録する。あるセグメントより後に十分なデータ（(3 − 1) × MSS バイトより多く）が SACK されたら、そのセグメントは失われたとみなし、部分的な確認応答を待たずに再送する。どの抜けも同じ往復の中で直せる。
+送信側は、どのセグメントが SACK されたかを**スコアボード**に記録する。あるセグメントより後に十分なデータ（(3 − 1) × MSS バイトより多く）が SACK されたら、そのセグメントは失われたとみなし、部分的な確認応答を待たずに再送する。複数の抜けを同じ往復の中で直せる。
 
 ## 後に何も来ないとき
 
@@ -32,6 +32,6 @@ TCP の ACK は**累積**の確認応答で、Ack の番号は、受信側がま
 
 - [RFC 5681: TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681) — §3.2「Fast Retransmit/Fast Recovery」
 - [RFC 2018: TCP Selective Acknowledgment Options](https://www.rfc-editor.org/rfc/rfc2018)
-- [RFC 6675: A Conservative Loss Recovery Algorithm Based on SACK for TCP](https://www.rfc-editor.org/rfc/rfc6675)
+- [RFC 6675: A Conservative Loss Recovery Algorithm Based on Selective Acknowledgment (SACK) for TCP](https://www.rfc-editor.org/rfc/rfc6675)
 - [RFC 6582: The NewReno Modification to TCP’s Fast Recovery Algorithm](https://www.rfc-editor.org/rfc/rfc6582)
 - [RFC 8985: The RACK-TLP Loss Detection Algorithm for TCP](https://www.rfc-editor.org/rfc/rfc8985)

@@ -1,6 +1,6 @@
 import type { Quiz } from '@/components/features/quiz/types'
 
-/** 高速再送と SACK の理解度クイズ（根拠は scenario.ts の RFC 5681・RFC 2018・RFC 6675・RFC 6582 の参照と同じ） */
+/** 高速再送と SACK の理解度クイズ（根拠は scenario.ts の RFC 5681・RFC 2018・RFC 6675・RFC 6582・RFC 8985 の参照と同じ） */
 export const tcpSackQuiz: Quiz = {
   id: 'tcp-sack',
   questions: [
