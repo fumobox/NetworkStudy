@@ -90,6 +90,25 @@ describe('Ipv6Address', () => {
     expect(screen.getByText(/Not a valid MAC address/)).toBeInTheDocument()
   })
 
+  it('ループバックには、近隣探索と EUI-64 の行を出さない', () => {
+    renderAt('?address=::1')
+    expect(screen.queryByText('Solicited-node multicast address', { selector: 'dt' })).toBeNull()
+    expect(
+      screen.queryByText('Interface ID made from a MAC address', { selector: 'dt' }),
+    ).toBeNull()
+  })
+
+  it('例のアドレスは、どれも推奨の表記（押した例が選ばれた状態になる）', async () => {
+    const user = userEvent.setup()
+    renderAt('')
+    for (const button of within(
+      screen.getByText('Try these addresses').parentElement ?? document.body,
+    ).getAllByRole('button')) {
+      await user.click(button)
+      expect(button).toHaveAttribute('aria-pressed', 'true')
+    }
+  })
+
   it('日本語の表示', () => {
     renderAt('?address=::1', 'ja')
     expect(value('種類')).toBe('ループバックアドレス（::1/128）')

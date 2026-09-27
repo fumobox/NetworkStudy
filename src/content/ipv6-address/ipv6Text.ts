@@ -46,7 +46,7 @@ export const IPV6_TEXT = {
     ja: '小文字で、先頭の 0 を省き、2 つ以上続く 0 のグループのうちいちばん長いところ（同じ長さなら最初）を :: にする。',
   },
   solicitedNodeNote: {
-    en: 'ff02::1:ff and the last 24 bits of the address. Neighbor Discovery asks for this address here instead of broadcasting.',
+    en: 'ff02::1:ff and the last 24 bits of the address. Neighbor Discovery sends its questions to this address instead of broadcasting.',
     ja: 'ff02::1:ff と、アドレスの下位 24 ビット。近隣探索は、ブロードキャストの代わりにこのアドレスに尋ねる。',
   },
   eui64Yes: (mac: string): LocalizedText => ({

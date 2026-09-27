@@ -170,6 +170,8 @@ export function Ipv6Address() {
       <MacToInterfaceId
         onUse={(address) => {
           writeQuery({ address, prefix: 64 })
+          // 結果は上にあるので、入力欄に移って見える位置にする
+          document.getElementById(ids.address)?.focus()
         }}
       />
     </section>
@@ -181,7 +183,8 @@ type Row = readonly [LocalizedText, string, LocalizedText?]
 function Results({ groups, prefix }: { groups: Groups; prefix: number }) {
   const t = useText()
   const { kind, range } = classify(groups)
-  const unicast = !['multicast', 'unspecified', 'ipv4Mapped', 'reserved'].includes(kind)
+  // 近隣探索（要請ノードマルチキャスト）と EUI-64 は、リンクのインターフェースに付くユニキャストのアドレスだけの話
+  const onLink = ['globalUnicast', 'linkLocal', 'uniqueLocal', 'documentation'].includes(kind)
   const eui64 = macFromEui64(groups)
   const rows: Row[] = [
     [TEXT.rows.canonical, formatCanonical(groups), TEXT.canonicalNote],
@@ -205,7 +208,7 @@ function Results({ groups, prefix }: { groups: Groups; prefix: number }) {
       [TEXT.rows.interfaceId, formatCanonical(interfaceId(groups, prefix))],
     )
   }
-  if (unicast) {
+  if (onLink) {
     const solicited = solicitedNode(groups)
     rows.push(
       [TEXT.rows.solicitedNode, formatCanonical(solicited), TEXT.solicitedNodeNote],
@@ -214,12 +217,14 @@ function Results({ groups, prefix }: { groups: Groups; prefix: number }) {
     )
   }
   return (
-    <section className="space-y-2" aria-live="polite">
+    <section className="space-y-2">
       <h3 className="text-base font-semibold">{t(TEXT.results)}</h3>
       <dl className="text-sm">
         {rows.map(([label, value, note]) => (
           <div
             key={label.en}
+            // 入力のたびに多くの行が変わるので、読み上げるのは種類の行だけにする
+            aria-live={label === TEXT.rows.kind ? 'polite' : undefined}
             className="grid grid-cols-[minmax(9rem,auto)_minmax(0,1fr)] items-baseline gap-x-3 border-t px-1 py-2"
           >
             <dt className="text-xs text-muted-foreground">{t(label)}</dt>
@@ -317,7 +322,7 @@ function MacToInterfaceId({ onUse }: { onUse: (address: string) => void }) {
               [
                 TEXT.mac.interfaceId,
                 eui64FromMac(mac)
-                  .map((g) => g.toString(16))
+                  .map((g) => g.toString(16).padStart(4, '0'))
                   .join(':'),
               ],
               [TEXT.mac.linkLocal, formatCanonical(linkLocalFromMac(mac))],

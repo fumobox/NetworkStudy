@@ -214,6 +214,8 @@ describe('MAC アドレスと EUI-64（RFC 4291 付録 A、RFC 2464 §4）', () 
     const mac = macFromEui64(groups(DEFAULT_ADDRESS))
     expect(mac === null ? null : formatMac(mac)).toBe('00:00:5e:00:53:0a')
     expect(macFromEui64(groups('2001:db8::1'))).toBeNull()
+    // ff:fe がほかの位置にあっても EUI-64 ではない
+    expect(macFromEui64(groups('2001:db8::ff:fe00:0:0'))).toBeNull()
   })
 
   it('MAC アドレスの表記', () => {
