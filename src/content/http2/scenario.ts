@@ -16,7 +16,7 @@
  * 学習用の単純化: 1 つのメッセージを 1 つのフレームとして描く（実際のフレームは複数の TCP セグメントに分かれ、
  * 再送されるのは失われたセグメントだけ）。TCP と TLS の接続はすでにできているものとし、ALPN は描かない。
  * WINDOW_UPDATE、SETTINGS の ACK、PRIORITY、PUSH_PROMISE、GOAWAY は省く。HPACK は表の番号だけを示し、
- * ハフマン符号とバイト数は省く。ロスは RTO（1 秒）で再送し、高速再送は描かない（TCP の輻輳制御のテーマを参照）。
+ * ハフマン符号とバイト数は省く。HTTP/1.1 の応答も、比べやすいよう HTTP/2 のフレームと同じ大きさに分けて描く。ロスは RTO（1 秒）で再送し、高速再送は描かない（TCP の輻輳制御のテーマを参照）。
  * HTTP は読めるよう暗号化せずに描く（実際は HTTPS）
  */
 import { z } from 'zod'
@@ -46,6 +46,7 @@ const TCP: StateKey = 'tcp'
 const HPACK: StateKey = 'hpack'
 
 export const REQUEST_COLUMNS = ['ID', 'Path', 'State', 'Received'] as const
+/** RFC 6298 §2.4 の下限（1 秒）。実際の実装はもっと短いこともある */
 export const RTO_MS = 1000
 /** 1 つの DATA フレームの最大の長さ（SETTINGS_MAX_FRAME_SIZE の初期値） */
 export const MAX_FRAME = 16_384
@@ -385,7 +386,7 @@ function http2Steps(loss: boolean): Step[] {
                 ],
           ),
         ),
-        ...(loss ? [set(CLIENT, TCP, 'waiting: 1 segment missing, later data held')] : []),
+        ...(loss ? [set(CLIENT, TCP, '1 segment missing')] : []),
       ],
     },
   ]
@@ -398,8 +399,8 @@ function http2Steps(loss: boolean): Step[] {
         ja: '失われたデータが再送され、すべてのストリームがまた進む',
       },
       description: {
-        en: `${RTO_TEXT.en} Now TCP has everything in order and hands both frames to HTTP/2 at once. One lost packet stalled streams 3 and 5 together: this is TCP head-of-line blocking, which QUIC removes.`,
-        ja: `${RTO_TEXT.ja}これで TCP は順番どおりにそろい、2 つのフレームをまとめて HTTP/2 に渡す。1 つのパケットのロスで、ストリーム 3 と 5 が一緒に止まった。これが TCP のヘッドオブラインブロッキングで、QUIC はこれをなくす。`,
+        en: `${RTO_TEXT.en} Now TCP has everything in order and hands both frames to HTTP/2 at once. One lost packet stalled streams 3 and 5 together: this is TCP head-of-line blocking. In QUIC, streams are independent, so a loss stalls only its own stream.`,
+        ja: `${RTO_TEXT.ja}これで TCP は順番どおりにそろい、2 つのフレームをまとめて HTTP/2 に渡す。1 つのパケットのロスで、ストリーム 3 と 5 が一緒に止まった。これが TCP のヘッドオブラインブロッキング（HOL ブロッキング）。QUIC ではストリームが独立しているので、ロスで止まるのはそのストリームだけになる。`,
       },
       events: [
         { kind: 'timer', actorId: SERVER, name: 'RTO', durationMs: RTO_MS },
@@ -556,10 +557,7 @@ function http1Steps(loss: boolean): Step[] {
           en: 'The segment carrying the start of the app.js response is lost. The rest cannot be used until it is resent, and the next request cannot be sent on this connection either.',
           ja: 'app.js の応答の最初を運ぶセグメントが失われる。再送されるまで残りは使えず、この接続では次の要求も送れない。',
         },
-        events: [
-          send(http1Response(resource, 0, 'lost')),
-          set(CLIENT, TCP, 'waiting: 1 segment missing, later data held'),
-        ],
+        events: [send(http1Response(resource, 0, 'lost')), set(CLIENT, TCP, '1 segment missing')],
       })
       steps.push({
         id: `h1-retransmit`,

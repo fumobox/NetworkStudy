@@ -4,7 +4,7 @@ import { deriveState } from '@/engine/derive'
 import { toScenarioHandle } from '@/engine/scenario'
 import type { Message, Step } from '@/engine/types'
 import { validateScenario } from '@/engine/validate'
-import { http2Scenario, type Http2Options } from './scenario'
+import { http2Scenario, RESOURCES, type Http2Options } from './scenario'
 
 const handle = toScenarioHandle(http2Scenario)
 const defaults: Http2Options = { version: 'http2', loss: false }
@@ -49,6 +49,10 @@ describe('http2Scenario', () => {
   })
 
   describe('HTTP/2（RFC 9113、RFC 7541）', () => {
+    it('データの合計は初期のフロー制御のウィンドウ（65,535 バイト）より小さい（WINDOW_UPDATE を省けることの前提、RFC 9113 §6.9.2）', () => {
+      expect(RESOURCES.reduce((sum, resource) => sum + resource.size, 0)).toBeLessThan(65_535)
+    })
+
     it('序文と SETTINGS のあと、3 つのストリームの要求を待たずに送り、DATA が混ざって届く', () => {
       expect(messages(build()).map((m) => m.label)).toEqual([
         'Preface + SETTINGS',
@@ -115,12 +119,14 @@ describe('http2Scenario', () => {
       const steps = build({ loss: true })
       const lost = messages(steps).find((m) => m.status === 'lost')
       expect(lost?.label).toBe('DATA [stream 3] app.js 1/3')
+      // hero.jpg のフレームは届いている（TCP の受信バッファーで止まっているだけ）
+      expect(messages(steps).find((m) => m.id === 'data-5-0')?.status).toBe('delivered')
       expect(requestsAt(steps, 'h2-data-1')).toEqual([
         ['1', '/style.css', 'closed', '100%'],
         ['3', '/app.js', 'half-closed (local)', '0%'],
         ['5', '/hero.jpg', 'half-closed (local)', '0%'],
       ])
-      expect(stateAt(steps, 'h2-data-1', 'tcp')).toBe('waiting: 1 segment missing, later data held')
+      expect(stateAt(steps, 'h2-data-1', 'tcp')).toBe('1 segment missing')
       const retransmit = messages(steps).find((m) => m.retransmitOf !== undefined)
       expect(retransmit?.retransmitOf).toBe(lost?.id)
       expect(requestsAt(steps, 'h2-retransmit')).toEqual([
@@ -171,6 +177,9 @@ describe('http2Scenario', () => {
         ['200 OK (hero.jpg 1/2)', 'delivered'],
         ['200 OK (hero.jpg 2/2)', 'delivered'],
       ])
+      expect(stateAt(steps, 'h1-response-app.js-lost', 'tcp')).toBe('1 segment missing')
+      expect(stateAt(steps, 'h1-retransmit', 'tcp')).toBe('in order')
+      expect(deriveState(http2Scenario.actors, steps, steps.length - 1).elapsedMs).toBe(1000)
     })
   })
 })
