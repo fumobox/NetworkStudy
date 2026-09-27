@@ -17,6 +17,7 @@ import { switchingTheme } from './switching'
 import { tcpCloseTheme } from './tcp-close'
 import { tcpCongestionTheme } from './tcp-congestion'
 import { tcpFlowControlTheme } from './tcp-flow-control'
+import { tcpSackTheme } from './tcp-sack'
 import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
 import { vlanTheme } from './vlan'
@@ -42,6 +43,7 @@ export const THEMES: readonly ThemeModule[] = [
   tcpCloseTheme,
   tcpCongestionTheme,
   tcpFlowControlTheme,
+  tcpSackTheme,
   httpCachingTheme,
   corsTheme,
   http2Theme,

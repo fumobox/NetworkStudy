@@ -18,6 +18,7 @@ import { tcpCloseQuiz } from './tcp-close/quiz'
 import { tcpCongestionQuiz } from './tcp-congestion/quiz'
 import { tcpFlowControlQuiz } from './tcp-flow-control/quiz'
 import { tcpHandshakeQuiz } from './tcp-handshake/quiz'
+import { tcpSackQuiz } from './tcp-sack/quiz'
 import {
   ARP_META,
   CORS_META,
@@ -39,6 +40,7 @@ import {
   TCP_CONGESTION_META,
   TCP_FLOW_CONTROL_META,
   TCP_HANDSHAKE_META,
+  TCP_SACK_META,
   TLS_HANDSHAKE_META,
   VLAN_META,
 } from './themeMeta'
@@ -70,6 +72,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: TCP_CLOSE_META, quiz: tcpCloseQuiz },
   { meta: TCP_CONGESTION_META, quiz: tcpCongestionQuiz },
   { meta: TCP_FLOW_CONTROL_META, quiz: tcpFlowControlQuiz },
+  { meta: TCP_SACK_META, quiz: tcpSackQuiz },
   { meta: HTTP_CACHING_META, quiz: httpCachingQuiz },
   { meta: CORS_META, quiz: corsQuiz },
   { meta: HTTP2_META, quiz: http2Quiz },

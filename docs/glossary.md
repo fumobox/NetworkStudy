@@ -197,6 +197,8 @@
 | out of order | 順序が入れ替わった | |
 | scoreboard | スコアボード | |
 | tail loss | 末尾のロス | |
+| tail loss probe (TLP) | テールロスプローブ | RACK-TLP、RFC 8985 |
+| selective acknowledgment (SACK) | 選択的確認応答（SACK） | |
 | replay (attack) | リプレイ（リプレイ攻撃） | 「再送」は送り手の正当な再送信だけに使う |
 | server push | サーバープッシュ | HTTP/2 |
 | trailer | トレーラー | |

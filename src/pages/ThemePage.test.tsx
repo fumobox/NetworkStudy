@@ -211,6 +211,7 @@ describe('テーマへの導線', () => {
       'Closing a TCP connection',
       'TCP congestion control',
       'TCP flow control: the receive window',
+      'Fast retransmit and SACK: resending only what was lost',
     ])
   })
 
