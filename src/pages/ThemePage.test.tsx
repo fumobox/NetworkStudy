@@ -271,9 +271,9 @@ describe('テーマへの導線', () => {
         String(THEME_META.filter((other) => other.category === meta.category).indexOf(meta) + 1),
       ),
     )
-    // 例: 基礎の 2 つ目の次は、次の分類の 1 つ目
+    // 例: 基礎の 3 つ目の次は、次の分類の 1 つ目
     expect(
-      cards.map((card) => card.querySelector('[aria-hidden]')?.textContent).slice(0, 3),
-    ).toEqual(['1', '2', '1'])
+      cards.map((card) => card.querySelector('[aria-hidden]')?.textContent).slice(0, 4),
+    ).toEqual(['1', '2', '3', '1'])
   })
 })

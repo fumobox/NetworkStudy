@@ -120,7 +120,7 @@ export const en = {
   categories: {
     basics: {
       title: 'Network basics',
-      lead: 'How the work of sending data is split into layers, and how IP addresses are divided into networks.',
+      lead: 'How the work of sending data is split into layers, how IPv4 addresses are divided into networks, and how IPv6 addresses are written.',
     },
     ip: {
       title: 'Getting on the network',

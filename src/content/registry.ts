@@ -6,6 +6,7 @@ import { httpCachingTheme } from './http-caching'
 import { http2Theme } from './http2'
 import { httpsOverviewTheme } from './https-overview'
 import { icmpTheme } from './icmp'
+import { ipv6AddressTheme } from './ipv6-address'
 import { natTheme } from './nat'
 import { osiModelTheme } from './osi-model'
 import { quicTheme } from './quic'
@@ -22,6 +23,7 @@ import type { ThemeModule } from './types'
 export const THEMES: readonly ThemeModule[] = [
   osiModelTheme,
   subnetCalculatorTheme,
+  ipv6AddressTheme,
   arpTheme,
   dhcpTheme,
   icmpTheme,

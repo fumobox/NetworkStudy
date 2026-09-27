@@ -72,7 +72,12 @@ function QuestionView({ question, index, total, selectedId, onAnswer }: Question
   const correctChoice = question.choices.find((choice) => choice.id === question.answerId)
 
   return (
-    <div role="group" aria-labelledby={promptId} className="space-y-3 rounded-lg border p-4">
+    // 長いアドレス（IPv6 など）が狭い画面ではみ出さないよう、どこでも折り返せるようにする
+    <div
+      role="group"
+      aria-labelledby={promptId}
+      className="space-y-3 rounded-lg border p-4 wrap-anywhere"
+    >
       <div id={promptId}>
         <p className="text-xs text-muted-foreground">{m.quiz.question({ n: index + 1, total })}</p>
         <h3 className="font-medium">{t(question.prompt)}</h3>

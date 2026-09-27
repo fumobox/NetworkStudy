@@ -284,13 +284,27 @@ export const SWITCHING_META = {
   minutes: 8,
 } as const satisfies ThemeMeta
 
+export const IPV6_ADDRESS_META = {
+  id: 'ipv6-address',
+  kind: 'custom',
+  category: 'basics',
+  title: { en: 'IPv6 addresses: notation and kinds', ja: 'IPv6 アドレス: 表記と種類' },
+  summary: {
+    en: 'How a 128-bit IPv6 address is written and shortened (RFC 5952), how to tell link-local, global, multicast and other kinds apart, and how an interface ID can come from a MAC address.',
+    ja: '128 ビットの IPv6 アドレスの書き方と短くし方（RFC 5952）、リンクローカル・グローバル・マルチキャストなどの種類の見分け方、MAC アドレスからインターフェース ID を作る方法。',
+  },
+  difficulty: 'beginner',
+  minutes: 8,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
  */
 export const THEME_META = [
   OSI_MODEL_META,
   SUBNET_CALCULATOR_META,
+  IPV6_ADDRESS_META,
   ARP_META,
   DHCP_META,
   ICMP_META,
