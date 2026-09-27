@@ -3,6 +3,7 @@ import { corsQuiz } from './cors/quiz'
 import { dhcpQuiz } from './dhcp/quiz'
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
 import { httpCachingQuiz } from './http-caching/quiz'
+import { http2Quiz } from './http2/quiz'
 import { httpsOverviewQuiz } from './https-overview/quiz'
 import { icmpQuiz } from './icmp/quiz'
 import { natQuiz } from './nat/quiz'
@@ -18,6 +19,7 @@ import {
   DHCP_META,
   DNS_RESOLUTION_META,
   HTTP_CACHING_META,
+  HTTP2_META,
   HTTPS_OVERVIEW_META,
   ICMP_META,
   NAT_META,
@@ -53,4 +55,5 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: TCP_CONGESTION_META, quiz: tcpCongestionQuiz },
   { meta: HTTP_CACHING_META, quiz: httpCachingQuiz },
   { meta: CORS_META, quiz: corsQuiz },
+  { meta: HTTP2_META, quiz: http2Quiz },
 ]

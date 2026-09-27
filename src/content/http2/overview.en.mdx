@@ -1,0 +1,35 @@
+## One request at a time in HTTP/1.1
+
+HTTP/1.1 keeps a TCP connection open for several requests, but on each connection it sends **one request and waits for the whole response** before sending the next. A big file therefore delays every small file behind it. Browsers ease this by opening about six connections per server. Also, every request repeats all its headers as plain text.
+
+## Streams and frames in HTTP/2
+
+HTTP/2 splits everything into binary **frames** and gives each request its own **stream**, numbered 1, 3, 5 … (odd-numbered streams are opened by the client). Frames of different streams can be **interleaved** on one connection:
+
+| Frame | What it carries |
+|---|---|
+| `SETTINGS` | limits for the connection, such as how many streams may be open at once |
+| `HEADERS` | the headers of a request or a response, compressed with HPACK |
+| `DATA` | a piece of the body, up to 16,384 bytes by default; `END_STREAM` marks the last one |
+
+So the small `style.css` does not wait behind the big `app.js`. **HPACK** shortens the headers: common ones are numbers in a static table, and values like `:authority` are remembered in a dynamic table after the first request.
+
+## Head-of-line blocking
+
+All streams still share one TCP connection, and TCP delivers bytes strictly in order. If one packet is lost, data of *every* stream that arrived after it waits in the receive buffer until the retransmission. This is **TCP head-of-line blocking**. HTTP/3 runs over QUIC, where streams are independent, to avoid it.
+
+## What to look for in the walkthrough
+
+- The **Requests** table: stream states (`half-closed (local)` → `closed`) and how much of each file has arrived.
+- The order of `DATA` frames: style.css finishes first even though it was requested together with the others.
+- In the “What if…” options: HTTP/1.1 for comparison, and a lost packet (the TCP receive buffer holds hero.jpg until app.js is resent).
+
+## About this page
+
+The TCP and TLS connection is already set up (HTTP/2 is chosen with ALPN during the TLS handshake). One message is drawn as one frame; in reality a frame is split into several TCP segments and only the lost segment is resent. The HTTP/1.1 responses are drawn in the same pieces for comparison. `WINDOW_UPDATE`, `SETTINGS` acknowledgments, `PRIORITY`, `PUSH_PROMISE` and `GOAWAY` are left out, HPACK is shown only as table numbers, and the loss is recovered by a 1-second RTO (fast retransmit is covered in the TCP congestion control theme).
+
+## References
+
+- [RFC 9113: HTTP/2](https://www.rfc-editor.org/rfc/rfc9113) — §3.1, §3.4, §5.1, §6, §8.3
+- [RFC 7541: HPACK](https://www.rfc-editor.org/rfc/rfc7541) — §2.3, Appendix A
+- [RFC 9112: HTTP/1.1](https://www.rfc-editor.org/rfc/rfc9112) — §9.3
