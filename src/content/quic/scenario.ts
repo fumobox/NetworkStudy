@@ -148,13 +148,27 @@ interface PacketSpec {
   readonly showDcid?: boolean
 }
 
+/** 図のラベル用に、フレームの並びを短くする（全体はインスペクタの Frames に出す）。2 レーンの図に収めるため */
+const LABEL_ABBREVIATIONS: readonly (readonly [string, string])[] = [
+  ['CRYPTO (ClientHello), PADDING', 'CRYPTO (ClientHello)'],
+  ['CRYPTO (EncryptedExtensions, Certificate, CertificateVerify, Finished)', 'CRYPTO (… Finished)'],
+  ['STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)', 'STREAM 0, 4 (GET)'],
+  ['STREAM 0 (HEADERS 200, DATA / 1/3)', 'STREAM 0 (200, 1/3)'],
+  ['STREAM 4 (HEADERS 200, DATA /style.css, FIN)', 'STREAM 4 (200, FIN)'],
+  ['STREAM 0 (DATA / 2/3)', 'STREAM 0 (2/3)'],
+  ['STREAM 0 (DATA / 3/3, FIN)', 'STREAM 0 (3/3, FIN)'],
+]
+function shortFrames(frames: string): string {
+  return LABEL_ABBREVIATIONS.reduce((text, [full, short]) => text.replace(full, short), frames)
+}
+
 function packet(spec: PacketSpec): Message {
   const long = spec.type !== '1-RTT'
   const message: Message = {
     id: spec.id,
     from: spec.from,
     to: spec.to,
-    label: `${spec.type}[${String(spec.pn)}]: ${spec.frames}`,
+    label: `${spec.type}[${String(spec.pn)}]: ${shortFrames(spec.frames)}`,
     status: spec.status ?? 'delivered',
     encrypted: spec.type !== 'Initial',
     fields: [

@@ -53,6 +53,17 @@ describe('ackRanges', () => {
 })
 
 describe('quicScenario', () => {
+  it('図のラベルは短くし、フレームの全体はインスペクタの Frames に出す', () => {
+    const handshake = messages(build()).find((m) => m.id === 'server-handshake')
+    expect(handshake?.label).toBe('Handshake[0]: CRYPTO (… Finished)')
+    expect(handshake?.fields.find((f) => f.name === 'Frames')?.value).toBe(
+      'CRYPTO (EncryptedExtensions, Certificate, CertificateVerify, Finished)',
+    )
+    for (const combination of [build(), build({ earlyData: 'accepted', loss: 'stream' })]) {
+      expect(Math.max(...messages(combination).map((m) => m.label.length))).toBeLessThanOrEqual(40)
+    }
+  })
+
   it('すべてのオプションの組み合わせ（9 通り）で整合している', () => {
     expect(validateScenario(handle)).toEqual([])
   })
@@ -68,27 +79,17 @@ describe('quicScenario', () => {
   describe('1-RTT のハンドシェイク（RFC 9000 §7、RFC 9001 §4.1）', () => {
     it('1 往復で要求を送る。Initial だけが暗号化されていない', () => {
       expect(packets(build())).toEqual([
-        ['client', 'Initial[0]: CRYPTO (ClientHello), PADDING', 'delivered', false],
+        ['client', 'Initial[0]: CRYPTO (ClientHello)', 'delivered', false],
         ['server', 'Initial[0]: ACK 0, CRYPTO (ServerHello)', 'delivered', false],
-        [
-          'server',
-          'Handshake[0]: CRYPTO (EncryptedExtensions, Certificate, CertificateVerify, Finished)',
-          'delivered',
-          true,
-        ],
+        ['server', 'Handshake[0]: CRYPTO (… Finished)', 'delivered', true],
         ['client', 'Initial[1]: ACK 0', 'delivered', false],
         ['client', 'Handshake[0]: ACK 0, CRYPTO (Finished)', 'delivered', true],
-        [
-          'client',
-          '1-RTT[0]: STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)',
-          'delivered',
-          true,
-        ],
+        ['client', '1-RTT[0]: STREAM 0, 4 (GET)', 'delivered', true],
         ['server', '1-RTT[0]: HANDSHAKE_DONE, ACK 0', 'delivered', true],
-        ['server', '1-RTT[1]: STREAM 0 (HEADERS 200, DATA / 1/3)', 'delivered', true],
-        ['server', '1-RTT[2]: STREAM 4 (HEADERS 200, DATA /style.css, FIN)', 'delivered', true],
-        ['server', '1-RTT[3]: STREAM 0 (DATA / 2/3)', 'delivered', true],
-        ['server', '1-RTT[4]: STREAM 0 (DATA / 3/3, FIN)', 'delivered', true],
+        ['server', '1-RTT[1]: STREAM 0 (200, 1/3)', 'delivered', true],
+        ['server', '1-RTT[2]: STREAM 4 (200, FIN)', 'delivered', true],
+        ['server', '1-RTT[3]: STREAM 0 (2/3)', 'delivered', true],
+        ['server', '1-RTT[4]: STREAM 0 (3/3, FIN)', 'delivered', true],
         ['client', '1-RTT[1]: ACK 0-4', 'delivered', true],
       ])
     })
@@ -158,20 +159,18 @@ describe('quicScenario', () => {
       const steps = build({ earlyData: 'accepted' })
       const labels = messages(steps).map((m) => m.label)
       expect(labels.slice(0, 2)).toEqual([
-        'Initial[0]: CRYPTO (ClientHello), PADDING',
-        '0-RTT[0]: STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)',
+        'Initial[0]: CRYPTO (ClientHello)',
+        '0-RTT[0]: STREAM 0, 4 (GET)',
       ])
       const flight = steps.find((step) => step.id === 'server-flight')
       const flightLabels = (flight?.events ?? []).flatMap((e) =>
         e.kind === 'message' ? [e.message.label] : [],
       )
-      expect(flightLabels).toContain('1-RTT[0]: ACK 0, STREAM 0 (HEADERS 200, DATA / 1/3)')
+      expect(flightLabels).toContain('1-RTT[0]: ACK 0, STREAM 0 (200, 1/3)')
       // クライアントも 0.5-RTT の応答をすぐに確認応答する
       expect(labels).toContain('1-RTT[1]: ACK 0-3')
       // 1-RTT の要求は送らない（0-RTT で送り済み）
-      expect(labels.some((label) => label.includes('GET /') && label.startsWith('1-RTT'))).toBe(
-        false,
-      )
+      expect(labels.some((label) => label.includes('GET') && label.startsWith('1-RTT'))).toBe(false)
       expect(labels).toContain('1-RTT[4]: HANDSHAKE_DONE, ACK 0')
     })
 
@@ -179,9 +178,7 @@ describe('quicScenario', () => {
       const steps = build({ earlyData: 'rejected' })
       const zeroRtt = messages(steps).find((m) => m.label.startsWith('0-RTT'))
       expect(zeroRtt?.status).toBe('rejected')
-      expect(messages(steps).map((m) => m.label)).toContain(
-        '1-RTT[1]: STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)',
-      )
+      expect(messages(steps).map((m) => m.label)).toContain('1-RTT[1]: STREAM 0, 4 (GET)')
       expect(clientState(steps, 'server-flight').streams).toEqual([
         ['0', 'GET /', '0-RTT rejected'],
         ['4', 'GET /style.css', '0-RTT rejected'],
@@ -196,10 +193,7 @@ describe('quicScenario', () => {
       const labels = messages(build({ earlyData: 'accepted', loss: 'stream' })).map((m) => m.label)
       expect(labels).toContain('1-RTT[1]: ACK 1-3')
       expect(labels).toContain('1-RTT[4]: HANDSHAKE_DONE, ACK 0')
-      expect(labels.slice(-2)).toEqual([
-        '1-RTT[5]: STREAM 0 (HEADERS 200, DATA / 1/3)',
-        '1-RTT[3]: ACK 1-5',
-      ])
+      expect(labels.slice(-2)).toEqual(['1-RTT[5]: STREAM 0 (200, 1/3)', '1-RTT[3]: ACK 1-5'])
     })
 
     it('0-RTT の拒否 + 最初のデータグラムのロス: 送り直した 0-RTT も捨てられ、要求は 1-RTT[2] で送る', () => {
@@ -219,7 +213,7 @@ describe('quicScenario', () => {
       const labels = messages(build({ earlyData: 'accepted', loss: 'handshake' })).map(
         (m) => m.label,
       )
-      expect(labels).toContain('1-RTT[0]: ACK 1, STREAM 0 (HEADERS 200, DATA / 1/3)')
+      expect(labels).toContain('1-RTT[0]: ACK 1, STREAM 0 (200, 1/3)')
     })
   })
 
@@ -227,12 +221,9 @@ describe('quicScenario', () => {
     it('最初のデータグラムが失われると、PTO（約 1 秒）のあと新しいパケット番号で ClientHello を送り直す', () => {
       const steps = build({ loss: 'handshake' })
       const [first, second] = messages(steps)
-      expect([first?.label, first?.status]).toEqual([
-        'Initial[0]: CRYPTO (ClientHello), PADDING',
-        'lost',
-      ])
+      expect([first?.label, first?.status]).toEqual(['Initial[0]: CRYPTO (ClientHello)', 'lost'])
       expect([second?.label, second?.retransmitOf]).toEqual([
-        'Initial[1]: CRYPTO (ClientHello), PADDING',
+        'Initial[1]: CRYPTO (ClientHello)',
         'client-initial',
       ])
       expect(messages(steps).map((m) => m.label)).toContain(
@@ -250,7 +241,7 @@ describe('quicScenario', () => {
       const labels = messages(steps).map((m) => m.label)
       expect(labels.slice(-3)).toEqual([
         '1-RTT[1]: ACK 0, 2-4',
-        '1-RTT[5]: STREAM 0 (HEADERS 200, DATA / 1/3)',
+        '1-RTT[5]: STREAM 0 (200, 1/3)',
         // 1 番は届かないまま（データは 5 番で送り直した）なので、確認応答にも入らない
         '1-RTT[2]: ACK 0, 2-5',
       ])
