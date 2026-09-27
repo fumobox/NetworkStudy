@@ -16,7 +16,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
 
 /**
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
- * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、lan: LAN の中（スイッチ、VLAN …）、
+ * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、lan: LAN の中（スイッチ、VLAN、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
  * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）
  */
@@ -313,9 +313,25 @@ export const VLAN_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const IPV6_ND_META = {
+  id: 'ipv6-nd',
+  kind: 'sequence',
+  category: 'lan',
+  title: {
+    en: 'IPv6 on the LAN: SLAAC and Neighbor Discovery',
+    ja: 'IPv6 で LAN につながる: SLAAC と近隣探索',
+  },
+  summary: {
+    en: 'How an IPv6 host gives itself a link-local address, checks that nobody else uses it (DAD), learns the prefix and default router from a Router Advertisement, builds a global address without DHCP, and finds a neighbor’s MAC address with Neighbor Solicitation instead of ARP.',
+    ja: 'IPv6 のホストが自分でリンクローカルアドレスを作り、誰も使っていないか確かめ（DAD）、Router Advertisement からプレフィックスとデフォルトルーターを知り、DHCP なしでグローバルアドレスを作り、ARP の代わりに Neighbor Solicitation で隣の機器の MAC アドレスを調べるまで。',
+  },
+  difficulty: 'intermediate',
+  minutes: 15,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ → VLAN …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ → VLAN → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -328,6 +344,7 @@ export const THEME_META = [
   ROUTE_LOOKUP_META,
   SWITCHING_META,
   VLAN_META,
+  IPV6_ND_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,

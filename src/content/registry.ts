@@ -7,6 +7,7 @@ import { http2Theme } from './http2'
 import { httpsOverviewTheme } from './https-overview'
 import { icmpTheme } from './icmp'
 import { ipv6AddressTheme } from './ipv6-address'
+import { ipv6NdTheme } from './ipv6-nd'
 import { natTheme } from './nat'
 import { osiModelTheme } from './osi-model'
 import { quicTheme } from './quic'
@@ -32,6 +33,7 @@ export const THEMES: readonly ThemeModule[] = [
   routeLookupTheme,
   switchingTheme,
   vlanTheme,
+  ipv6NdTheme,
   dnsResolutionTheme,
   tcpHandshakeTheme,
   tlsHandshakeTheme,

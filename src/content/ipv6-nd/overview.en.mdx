@@ -1,0 +1,40 @@
+## Getting on the LAN without DHCP
+
+An IPv6 host can configure itself. The router only announces the prefix of the LAN; the host builds its own address, checks that nobody else uses it, and finds its neighbors with **Neighbor Discovery**, a set of ICMPv6 messages that replaces ARP and much of DHCP.
+
+| Message | Sent to | Purpose |
+|---|---|---|
+| Router Solicitation (RS) | `ff02::2` (all routers) | “Is there a router?” |
+| Router Advertisement (RA) | `ff02::1` (all nodes) | the prefix, the default router, DNS servers |
+| Neighbor Solicitation (NS) | a solicited-node group | “Who has this address?” or “Is anyone using it?” |
+| Neighbor Advertisement (NA) | the asker, or all nodes | “It is me, here is my MAC address” |
+
+## The steps
+
+1. **Link-local address**: the host combines `fe80::/64` with its interface ID. It needs no router and works only on the LAN.
+2. **Duplicate address detection (DAD)**: the address is *tentative* until the host has asked, from the unspecified address `::`, whether anyone already uses it. If nobody answers within a second, it becomes *preferred*.
+3. **RS and RA**: the host asks for routers; the router answers with the prefix. The A flag allows **SLAAC** (stateless address autoconfiguration), and the M and O flags say whether DHCPv6 is needed.
+4. **Global address**: prefix + interface ID, checked with DAD again.
+5. **Address resolution**: to send on the LAN, the host asks with an NS for the neighbor’s MAC address and keeps the answer in its **neighbor cache**.
+
+## Multicast instead of broadcast
+
+IPv6 has no broadcast. An NS goes to the **solicited-node multicast address** of the target (`ff02::1:ff` and the last 24 bits), which only a few devices join. The NICs of all other devices drop the frame without bothering the rest of the system.
+
+## What to look for in the walkthrough
+
+- The address table of the PC: `tentative` → `preferred`, and later a second, global address.
+- Which devices accept each multicast and which ones drop it.
+- The neighbor cache: `STALE` from the RA, then `INCOMPLETE` → `REACHABLE` for PC 2.
+- In the “What if…” options: a duplicated address, and a LAN without a router.
+
+## About this page
+
+The interface ID is made from the MAC address (EUI-64) so that the addresses are easy to follow; most operating systems now use random interface IDs instead (RFC 7217, RFC 8981). MLD (how hosts announce the groups they join), MLD snooping in switches, the random delays before DAD and RS, periodic RAs, DHCPv6, and the DELAY and PROBE states of the neighbor cache are left out. How PC 2 configured its own address is not shown. See also the IPv6 address theme for the notation and the kinds of addresses.
+
+## References
+
+- [RFC 4861: Neighbor Discovery for IP version 6](https://www.rfc-editor.org/rfc/rfc4861) — §4, §6.2, §6.3, §7.2, §10
+- [RFC 4862: IPv6 Stateless Address Autoconfiguration](https://www.rfc-editor.org/rfc/rfc4862) — §5.3, §5.4, §5.5
+- [RFC 4291: IP Version 6 Addressing Architecture](https://www.rfc-editor.org/rfc/rfc4291) — §2.5.6, §2.7.1
+- [RFC 8106: IPv6 Router Advertisement Options for DNS Configuration](https://www.rfc-editor.org/rfc/rfc8106)
