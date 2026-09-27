@@ -1,11 +1,11 @@
 import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { describe, expect, it } from 'vitest'
-import { NAT_META, TCP_HANDSHAKE_META } from '@/content/themeMeta'
+import { NAT_META, TCP_HANDSHAKE_META, type ThemeMeta } from '@/content/themeMeta'
 import { LocaleProvider } from '@/lib/i18n'
 import { ThemeCard } from './ThemeCard'
 
-function renderCard(theme: Parameters<typeof ThemeCard>[0]['theme']) {
+function renderCard(theme: ThemeMeta) {
   render(
     <MemoryRouter>
       <LocaleProvider locale="ja">

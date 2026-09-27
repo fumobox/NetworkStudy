@@ -34,7 +34,7 @@ const SECTION_HEIGHT = 24
 /** アクター名とレーンの端のあいだに空ける幅 */
 const HEADER_NAME_MARGIN = 20
 /** アクターの見出しの背景（名前の左右の余白、上端、高さ） */
-const HEADER_PILL_PADDING = 8
+const HEADER_PILL_PADDING = 6
 const HEADER_PILL_TOP = 7
 const HEADER_PILL_HEIGHT = 24
 const ICON_SIZE = 14
@@ -93,7 +93,7 @@ export function SequenceDiagram({
   // 名前がレーンに収まらなければ、短縮名を使う（狭い画面では常に短縮名）
   const headerName = (actor: Actor): string => {
     const name = t(actor.name)
-    const fits = estimateTextWidth(name) <= laneWidth - HEADER_NAME_MARGIN
+    const fits = estimateTextWidth(name) <= laneWidth - HEADER_NAME_MARGIN - HEADER_PILL_PADDING * 2
     return (compact || !fits) && actor.shortName !== undefined ? t(actor.shortName) : name
   }
 
