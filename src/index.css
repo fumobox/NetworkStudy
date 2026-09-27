@@ -27,6 +27,18 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-tone-blue: var(--tone-blue);
+  --color-tone-blue-soft: var(--tone-blue-soft);
+  --color-tone-violet: var(--tone-violet);
+  --color-tone-violet-soft: var(--tone-violet-soft);
+  --color-tone-teal: var(--tone-teal);
+  --color-tone-teal-soft: var(--tone-teal-soft);
+  --color-tone-amber: var(--tone-amber);
+  --color-tone-amber-soft: var(--tone-amber-soft);
+  --color-tone-green: var(--tone-green);
+  --color-tone-green-soft: var(--tone-green-soft);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -57,33 +69,51 @@
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
+  /* ブランドの青。白の上で 6.1:1、--accent の上で 5.3:1 */
+  --primary: oklch(0.5 0.17 258);
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   /* shadcn の既定（0.556）では、bg-accent / bg-muted の上の小さい文字がコントラスト比 4.5 に届かない（4.34）ので暗くする */
   --muted-foreground: oklch(0.52 0 0);
-  --accent: oklch(0.97 0 0);
+  /* 強調の背景（選んだ行・変わった値など）。この上の --muted-foreground は 4.76:1。--destructive は 4.1:1 で足りないので、この上には置かない */
+  --accent: oklch(0.95 0.025 258);
   --accent-foreground: oklch(0.205 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ring: oklch(0.56 0.17 258);
+  --chart-1: var(--tone-blue);
+  --chart-2: var(--tone-violet);
+  --chart-3: var(--tone-teal);
+  --chart-4: var(--tone-amber);
+  --chart-5: var(--tone-green);
+  /*
+   * 色相（分類・難易度・アクターの色分けに使う。src/lib/tone.ts）。--tone-X は文字・線用で、背景と --tone-X-soft の上で
+   * 4.5:1 以上。--tone-X-soft は背景用で、その上の --muted-foreground も 4.5:1 以上
+   */
+  --tone-blue: oklch(0.5 0.17 258);
+  --tone-blue-soft: oklch(0.95 0.025 258);
+  --tone-violet: oklch(0.5 0.17 300);
+  --tone-violet-soft: oklch(0.95 0.03 300);
+  --tone-teal: oklch(0.5 0.09 180);
+  --tone-teal-soft: oklch(0.95 0.03 180);
+  --tone-amber: oklch(0.52 0.12 70);
+  --tone-amber-soft: oklch(0.96 0.04 85);
+  --tone-green: oklch(0.5 0.13 152);
+  --tone-green-soft: oklch(0.95 0.035 152);
+  --success: var(--tone-green);
+  --success-soft: var(--tone-green-soft);
   --radius: 0.625rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.97 0 0);
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --sidebar-ring: var(--ring);
 }
 
 .dark {
@@ -94,31 +124,43 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
+  --primary: oklch(0.78 0.11 250);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
+  --accent: oklch(0.28 0.045 258);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+  --ring: oklch(0.7 0.13 250);
+  --chart-1: var(--tone-blue);
+  --chart-2: var(--tone-violet);
+  --chart-3: var(--tone-teal);
+  --chart-4: var(--tone-amber);
+  --chart-5: var(--tone-green);
+  --tone-blue: oklch(0.78 0.11 250);
+  --tone-blue-soft: oklch(0.28 0.045 258);
+  --tone-violet: oklch(0.8 0.12 305);
+  --tone-violet-soft: oklch(0.29 0.05 305);
+  --tone-teal: oklch(0.8 0.1 180);
+  --tone-teal-soft: oklch(0.28 0.04 180);
+  --tone-amber: oklch(0.8 0.12 80);
+  --tone-amber-soft: oklch(0.29 0.05 80);
+  --tone-green: oklch(0.78 0.14 155);
+  --tone-green-soft: oklch(0.28 0.045 155);
+  --success: var(--tone-green);
+  --success-soft: var(--tone-green-soft);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: var(--ring);
 }
 
 @layer base {

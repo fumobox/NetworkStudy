@@ -3,6 +3,7 @@ import { m, useReducedMotionConfig } from 'motion/react'
 import type { KeyboardEvent } from 'react'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatSeconds, useLocale, useMessages, useText } from '@/lib/i18n'
+import { TONE_CLASSES } from '@/lib/tone'
 import { cn } from '@/lib/utils'
 import { clampStepIndex } from '../derive'
 import {
@@ -16,6 +17,7 @@ import {
   type DiagramRow,
 } from '../diagram'
 import type { Actor, ActorId, Message, MessageId, Step, TimerEvent } from '../types'
+import { ACTOR_TONE } from './actorTone'
 import { useActorName } from './useActorName'
 
 /** 狭い画面ではレーンを詰め、アクターの短縮名を使う */
@@ -31,6 +33,10 @@ const ARROW_SIZE = 8
 const SECTION_HEIGHT = 24
 /** アクター名とレーンの端のあいだに空ける幅 */
 const HEADER_NAME_MARGIN = 20
+/** アクターの見出しの背景（名前の左右の余白、上端、高さ） */
+const HEADER_PILL_PADDING = 8
+const HEADER_PILL_TOP = 7
+const HEADER_PILL_HEIGHT = 24
 const ICON_SIZE = 14
 
 // 図の中の記号（翻訳しない）。意味は aria-label で伝える
@@ -103,17 +109,35 @@ export function SequenceDiagram({
       >
         {actors.map((actor) => {
           const x = laneX.get(actor.id) ?? 0
+          const name = headerName(actor)
+          const tone = TONE_CLASSES[ACTOR_TONE[actor.kind]]
+          const pillWidth = estimateTextWidth(name) + HEADER_PILL_PADDING * 2
           return (
-            <g key={actor.id}>
-              <text x={x} y={24} textAnchor="middle" className="fill-current text-sm font-semibold">
-                {headerName(actor)}
+            <g key={actor.id} data-kind={actor.kind}>
+              {/* 種類ごとの色の見出し（名前も必ず表示するので、色だけに頼らない） */}
+              <rect
+                x={x - pillWidth / 2}
+                y={HEADER_PILL_TOP}
+                width={pillWidth}
+                height={HEADER_PILL_HEIGHT}
+                rx={HEADER_PILL_HEIGHT / 2}
+                className={cn(tone.fillSoft, tone.stroke)}
+                strokeWidth={1}
+              />
+              <text
+                x={x}
+                y={24}
+                textAnchor="middle"
+                className={cn('text-sm font-semibold', tone.fill)}
+              >
+                {name}
               </text>
               <line
                 x1={x}
                 x2={x}
                 y1={HEADER_HEIGHT - 12}
                 y2={height - BOTTOM_PADDING / 2}
-                className="stroke-muted-foreground/40"
+                className={cn(tone.stroke, 'opacity-50')}
                 strokeDasharray="4 4"
               />
             </g>
@@ -321,8 +345,12 @@ function MessageArrow({
       onKeyDown={handleKeyDown}
       className={cn(
         'group cursor-pointer outline-none',
-        isLost || isRejected ? 'text-destructive' : 'text-foreground',
-        isSelected && !isLost && !isRejected && 'text-primary',
+        // 失われた・拒否されたメッセージは赤、現在のステップと選んだメッセージはブランドの色で示す（線の太さと記号も変わる）
+        isLost || isRejected
+          ? 'text-destructive'
+          : isCurrent || isSelected
+            ? 'text-primary'
+            : 'text-foreground',
       )}
     >
       {/* クリックしやすいように、行全体を当たり判定にする */}
@@ -333,7 +361,7 @@ function MessageArrow({
         height={ROW_HEIGHT - 8}
         rx={6}
         className={cn(
-          // --ring は背景とのコントラストが 3:1 に届かないため、フォーカスは foreground の太線で示す
+          // 選んだ行は --accent で塗るので、フォーカスは --ring より目立つ foreground の太線で示す
           'fill-transparent stroke-transparent group-focus-visible:stroke-foreground',
           isSelected && 'fill-accent',
         )}

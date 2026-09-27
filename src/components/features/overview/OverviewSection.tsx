@@ -19,7 +19,7 @@ export function OverviewSection({ content: Content }: OverviewSectionProps) {
     <section aria-label={m.theme.overview} className="space-y-3">
       <Suspense fallback={<p className="text-sm text-muted-foreground">{m.theme.loading}</p>}>
         {/* typography の既定はインラインコードの前後に ` を付け足すので、それを消す */}
-        <div className="prose max-w-none prose-headings:font-heading prose-code:before:content-none prose-code:after:content-none">
+        <div className="prose max-w-none prose-headings:font-heading prose-code:rounded prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:font-medium prose-code:before:content-none prose-code:after:content-none prose-th:bg-muted prose-th:px-2 prose-td:px-2">
           <Content components={MDX_COMPONENTS} />
         </div>
       </Suspense>

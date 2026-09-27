@@ -1,7 +1,9 @@
 import { useId } from 'react'
 import { NavLink } from 'react-router'
 import { groupByCategory, THEME_META } from '@/content/themeMeta'
+import { CATEGORY_TONE } from '@/content/themeTone'
 import { localePath, useLocale, useMessages, useText } from '@/lib/i18n'
+import { TONE_CLASSES } from '@/lib/tone'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
@@ -25,7 +27,17 @@ export function Sidebar({ onNavigate }: SidebarProps) {
         const headingId = `${baseId}-${group.category}`
         return (
           <div key={group.category} className="space-y-1 pt-2">
-            <h3 id={headingId} className="px-2 text-xs font-medium text-muted-foreground">
+            <h3
+              id={headingId}
+              className="flex items-center gap-2 px-2 text-xs font-medium text-muted-foreground"
+            >
+              <span
+                aria-hidden
+                className={cn(
+                  'size-2 rounded-full',
+                  TONE_CLASSES[CATEGORY_TONE[group.category]].bg,
+                )}
+              />
               {m.categories[group.category].title}
             </h3>
             <ul aria-labelledby={headingId} className="space-y-1">
@@ -37,7 +49,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
                     className={({ isActive }) =>
                       cn(
                         'block rounded-md px-2 py-1.5 text-sm hover:bg-muted',
-                        isActive && 'bg-accent font-medium',
+                        isActive && 'bg-accent font-medium text-primary',
                       )
                     }
                   >

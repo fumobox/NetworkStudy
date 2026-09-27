@@ -204,7 +204,7 @@ function BinaryView({ info }: { info: SubnetInfo }) {
       {/* ネットワーク部は太字と下線、ホスト部は淡い色で示す（色だけに頼らない） */}
       <ul className="flex flex-wrap gap-4 text-xs" aria-hidden>
         <li>
-          <span className="mr-1 font-mono font-bold underline decoration-2 underline-offset-4">
+          <span className="mr-1 font-mono font-bold text-primary underline decoration-2 underline-offset-4">
             {LEGEND_BITS}
           </span>
           {t(TEXT.networkPart)}
@@ -250,7 +250,7 @@ function BinaryBits({ value, networkBits }: { value: number; networkBits: number
                 key={bitIndex}
                 className={cn(
                   isNetwork
-                    ? 'font-bold underline decoration-2 underline-offset-4'
+                    ? 'font-bold text-primary underline decoration-2 underline-offset-4'
                     : 'text-muted-foreground',
                 )}
               >

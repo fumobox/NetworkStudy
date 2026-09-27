@@ -1,7 +1,9 @@
 import { useId } from 'react'
 import { useMessages, useText } from '@/lib/i18n'
+import { TONE_CLASSES } from '@/lib/tone'
 import { cn } from '@/lib/utils'
 import type { Actor, DerivedState, StateKey, StateTable, StateValue } from '../types'
+import { ACTOR_TONE } from './actorTone'
 
 const CHANGE_MARK = '●'
 
@@ -44,7 +46,18 @@ export function ActorStatePanel({
           const before = previous?.actorStates[actor.id]
           return (
             <div key={actor.id} className="rounded-lg border p-3">
-              <h3 className="mb-2 text-sm font-semibold">{t(actor.name)}</h3>
+              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+                {/* シーケンス図の見出しと同じ色の印 */}
+                <span
+                  aria-hidden
+                  data-kind={actor.kind}
+                  className={cn(
+                    'size-2.5 shrink-0 rounded-full',
+                    TONE_CLASSES[ACTOR_TONE[actor.kind]].bg,
+                  )}
+                />
+                {t(actor.name)}
+              </h3>
               <dl className="space-y-2">
                 {slots.map((slot) => {
                   const value = snapshot?.values[slot.key] ?? slot.initial

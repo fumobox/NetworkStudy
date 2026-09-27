@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { useParams } from 'react-router'
 import { OverviewSection } from '@/components/features/overview/OverviewSection'
 import { QuizPanel } from '@/components/features/quiz/QuizPanel'
+import { DifficultyBadge } from '@/components/features/theme-card/DifficultyBadge'
 import { findTheme } from '@/content/registry'
 import type { CustomThemeModule, SequenceThemeModule, ThemeModule } from '@/content/types'
 import { ScenarioPlayer } from '@/engine/ui/ScenarioPlayer'
@@ -33,8 +34,8 @@ function ThemeView({ theme }: { theme: ThemeModule }) {
         <header className="space-y-2">
           <h1 className="font-heading text-3xl font-bold tracking-tight">{title}</h1>
           <p className="text-muted-foreground">{t(theme.meta.summary)}</p>
-          <p className="flex gap-3 text-xs text-muted-foreground">
-            <span>{m.theme.difficulty[theme.meta.difficulty]}</span>
+          <p className="flex items-center gap-3 text-xs text-muted-foreground">
+            <DifficultyBadge difficulty={theme.meta.difficulty} />
             <span>{m.theme.minutes({ minutes: theme.meta.minutes })}</span>
           </p>
         </header>

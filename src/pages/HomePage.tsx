@@ -2,8 +2,11 @@ import { ThemeCard } from '@/components/features/theme-card/ThemeCard'
 import { readQuizAnswers, scoreQuiz } from '@/components/features/quiz/useQuizProgress'
 import { THEME_QUIZZES } from '@/content/quizzes'
 import { groupByCategory } from '@/content/themeMeta'
+import { CATEGORY_TONE } from '@/content/themeTone'
 import { useDocumentDescription } from '@/lib/hooks/useDocumentDescription'
 import { useMessages } from '@/lib/i18n'
+import { TONE_CLASSES } from '@/lib/tone'
+import { cn } from '@/lib/utils'
 
 export function HomePage() {
   const m = useMessages()
@@ -30,7 +33,12 @@ export function HomePage() {
             const category = m.categories[group.category]
             return (
               <section key={group.category} aria-labelledby={headingId} className="space-y-3">
-                <div className="space-y-1">
+                <div
+                  className={cn(
+                    'space-y-1 border-l-4 pl-3',
+                    TONE_CLASSES[CATEGORY_TONE[group.category]].border,
+                  )}
+                >
                   <h3 id={headingId} className="font-heading text-lg font-semibold">
                     {category.title}
                   </h3>
