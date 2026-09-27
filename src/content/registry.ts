@@ -3,6 +3,7 @@ import { corsTheme } from './cors'
 import { dhcpTheme } from './dhcp'
 import { dnsResolutionTheme } from './dns-resolution'
 import { httpCachingTheme } from './http-caching'
+import { http2Theme } from './http2'
 import { httpsOverviewTheme } from './https-overview'
 import { icmpTheme } from './icmp'
 import { natTheme } from './nat'
@@ -32,6 +33,7 @@ export const THEMES: readonly ThemeModule[] = [
   tcpCongestionTheme,
   httpCachingTheme,
   corsTheme,
+  http2Theme,
 ]
 
 export function findTheme(id: string | undefined): ThemeModule | undefined {

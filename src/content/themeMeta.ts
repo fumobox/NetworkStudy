@@ -236,9 +236,25 @@ export const CORS_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const HTTP2_META = {
+  id: 'http2',
+  kind: 'sequence',
+  category: 'http',
+  title: {
+    en: 'HTTP/1.1 vs HTTP/2: many requests on one connection',
+    ja: 'HTTP/1.1 と HTTP/2: 1 つの接続でたくさんの要求',
+  },
+  summary: {
+    en: 'Why HTTP/1.1 sends requests one after another on a connection, how HTTP/2 interleaves frames of several streams on one connection, and why one lost packet still stalls every stream.',
+    ja: 'HTTP/1.1 が 1 つの接続で要求を順番にしか送れない理由、HTTP/2 が複数のストリームのフレームを 1 つの接続に混ぜて送るしくみ、それでもパケットが 1 つ失われると全ストリームが止まる理由。',
+  },
+  difficulty: 'intermediate',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS …）
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 …）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -256,6 +272,7 @@ export const THEME_META = [
   TCP_CONGESTION_META,
   HTTP_CACHING_META,
   CORS_META,
+  HTTP2_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']
