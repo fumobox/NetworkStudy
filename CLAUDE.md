@@ -93,7 +93,7 @@ e2e/                Playwright のスモークテストとアクセシビリテ�
 - Radix が使う `ResizeObserver`・pointer capture・`scrollIntoView` は `src/test/setup.ts` で補っている。足りない API があればそこに追加する
 - e2e（`e2e/*.spec.ts`）はスモークのみ（各テーマ × 各ロケールで最終ステップまで進める、直リンク、言語切替、404）。挙動の検証は Vitest で行う。ビルド済みの `dist` を `vite preview` で配信して確かめる。テーマ一覧と文言は `themeMeta.ts` と辞書から取り、テーマを足すと自動で対象になる。e2e から import してよい src は scripts と同じ（DOM 非依存のモジュールのみ）
 - `e2e/a11y.spec.ts` は axe で WCAG 2.1 A / AA の違反がないことを、明暗の両方の配色で確かめる（各ページの初期表示・最終ステップ・What-if 変更後・クイズの回答後）。色を変えたら e2e で確かめる。shadcn の既定の `--muted-foreground` はライトモードの `bg-accent` 上でコントラストが足りないので、`src/index.css` で暗くしている
-- 配色は `src/index.css` のトークンで決める。ブランドの青（`--primary`・`--accent`・`--ring`）、正解・到達の `--success`、5 つの色相 `--tone-{blue,violet,teal,amber,green}`（と淡い背景の `-soft`）。色相のクラスは `src/lib/tone.ts` の `TONE_CLASSES` から取る（Tailwind が走査できるよう、クラス名を組み立てない）。分類と難易度の色は `src/content/themeTone.ts`、アクターの種類の色は `src/engine/ui/actorTone.ts`。色だけで意味を伝えない（記号や文字も残す）。`--destructive` は `bg-accent`（選んだ行）の上でも 4.5:1 になるよう暗くしてあるが、`-soft` の上には置かない
+- 配色は `src/index.css` のトークンで決める。ブランドの青（`--primary`・`--accent`・`--ring`）、正解・到達の `--success`、6 つの色相 `--tone-{blue,violet,teal,amber,green,rose}`（と淡い背景の `-soft`）。色相のクラスは `src/lib/tone.ts` の `TONE_CLASSES` から取る（Tailwind が走査できるよう、クラス名を組み立てない）。分類と難易度の色は `src/content/themeTone.ts`、アクターの種類の色は `src/engine/ui/actorTone.ts`。色だけで意味を伝えない（記号や文字も残す）。`--destructive` は `bg-accent`（選んだ行）の上でも 4.5:1 になるよう暗くしてあるが、`-soft` の上には置かない
 
 ## 静的ページ生成（scripts/）
 

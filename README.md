@@ -30,6 +30,10 @@ More about TCP / TCP をもっと詳しく
 - Closing a TCP connection / TCP の接続の終了
 - TCP congestion control / TCP の輻輳制御
 
+HTTP for web developers / Web 開発で出会う HTTP
+
+- HTTP caching: Cache-Control and ETag / HTTP のキャッシュ: Cache-Control と ETag
+
 Available in English and Japanese. / 英語・日本語に対応しています。
 
 ## Site / サイト

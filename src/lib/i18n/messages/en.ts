@@ -105,7 +105,7 @@ export const en = {
   home: {
     orderTitle: 'Where to start',
     orderLead:
-      'Start with the basics, see how your PC gets on the network, then follow a web page on its way to your browser. The last group looks at TCP in more depth.',
+      'Start with the basics, see how your PC gets on the network, then follow a web page on its way to your browser. Then look at TCP in more depth, and finish with the HTTP features you meet as a web developer.',
     howToTitle: 'How to use this site',
     howTo: [
       'Read the short overview at the top of each theme.',
@@ -133,6 +133,10 @@ export const en = {
     tcp: {
       title: 'More about TCP',
       lead: 'How a connection is closed, and how TCP avoids overloading the network.',
+    },
+    http: {
+      title: 'HTTP for web developers',
+      lead: 'Things you meet as soon as you build for the web, starting with how the browser caches responses and checks whether they are still valid.',
     },
   },
   theme: {

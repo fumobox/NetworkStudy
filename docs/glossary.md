@@ -34,6 +34,7 @@
 | ICMP | ICMP、ping、traceroute、tracert、Echo Request、Echo Reply、Time Exceeded、Destination Unreachable、network unreachable、host unreachable、port unreachable、type / code、TTL |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
+| HTTP のキャッシュ | Cache-Control、max-age、no-cache、no-store、s-maxage、Vary、ETag、If-None-Match、Last-Modified、If-Modified-Since、Expires、Age、Date、200 OK、304 Not Modified、GET、fresh、stale、hit、miss |
 
 ## 3. 訳語の対応表
 
@@ -111,6 +112,9 @@
 | port forwarding | ポートフォワーディング | |
 | carrier-grade NAT | キャリアグレード NAT | |
 | hairpinning | ヘアピン | |
+| fresh / stale | 新しい／古い | 状態の値としては fresh / stale のまま書く |
+| revalidation / conditional request | 再検証（確かめる）／条件付きの要求 | |
+| private cache / shared cache | プライベートキャッシュ／共有キャッシュ | |
 | home router / ISP router | 家庭のルーター／ISP のルーター | |
 | hop | ホップ | |
 | probe | プローブ | traceroute が送るパケット |

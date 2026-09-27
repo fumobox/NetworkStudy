@@ -17,9 +17,10 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
 /**
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
  * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、
- * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく
+ * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
+ * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）
  */
-export const THEME_CATEGORIES = ['basics', 'ip', 'web', 'tcp'] as const
+export const THEME_CATEGORIES = ['basics', 'ip', 'web', 'tcp', 'http'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
 
 export interface ThemeMeta {
@@ -203,9 +204,25 @@ export const ROUTE_LOOKUP_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
+export const HTTP_CACHING_META = {
+  id: 'http-caching',
+  kind: 'sequence',
+  category: 'http',
+  title: {
+    en: 'HTTP caching: Cache-Control and ETag',
+    ja: 'HTTP のキャッシュ: Cache-Control と ETag',
+  },
+  summary: {
+    en: 'How the browser reuses a response while it is fresh, and revalidates it with ETag and If-None-Match to get a small 304 instead of the whole file.',
+    ja: 'ブラウザーが応答を新しいうちは使い回し、古くなったら ETag と If-None-Match で確かめて、ファイル全体ではなく小さな 304 を受け取るしくみ。',
+  },
+  difficulty: 'beginner',
+  minutes: 10,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ …）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -221,6 +238,7 @@ export const THEME_META = [
   HTTPS_OVERVIEW_META,
   TCP_CLOSE_META,
   TCP_CONGESTION_META,
+  HTTP_CACHING_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']
