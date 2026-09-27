@@ -6,7 +6,7 @@ TCP の **MSS** は SYN のセグメントで知らせ、ふつうはそれぞ�
 
 ## パス MTU 探索
 
-**パス MTU 探索**では、送信側はどのパケットにも **DF**（Don’t Fragment）のフラグを立てる。次のリンクが小さくてパケットを転送できないルーターは、パケットを捨て、ICMP の **Destination Unreachable、code 4（Fragmentation Needed）** を返す。このメッセージには**次のリンクの MTU**（Next-Hop MTU）と、捨てたパケットの先頭が入っているので、送信側はどの TCP の接続のパケットかがわかる。
+**パス MTU 探索**では、送信側はどのパケットにも **DF**（Don’t Fragment）のフラグを立てる。次のリンクが小さくてパケットを転送できないルーターは、パケットを捨て、ICMP の **Destination Unreachable、code 4**（Fragmentation Needed）を返す。このメッセージには**次のリンクの MTU**（Next-Hop MTU）と、捨てたパケットの先頭が入っているので、送信側はどの TCP の接続のパケットかがわかる。
 
 送信側はその宛先のパス MTU を小さい値で記録し、TCP は同じデータを小さなセグメントで送り直す（1492 − 40 = 1452 バイト）。10 分ほどたつと、送信側はまた大きい値を試すことがある。
 
@@ -34,3 +34,5 @@ DF が立っていなければ、ルーターは代わりにパケットを**フ
 - [RFC 1812: Requirements for IP Version 4 Routers](https://www.rfc-editor.org/rfc/rfc1812) — §5.2.6「Fragmentation and Reassembly」
 - [RFC 2923: TCP Problems with Path MTU Discovery](https://www.rfc-editor.org/rfc/rfc2923)
 - [RFC 8899: Packetization Layer Path MTU Discovery for Datagram Transports](https://www.rfc-editor.org/rfc/rfc8899)
+- [RFC 8201: Path MTU Discovery for IP version 6](https://www.rfc-editor.org/rfc/rfc8201)
+- [RFC 8200: Internet Protocol, Version 6 (IPv6) Specification](https://www.rfc-editor.org/rfc/rfc8200) — §5「Packet Size Issues」

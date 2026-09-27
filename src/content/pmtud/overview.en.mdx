@@ -22,7 +22,7 @@ Without DF, a router may split a packet into **fragments** instead. Each fragmen
 
 Fragmentation costs routers work, and losing any one fragment loses the whole packet, so TCP today avoids it with path MTU discovery. IPv6 routers never fragment: they send ICMPv6 **Packet Too Big** instead (RFC 8201), and every IPv6 link must carry at least 1280 bytes.
 
-## What to watch in the step-by-step view
+## What to look for in the walkthrough
 
 - The packet with **DF** that the router drops, the **Next-Hop MTU** in the ICMP, and the PC’s path MTU and MSS going down.
 - In “What if…”, a firewall that blocks the ICMP (the **black hole**) and a packet sent **without DF** (the router fragments it).
@@ -34,3 +34,5 @@ Fragmentation costs routers work, and losing any one fragment loses the whole pa
 - [RFC 1812: Requirements for IP Version 4 Routers](https://www.rfc-editor.org/rfc/rfc1812) — §5.2.6 “Fragmentation and Reassembly”
 - [RFC 2923: TCP Problems with Path MTU Discovery](https://www.rfc-editor.org/rfc/rfc2923)
 - [RFC 8899: Packetization Layer Path MTU Discovery for Datagram Transports](https://www.rfc-editor.org/rfc/rfc8899)
+- [RFC 8201: Path MTU Discovery for IP version 6](https://www.rfc-editor.org/rfc/rfc8201)
+- [RFC 8200: Internet Protocol, Version 6 (IPv6) Specification](https://www.rfc-editor.org/rfc/rfc8200) — §5 “Packet Size Issues”
