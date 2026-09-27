@@ -34,6 +34,7 @@
 | スイッチ | Ingress port、Egress port、learn、flood、forward、refresh、aged out、accepted、dropped (not my MAC)、ignored (not the target)、STP |
 | VLAN | VLAN、802.1Q、TPID、TCI、PCP（Priority Code Point）、DEI、VID、PVID、access、trunk、eth0.10（サブインターフェースの名前）、on-link、gateway |
 | ICMP | ICMP、ping、traceroute、tracert、Echo Request、Echo Reply、Time Exceeded、Destination Unreachable、network unreachable、host unreachable、port unreachable、type / code、TTL |
+| 近隣探索 | NDP、ICMPv6、RS、RA、NS、NA、DAD、SLAAC、DHCPv6、MLD、RDNSS、RetransTimer、RTR_SOLICITATION_INTERVAL、Cur Hop Limit、Router Lifetime、Prefix Information、M / O / L / A / R / S フラグ、tentative、preferred、duplicate、INCOMPLETE、REACHABLE、STALE、DELAY、PROBE、NUD |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
 | HTTP のキャッシュ | Cache-Control、max-age、no-cache、no-store、s-maxage、Vary、ETag、If-None-Match、Last-Modified、If-Modified-Since、Expires、Age、Date、200 OK、304 Not Modified、GET、fresh、stale、hit、miss |
@@ -165,6 +166,12 @@
 | early data | 早期データ（0-RTT のデータ） | |
 | session ticket / resumption | セッションチケット／再開 | |
 | probe timeout (PTO) | プローブタイムアウト（PTO） | |
+| Neighbor Discovery | 近隣探索 | |
+| neighbor cache | 近隣キャッシュ | |
+| duplicate address detection | 重複アドレス検出（DAD） | |
+| stateless address autoconfiguration | ステートレスアドレス自動設定（SLAAC） | |
+| Router Solicitation / Advertisement | Router Solicitation / Advertisement | 翻訳しない。初出で「ルーターを探す／知らせる」と説明する |
+| unspecified address | 未指定アドレス | :: |
 | replay (attack) | リプレイ（リプレイ攻撃） | 「再送」は送り手の正当な再送信だけに使う |
 | server push | サーバープッシュ | HTTP/2 |
 | trailer | トレーラー | |
