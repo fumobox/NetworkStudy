@@ -80,7 +80,7 @@ e2e/                Playwright のスモークテストとアクセシビリテ�
 
 ## 学習コンテンツの正確性
 
-- 技術的な内容の誤りは学習サイトとして致命的。シナリオの定義には根拠となる RFC の参照をコメントで残す（TCP: RFC 9293、DNS: RFC 1034/1035、TLS 1.3: RFC 8446、証明書: RFC 5280、ARP: RFC 826、DHCP: RFC 2131/2132、ICMP: RFC 792/1122/1812、NAT: RFC 3022/4787/5382、経路制御: RFC 1812/4632、HTTP のキャッシュ: RFC 9111/9110、CORS: Fetch Standard（WHATWG）・RFC 6454、HTTP/2: RFC 9113/7541、QUIC・HTTP/3: RFC 9000/9001/9002/9114）
+- 技術的な内容の誤りは学習サイトとして致命的。シナリオの定義には根拠となる RFC の参照をコメントで残す（TCP: RFC 9293、DNS: RFC 1034/1035、TLS 1.3: RFC 8446、証明書: RFC 5280、ARP: RFC 826、DHCP: RFC 2131/2132、ICMP: RFC 792/1122/1812、NAT: RFC 3022/4787/5382、経路制御: RFC 1812/4632、HTTP のキャッシュ: RFC 9111/9110、CORS: Fetch Standard（WHATWG）・RFC 6454、HTTP/1.1・HTTP/2: RFC 9112/9113/7541、QUIC・HTTP/3: RFC 9000/9001/9002/9114）
 - seq/ack の値やメッセージの順序などはテストで固定する
 
 ## テスト
