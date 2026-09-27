@@ -33,6 +33,7 @@
 | ARP | ARP、who-has、is-at、HTYPE、PTYPE、HLEN、PLEN、OPER、SHA、SPA、THA、TPA、EtherType、LAN |
 | ICMP | ICMP、ping、traceroute、tracert、Echo Request、Echo Reply、Time Exceeded、Destination Unreachable、network unreachable、host unreachable、port unreachable、type / code、TTL |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
+| HTTP のキャッシュ | Cache-Control、max-age、no-cache、no-store、s-maxage、Vary、ETag、If-None-Match、Last-Modified、If-Modified-Since、Expires、Age、Date、200 OK、304 Not Modified、GET、fresh、stale |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
 
 ## 3. 訳語の対応表
@@ -110,6 +111,9 @@
 | NAT table (mapping) | NAT の変換表（対応） | |
 | port forwarding | ポートフォワーディング | |
 | carrier-grade NAT | キャリアグレード NAT | |
+| fresh / stale | 新しい／古い | 状態の値としては fresh / stale のまま書く |
+| revalidation / conditional request | 再検証（確かめる）／条件付きの要求 | |
+| private cache / shared cache | プライベートキャッシュ／共有キャッシュ | |
 | hairpinning | ヘアピン | |
 | home router / ISP router | 家庭のルーター／ISP のルーター | |
 | hop | ホップ | |

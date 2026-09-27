@@ -1,0 +1,37 @@
+## Why browsers cache
+
+A page loads the same files again and again: scripts, style sheets, images. Downloading them every time wastes time and data. So the browser keeps responses in its **cache**, and the server says, in each response, how they may be reused.
+
+## Fresh and stale
+
+`Cache-Control: max-age=60` means the response is **fresh** for 60 seconds. While it is fresh, the browser uses the stored copy and sends nothing at all. After that it is **stale**, but it is not thrown away.
+
+## Revalidation with ETag
+
+The server gives each version of a file a tag, the **ETag** (for example `"v1"`). To reuse a stale response, the browser sends a **conditional request** with `If-None-Match: "v1"`:
+
+- If the file has not changed, the server answers **304 Not Modified** with no body. The browser uses its stored file, and the response is fresh again.
+- If the file has changed, the ETag differs, and the server answers **200** with the whole new file.
+
+| Cache-Control | Stored? | Before using it |
+|---|---|---|
+| `max-age=60` | yes | nothing while fresh, revalidate when stale |
+| `no-cache` | yes | always revalidate |
+| `no-store` | no | download the whole file every time |
+
+Despite its name, `no-cache` does store the response. Use `no-store` for responses that must not be left on the device.
+
+## What to look for in the walkthrough
+
+- The **browser cache** table: Age and Status change from fresh to stale.
+- The steps where nothing is sent: the stored response is used directly.
+- In the “What if…” options: `no-cache` and `no-store`, and a new version deployed in between (a fresh copy hides the update until it becomes stale).
+
+## About this page
+
+Only the browser’s own (private) cache is shown; shared caches such as CDNs, `s-maxage` and `Vary` are left out. The only validator here is ETag; servers can also use `Last-Modified` with `If-Modified-Since`. Responses without `Cache-Control` may be cached for a while by a heuristic, and the older `Expires` header works like `max-age`. Age is shown as the time since the response arrived, without the `Date` and `Age` header arithmetic. HTTP is drawn unencrypted so the headers are readable; in practice it runs over HTTPS (see the HTTPS theme).
+
+## References
+
+- [RFC 9111: HTTP Caching](https://www.rfc-editor.org/rfc/rfc9111) — §4.2, §4.3, §5.2.2
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — §8.8.3, §13.1.2, §15.4.5
