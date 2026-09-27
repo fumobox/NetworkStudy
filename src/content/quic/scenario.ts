@@ -9,7 +9,7 @@
  *   Handshake・1-RTT のパケット）、§19.3（ACK）、§19.6（CRYPTO）、§19.8（STREAM）、§19.20（HANDSHAKE_DONE）
  * - RFC 9001 §4.1.1・§4.1.2（ハンドシェイクの完了と確定。クライアントは HANDSHAKE_DONE で確定する）、§4.1.4（暗号化レベル）、
  *   §4.6（0-RTT。§4.6.2 で拒否されたら 0-RTT のデータは届かなかったものとして扱う）、§4.9.1・§4.9.2（Initial と
- *   Handshake の鍵を捨てる時点）、§5.2（Initial の鍵は Destination Connection ID から誰でも計算できる）、§9.2（0-RTT の再送攻撃）、
+ *   Handshake の鍵を捨てる時点）、§5.2（Initial の鍵は Destination Connection ID から誰でも計算できる）、§9.2（0-RTT のリプレイ攻撃）、
  *   付録 A（例の Destination Connection ID 0x8394c8f03e515708）
  * - RFC 9002 §5.3・§6.2.1（RTT の初期値 333 ミリ秒からの PTO = 333 + 4 × 166.5 ≈ 1 秒）、§6.1.1（番号が 3 以上大きい
  *   パケットが確認されたら、確認されないパケットを失われたとみなす）
