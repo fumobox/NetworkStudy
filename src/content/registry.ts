@@ -1,5 +1,6 @@
 import { arpTheme } from './arp'
 import { dhcpTheme } from './dhcp'
+import { corsTheme } from './cors'
 import { dnsResolutionTheme } from './dns-resolution'
 import { httpCachingTheme } from './http-caching'
 import { httpsOverviewTheme } from './https-overview'
@@ -30,6 +31,7 @@ export const THEMES: readonly ThemeModule[] = [
   tcpCloseTheme,
   tcpCongestionTheme,
   httpCachingTheme,
+  corsTheme,
 ]
 
 export function findTheme(id: string | undefined): ThemeModule | undefined {

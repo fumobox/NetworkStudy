@@ -33,6 +33,7 @@ More about TCP / TCP をもっと詳しく
 HTTP for web developers / Web 開発で出会う HTTP
 
 - HTTP caching: Cache-Control and ETag / HTTP のキャッシュ: Cache-Control と ETag
+- CORS: cross-origin requests and preflight / CORS: オリジンをまたぐ要求とプリフライト
 
 Available in English and Japanese. / 英語・日本語に対応しています。
 

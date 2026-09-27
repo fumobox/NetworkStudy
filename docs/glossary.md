@@ -120,6 +120,7 @@
 | preflight | プリフライト | |
 | credentials | 資格情報 | Cookie など。値としての `credentials: include` は翻訳しない |
 | network error | ネットワークエラー | |
+| same-origin policy | 同一オリジンポリシー | |
 | home router / ISP router | 家庭のルーター／ISP のルーター | |
 | hop | ホップ | |
 | probe | プローブ | traceroute が送るパケット |

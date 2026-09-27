@@ -220,9 +220,25 @@ export const HTTP_CACHING_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
+export const CORS_META = {
+  id: 'cors',
+  kind: 'sequence',
+  category: 'http',
+  title: {
+    en: 'CORS: cross-origin requests and preflight',
+    ja: 'CORS: オリジンをまたぐ要求とプリフライト',
+  },
+  summary: {
+    en: 'Why a page on one origin cannot freely read an API on another, how the browser asks first with OPTIONS, and which Access-Control-* headers make it allow the request.',
+    ja: '別のオリジンのページが API を自由に読めない理由、ブラウザーが OPTIONS で先に尋ねるしくみ、要求を許すための Access-Control-* ヘッダー。',
+  },
+  difficulty: 'beginner',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ …）
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS …）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -239,6 +255,7 @@ export const THEME_META = [
   TCP_CLOSE_META,
   TCP_CONGESTION_META,
   HTTP_CACHING_META,
+  CORS_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']

@@ -1,4 +1,5 @@
 import { arpQuiz } from './arp/quiz'
+import { corsQuiz } from './cors/quiz'
 import { dhcpQuiz } from './dhcp/quiz'
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
 import { httpCachingQuiz } from './http-caching/quiz'
@@ -13,6 +14,7 @@ import { tcpCongestionQuiz } from './tcp-congestion/quiz'
 import { tcpHandshakeQuiz } from './tcp-handshake/quiz'
 import {
   ARP_META,
+  CORS_META,
   DHCP_META,
   DNS_RESOLUTION_META,
   HTTP_CACHING_META,
@@ -50,4 +52,5 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: TCP_CLOSE_META, quiz: tcpCloseQuiz },
   { meta: TCP_CONGESTION_META, quiz: tcpCongestionQuiz },
   { meta: HTTP_CACHING_META, quiz: httpCachingQuiz },
+  { meta: CORS_META, quiz: corsQuiz },
 ]
