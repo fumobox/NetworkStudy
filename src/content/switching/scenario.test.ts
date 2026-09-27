@@ -21,7 +21,7 @@ function messages(steps: readonly Step[]): Message[] {
 
 /** 各メッセージの [from, to, ラベル, 状態] */
 function frames(steps: readonly Step[]) {
-  return messages(steps).map((m) => [m.from, m.to, m.label, m.status])
+  return messages(steps).map((m) => [m.from, m.to, m.label, m.status] as const)
 }
 
 function switchAt(steps: readonly Step[], stepId: string) {
