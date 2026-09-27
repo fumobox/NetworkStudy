@@ -116,8 +116,8 @@ const PROTECTION: Readonly<Record<PacketType, LocalizedText>> = {
     ja: '前の接続のセッションチケットから作る早期の鍵',
   },
   '1-RTT': {
-    en: 'Application keys, available once the handshake is complete',
-    ja: 'ハンドシェイクが終わると使えるアプリケーションの鍵',
+    en: 'Application keys, derived from the handshake as soon as the server’s Finished is sent; the server can already use them for 0.5-RTT data',
+    ja: 'サーバーの Finished が出た時点でハンドシェイクから作るアプリケーションの鍵。サーバーはすぐに 0.5-RTT のデータにも使える',
   },
 }
 
@@ -144,6 +144,8 @@ interface PacketSpec {
   readonly status?: Message['status']
   readonly retransmitOf?: string
   readonly extra?: readonly PacketField[]
+  /** クライアントの最初の Initial（と同じデータグラムの 0-RTT）だけ、Initial の鍵のもとになる DCID を示す */
+  readonly showDcid?: boolean
 }
 
 function packet(spec: PacketSpec): Message {
@@ -169,7 +171,18 @@ function packet(spec: PacketSpec): Message {
               ja: 'ハンドシェイクのあとは、宛先の接続 ID だけの短いヘッダーを使う',
             },
       },
-      ...(long ? [{ name: 'Destination Connection ID', value: DCID }] : []),
+      ...(spec.showDcid === true
+        ? [
+            {
+              name: 'Destination Connection ID',
+              value: DCID,
+              description: {
+                en: 'Chosen at random by the client for its first Initial. The Initial keys are derived from it; later packets use the IDs the two sides picked for each other',
+                ja: 'クライアントが最初の Initial のためにランダムに選ぶ。Initial の鍵はここから作る。以降のパケットは、両者がお互いのために選んだ ID を使う',
+              },
+            },
+          ]
+        : []),
       {
         name: 'Packet number',
         value: String(spec.pn),
@@ -185,9 +198,10 @@ function packet(spec: PacketSpec): Message {
 }
 
 /** 送ったパケット番号の表（空間ごと。捨てた空間は discarded） */
+/** 呼ぶのは、そのステップの next(...) をすべて済ませたあと（その時点の番号を写す） */
 function pnTable(
   initial: readonly number[] | null,
-  handshake: readonly number[],
+  handshake: readonly number[] | null,
   application: readonly number[],
 ): StateTable {
   const list = (numbers: readonly number[]) => (numbers.length === 0 ? '-' : numbers.join(', '))
@@ -195,7 +209,7 @@ function pnTable(
     columns: PN_COLUMNS,
     rows: [
       ['Initial', initial === null ? 'discarded' : list(initial)],
-      ['Handshake', list(handshake)],
+      ['Handshake', handshake === null ? 'discarded' : list(handshake)],
       ['Application', list(application)],
     ],
   }
@@ -213,32 +227,29 @@ function streamTable(states: readonly [string, string]): StateTable {
 
 /** ACK フレームの範囲の表記（0-2, 4 のように連続した番号をまとめる） */
 export function ackRanges(numbers: readonly number[]): string {
-  const sorted = [...numbers].sort((a, b) => a - b)
-  const ranges: string[] = []
-  let start = sorted[0]
-  let prev = start
-  for (const n of [...sorted.slice(1), Number.NaN]) {
-    if (start === undefined || prev === undefined) {
-      break
+  const ranges: [number, number][] = []
+  for (const n of [...numbers].sort((x, y) => x - y)) {
+    const last = ranges.at(-1)
+    if (last !== undefined && n === last[1] + 1) {
+      last[1] = n
+    } else {
+      ranges.push([n, n])
     }
-    if (n === prev + 1) {
-      prev = n
-      continue
-    }
-    ranges.push(start === prev ? String(start) : `${String(start)}-${String(prev)}`)
-    start = n
-    prev = n
   }
-  return ranges.join(', ')
+  return ranges
+    .map(([start, end]) => (start === end ? String(start) : `${String(start)}-${String(end)}`))
+    .join(', ')
 }
 
-const REQUEST_FRAMES = 'STREAM 0 (HEADERS: GET /), STREAM 4 (HEADERS: GET /style.css)'
+const REQUEST_FRAMES = 'STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)'
 
 function buildSteps(options: QuicOptions): readonly Step[] {
   const { earlyData, loss } = options
   const early = earlyData !== 'none'
   const accepted = earlyData === 'accepted'
   const steps: Step[] = []
+  const handshakeSection: LocalizedText =
+    loss === 'handshake' ? { en: 'Handshake', ja: 'ハンドシェイク' } : SECTIONS.handshake
 
   // クライアントが送ったパケット番号（空間ごと）
   const cInitial: number[] = []
@@ -263,6 +274,7 @@ function buildSteps(options: QuicOptions): readonly Step[] {
         type: 'Initial',
         pn: initialPn,
         frames: 'CRYPTO (ClientHello), PADDING',
+        showDcid: true,
         status: loss === 'handshake' && !retransmit ? 'lost' : 'delivered',
         ...(retransmit ? { retransmitOf: 'client-initial' } : {}),
         extra: [
@@ -278,8 +290,8 @@ function buildSteps(options: QuicOptions): readonly Step[] {
             name: 'Datagram size',
             value: '1,200 bytes',
             description: {
-              en: 'A datagram with an Initial packet from the client is padded to at least 1,200 bytes, so that the server cannot be used to amplify attacks',
-              ja: 'クライアントの Initial を運ぶデータグラムは 1,200 バイト以上に埋める。サーバーが攻撃の増幅に使われないようにするため',
+              en: 'A datagram with an Initial packet from the client is padded to at least 1,200 bytes, so that the server cannot be used to amplify attacks and the path is known to carry datagrams this large',
+              ja: 'クライアントの Initial を運ぶデータグラムは 1,200 バイト以上に埋める。サーバーが攻撃の増幅に使われないようにし、経路がこの大きさのデータグラムを通せることを確かめるため',
             },
           },
         ],
@@ -298,6 +310,7 @@ function buildSteps(options: QuicOptions): readonly Step[] {
           type: '0-RTT',
           pn,
           frames: REQUEST_FRAMES,
+          showDcid: true,
           status:
             loss === 'handshake' && !retransmit
               ? 'lost'
@@ -314,7 +327,7 @@ function buildSteps(options: QuicOptions): readonly Step[] {
   const flight1 = firstFlight(false)
   steps.push({
     id: 'client-initial',
-    section: SECTIONS.handshake,
+    section: handshakeSection,
     title: early
       ? { en: 'ClientHello and 0-RTT requests', ja: 'ClientHello と 0-RTT の要求' }
       : {
@@ -343,7 +356,7 @@ function buildSteps(options: QuicOptions): readonly Step[] {
     const flight1b = firstFlight(true)
     steps.push({
       id: 'client-pto',
-      section: SECTIONS.handshake,
+      section: handshakeSection,
       title: {
         en: 'No answer: the browser resends after the PTO',
         ja: '答えがない: ブラウザーが PTO のあとで送り直す',
@@ -368,14 +381,15 @@ function buildSteps(options: QuicOptions): readonly Step[] {
   const sAppReceived: number[] = []
 
   /** サーバーが送る応答のパケット。loss=stream なら stream 0 の最初の部分が失われる */
-  const responsePackets = (): Message[] => {
+  const responsePackets = (ack: string | null): { messages: Message[]; firstPn: number } => {
+    const firstPn = sAppPn
     const parts: [string, string][] = [
       ['response-0-1', 'STREAM 0 (HEADERS 200, DATA / 1/3)'],
       ['response-4', 'STREAM 4 (HEADERS 200, DATA /style.css, FIN)'],
       ['response-0-2', 'STREAM 0 (DATA / 2/3)'],
       ['response-0-3', 'STREAM 0 (DATA / 3/3, FIN)'],
     ]
-    return parts.map(([id, frames]) => {
+    const messages = parts.map(([id, frames], i) => {
       const pn = sAppPn++
       const lost = loss === 'stream' && id === 'response-0-1'
       if (!lost) {
@@ -387,12 +401,12 @@ function buildSteps(options: QuicOptions): readonly Step[] {
         to: CLIENT,
         type: '1-RTT',
         pn,
-        frames,
+        frames: i === 0 && ack !== null ? `ACK ${ack}, ${frames}` : frames,
         status: lost ? 'lost' : 'delivered',
       })
     })
+    return { messages, firstPn }
   }
-  const firstResponsePn = () => sAppPn
 
   const serverFlight: Message[] = [
     packet({
@@ -423,12 +437,14 @@ function buildSteps(options: QuicOptions): readonly Step[] {
   ]
   let responseStart = -1
   if (accepted) {
-    responseStart = firstResponsePn()
-    serverFlight.push(...responsePackets())
+    // 受け付けた 0-RTT のパケットは、最初の応答のパケットで確認応答する（RFC 9000 §13.2.1、図 6）
+    const response = responsePackets(ackRanges(serverGotApp))
+    responseStart = response.firstPn
+    serverFlight.push(...response.messages)
   }
   steps.push({
     id: 'server-flight',
-    section: SECTIONS.handshake,
+    section: handshakeSection,
     title: accepted
       ? {
           en: 'The server answers the handshake and the 0-RTT requests',
@@ -436,10 +452,15 @@ function buildSteps(options: QuicOptions): readonly Step[] {
         }
       : { en: 'The server’s handshake flight', ja: 'サーバーのハンドシェイクの応答' },
     description: accepted
-      ? {
-          en: 'In one go the server sends ServerHello (Initial), the rest of its TLS handshake (Handshake), and already the responses to the 0-RTT requests in 1-RTT packets. The requests were answered in the very first round trip.',
-          ja: 'サーバーは一度に、ServerHello（Initial）、残りの TLS のハンドシェイク（Handshake）、そして 0-RTT の要求への応答を 1-RTT パケットで送る。最初の 1 往復で要求に答えが返った。',
-        }
+      ? loss === 'stream'
+        ? {
+            en: 'In one go the server sends ServerHello (Initial), the rest of its TLS handshake (Handshake), and already the responses to the 0-RTT requests in 1-RTT packets. The first packet of stream 0 is lost, but style.css on stream 4 arrives complete and can be used right away: QUIC delivers each stream on its own.',
+            ja: 'サーバーは一度に、ServerHello（Initial）、残りの TLS のハンドシェイク（Handshake）、そして 0-RTT の要求への応答を 1-RTT パケットで送る。ストリーム 0 の最初のパケットは失われるが、ストリーム 4 の style.css は全部届き、すぐに使える。QUIC はストリームごとに別々に渡す。',
+          }
+        : {
+            en: 'In one go the server sends ServerHello (Initial), the rest of its TLS handshake (Handshake), and already the responses to the 0-RTT requests in 1-RTT packets (in reality, until the client’s address is confirmed, the server may send only three times what it received). The requests were answered in the very first round trip.',
+            ja: 'サーバーは一度に、ServerHello（Initial）、残りの TLS のハンドシェイク（Handshake）、そして 0-RTT の要求への応答を 1-RTT パケットで送る（実際には、クライアントのアドレスを確かめるまでは、受け取った量の 3 倍までしか送れない）。最初の 1 往復で要求に答えが返った。',
+          }
       : earlyData === 'rejected'
         ? {
             en: 'The server does not accept early data this time (for example, its ticket key changed), so it leaves early_data out of EncryptedExtensions and discards the 0-RTT packet. Otherwise the handshake goes on normally.',
@@ -451,7 +472,11 @@ function buildSteps(options: QuicOptions): readonly Step[] {
           },
     events: [
       ...serverFlight.map(send),
-      set(SERVER, KEYS, 'Handshake, 1-RTT'),
+      set(
+        SERVER,
+        KEYS,
+        accepted ? 'Initial, 0-RTT, Handshake, 1-RTT' : 'Initial, Handshake, 1-RTT',
+      ),
       set(SERVER, HANDSHAKE, 'in progress'),
       ...(early
         ? [
@@ -488,7 +513,19 @@ function buildSteps(options: QuicOptions): readonly Step[] {
       frames: 'ACK 0, CRYPTO (Finished)',
     }),
   ]
-  if (!accepted) {
+  if (accepted) {
+    // 0.5-RTT の応答をすぐに確認応答する
+    clientFinished.push(
+      packet({
+        id: 'client-early-ack',
+        from: CLIENT,
+        to: SERVER,
+        type: '1-RTT',
+        pn: next(cApp),
+        frames: `ACK ${ackRanges(sAppReceived)}`,
+      }),
+    )
+  } else {
     const requestPn = next(cApp)
     serverGotApp.push(requestPn)
     clientFinished.push(
@@ -504,7 +541,7 @@ function buildSteps(options: QuicOptions): readonly Step[] {
   }
   steps.push({
     id: 'client-finished',
-    section: SECTIONS.handshake,
+    section: handshakeSection,
     title: accepted
       ? { en: 'The browser finishes the handshake', ja: 'ブラウザーがハンドシェイクを終える' }
       : {
@@ -529,6 +566,9 @@ function buildSteps(options: QuicOptions): readonly Step[] {
       ...clientFinished.map(send),
       set(CLIENT, KEYS, 'Handshake, 1-RTT'),
       set(CLIENT, HANDSHAKE, 'complete'),
+      // サーバーは Finished を受け取るとハンドシェイクが完了し、同時に確定する（RFC 9001 §4.1.2）。Initial と Handshake の鍵を捨てる
+      set(SERVER, KEYS, '1-RTT'),
+      set(SERVER, HANDSHAKE, 'confirmed'),
       set(CLIENT, PACKET_NUMBERS, pnTable(null, cHandshake, cApp)),
       ...(accepted ? [] : [set(CLIENT, STREAMS, streamTable(['sent', 'sent']))]),
     ],
@@ -547,8 +587,9 @@ function buildSteps(options: QuicOptions): readonly Step[] {
   })
   const responses: Message[] = []
   if (!accepted) {
-    responseStart = firstResponsePn()
-    responses.push(...responsePackets())
+    const response = responsePackets(null)
+    responseStart = response.firstPn
+    responses.push(...response.messages)
   }
   steps.push({
     id: 'server-response',
@@ -573,11 +614,9 @@ function buildSteps(options: QuicOptions): readonly Step[] {
     events: [
       send(done),
       ...responses.map(send),
-      set(SERVER, KEYS, '1-RTT'),
-      set(SERVER, HANDSHAKE, 'confirmed'),
       set(CLIENT, KEYS, '1-RTT'),
       set(CLIENT, HANDSHAKE, 'confirmed'),
-      set(CLIENT, PACKET_NUMBERS, pnTable(null, cHandshake, cApp)),
+      set(CLIENT, PACKET_NUMBERS, pnTable(null, null, cApp)),
       ...(accepted
         ? []
         : [
@@ -612,7 +651,7 @@ function buildSteps(options: QuicOptions): readonly Step[] {
             frames: `ACK ${ackRanges(sAppReceived)}`,
           }),
         ),
-        set(CLIENT, PACKET_NUMBERS, pnTable(null, cHandshake, cApp)),
+        set(CLIENT, PACKET_NUMBERS, pnTable(null, null, cApp)),
       ],
     })
     const rtxPn = sAppPn++
@@ -625,8 +664,8 @@ function buildSteps(options: QuicOptions): readonly Step[] {
         ja: '失われたデータを新しいパケットで送り直す',
       },
       description: {
-        en: `At least three packets sent after packet ${String(responseStart)} have been acknowledged, so the server declares it lost without waiting for a timer. It resends the lost STREAM data in a new packet, number ${String(rtxPn)}. Only stream 0 had to wait.`,
-        ja: `パケット ${String(responseStart)} より後に送ったパケットが 3 つ以上確認されたので、サーバーはタイマーを待たずに ${String(responseStart)} を失われたとみなす。失われた STREAM のデータを、新しい ${String(rtxPn)} 番のパケットで送り直す。待たされたのはストリーム 0 だけ。`,
+        en: `A packet numbered at least 3 higher than packet ${String(responseStart)} has been acknowledged, so the server declares it lost without waiting for a timer. It resends the lost STREAM data in a new packet, number ${String(rtxPn)}. Only stream 0 had to wait.`,
+        ja: `パケット ${String(responseStart)} より 3 以上大きい番号のパケットが確認されたので、サーバーはタイマーを待たずに ${String(responseStart)} を失われたとみなす。失われた STREAM のデータを、新しい ${String(rtxPn)} 番のパケットで送り直す。待たされたのはストリーム 0 だけ。`,
       },
       events: [
         send(
@@ -651,7 +690,7 @@ function buildSteps(options: QuicOptions): readonly Step[] {
           }),
         ),
         set(CLIENT, STREAMS, streamTable(['closed', 'closed'])),
-        set(CLIENT, PACKET_NUMBERS, pnTable(null, cHandshake, cApp)),
+        set(CLIENT, PACKET_NUMBERS, pnTable(null, null, cApp)),
       ],
     })
     return steps
@@ -676,7 +715,7 @@ function buildSteps(options: QuicOptions): readonly Step[] {
           frames: `ACK ${ackRanges(sAppReceived)}`,
         }),
       ),
-      set(CLIENT, PACKET_NUMBERS, pnTable(null, cHandshake, cApp)),
+      set(CLIENT, PACKET_NUMBERS, pnTable(null, null, cApp)),
     ],
   })
   return steps

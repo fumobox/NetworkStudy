@@ -40,6 +40,11 @@ function clientState(steps: readonly Step[], stepId: string) {
 }
 
 describe('ackRanges', () => {
+  it('空と、並んでいない入力', () => {
+    expect(ackRanges([])).toBe('')
+    expect(ackRanges([4, 0, 2, 3])).toBe('0, 2-4')
+  })
+
   it('連続した番号をまとめる', () => {
     expect(ackRanges([0, 1, 2])).toBe('0-2')
     expect(ackRanges([0, 2, 3, 4])).toBe('0, 2-4')
@@ -75,7 +80,7 @@ describe('quicScenario', () => {
         ['client', 'Handshake[0]: ACK 0, CRYPTO (Finished)', 'delivered', true],
         [
           'client',
-          '1-RTT[0]: STREAM 0 (HEADERS: GET /), STREAM 4 (HEADERS: GET /style.css)',
+          '1-RTT[0]: STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)',
           'delivered',
           true,
         ],
@@ -111,7 +116,40 @@ describe('quicScenario', () => {
       expect(clientState(steps, 'server-response')).toMatchObject({
         keys: '1-RTT',
         handshake: 'confirmed',
+        packetNumbers: [
+          ['Initial', 'discarded'],
+          ['Handshake', 'discarded'],
+          ['Application', '0'],
+        ],
       })
+    })
+
+    it('DCID はクライアントの最初の Initial だけに示す（Initial の鍵のもと）', () => {
+      const withDcid = messages(build()).filter((m) =>
+        m.fields.some((f) => f.name === 'Destination Connection ID'),
+      )
+      expect(withDcid.map((m) => m.id)).toEqual(['client-initial'])
+    })
+
+    it('サーバーは Finished を受け取るとハンドシェイクを確定し、Initial と Handshake の鍵を捨てる', () => {
+      const steps = build()
+      const server = (id: string) => {
+        const index = steps.findIndex((step) => step.id === id)
+        return deriveState(quicScenario.actors, steps, index).actorStates.server?.values
+      }
+      expect(server('server-flight')).toMatchObject({
+        keys: 'Initial, Handshake, 1-RTT',
+        handshake: 'in progress',
+      })
+      expect(server('client-finished')).toMatchObject({ keys: '1-RTT', handshake: 'confirmed' })
+    })
+
+    it('Initial 以外は暗号化され、1-RTT だけが短いヘッダー', () => {
+      const header = (m: Message) => m.fields.find((f) => f.name === 'Header')?.value
+      for (const m of messages(build({ earlyData: 'accepted' }))) {
+        expect(m.encrypted === true).toBe(!m.label.startsWith('Initial'))
+        expect(header(m)?.startsWith('short')).toBe(m.label.startsWith('1-RTT'))
+      }
     })
   })
 
@@ -121,13 +159,15 @@ describe('quicScenario', () => {
       const labels = messages(steps).map((m) => m.label)
       expect(labels.slice(0, 2)).toEqual([
         'Initial[0]: CRYPTO (ClientHello), PADDING',
-        '0-RTT[0]: STREAM 0 (HEADERS: GET /), STREAM 4 (HEADERS: GET /style.css)',
+        '0-RTT[0]: STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)',
       ])
       const flight = steps.find((step) => step.id === 'server-flight')
       const flightLabels = (flight?.events ?? []).flatMap((e) =>
         e.kind === 'message' ? [e.message.label] : [],
       )
-      expect(flightLabels).toContain('1-RTT[0]: STREAM 0 (HEADERS 200, DATA / 1/3)')
+      expect(flightLabels).toContain('1-RTT[0]: ACK 0, STREAM 0 (HEADERS 200, DATA / 1/3)')
+      // クライアントも 0.5-RTT の応答をすぐに確認応答する
+      expect(labels).toContain('1-RTT[1]: ACK 0-3')
       // 1-RTT の要求は送らない（0-RTT で送り済み）
       expect(labels.some((label) => label.includes('GET /') && label.startsWith('1-RTT'))).toBe(
         false,
@@ -140,7 +180,7 @@ describe('quicScenario', () => {
       const zeroRtt = messages(steps).find((m) => m.label.startsWith('0-RTT'))
       expect(zeroRtt?.status).toBe('rejected')
       expect(messages(steps).map((m) => m.label)).toContain(
-        '1-RTT[1]: STREAM 0 (HEADERS: GET /), STREAM 4 (HEADERS: GET /style.css)',
+        '1-RTT[1]: STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)',
       )
       expect(clientState(steps, 'server-flight').streams).toEqual([
         ['0', 'GET /', '0-RTT rejected'],
@@ -148,6 +188,38 @@ describe('quicScenario', () => {
       ])
       // 捨てた 0-RTT のパケット（0 番）は確認応答しない
       expect(messages(steps).map((m) => m.label)).toContain('1-RTT[0]: HANDSHAKE_DONE, ACK 1')
+    })
+  })
+
+  describe('組み合わせ', () => {
+    it('0-RTT の受理 + ストリームのロス: 最初の応答のパケット（ACK 付き）が失われ、HANDSHAKE_DONE で ACK をもう一度送る', () => {
+      const labels = messages(build({ earlyData: 'accepted', loss: 'stream' })).map((m) => m.label)
+      expect(labels).toContain('1-RTT[1]: ACK 1-3')
+      expect(labels).toContain('1-RTT[4]: HANDSHAKE_DONE, ACK 0')
+      expect(labels.slice(-2)).toEqual([
+        '1-RTT[5]: STREAM 0 (HEADERS 200, DATA / 1/3)',
+        '1-RTT[3]: ACK 1-5',
+      ])
+    })
+
+    it('0-RTT の拒否 + 最初のデータグラムのロス: 送り直した 0-RTT も捨てられ、要求は 1-RTT[2] で送る', () => {
+      const steps = build({ earlyData: 'rejected', loss: 'handshake' })
+      const retried = messages(steps).find((m) => m.id === 'client-0rtt-rtx')
+      expect([retried?.label.slice(0, 8), retried?.status, retried?.retransmitOf]).toEqual([
+        '0-RTT[1]',
+        'rejected',
+        'client-0rtt',
+      ])
+      const labels = messages(steps).map((m) => m.label)
+      expect(labels.some((label) => label.startsWith('1-RTT[2]: STREAM 0'))).toBe(true)
+      expect(labels).toContain('1-RTT[0]: HANDSHAKE_DONE, ACK 2')
+    })
+
+    it('0-RTT の受理 + 最初のデータグラムのロス: 受け取った 0-RTT[1] を確認応答する', () => {
+      const labels = messages(build({ earlyData: 'accepted', loss: 'handshake' })).map(
+        (m) => m.label,
+      )
+      expect(labels).toContain('1-RTT[0]: ACK 1, STREAM 0 (HEADERS 200, DATA / 1/3)')
     })
   })
 
