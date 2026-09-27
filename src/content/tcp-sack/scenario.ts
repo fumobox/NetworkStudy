@@ -74,7 +74,10 @@ const actors: readonly Actor[] = [
     stateSlots: [
       {
         key: SND_UNA,
-        label: { en: 'SND.UNA (oldest unacknowledged)', ja: 'SND.UNA（確認応答されていない最初）' },
+        label: {
+          en: 'SND.UNA (oldest unacknowledged)',
+          ja: 'SND.UNA（確認応答されていない最初のバイト）',
+        },
         initial: '-',
       },
       { key: DUPACKS, label: { en: 'Duplicate ACKs', ja: '重複 ACK の数' }, initial: '0' },

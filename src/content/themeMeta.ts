@@ -152,6 +152,22 @@ export const TCP_FLOW_CONTROL_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const TCP_SACK_META = {
+  id: 'tcp-sack',
+  kind: 'sequence',
+  category: 'tcp',
+  title: {
+    en: 'Fast retransmit and SACK: resending only what was lost',
+    ja: '高速再送と SACK: 失われた分だけを再送する',
+  },
+  summary: {
+    en: 'How duplicate ACKs trigger a retransmission without waiting for the timer, and how SACK tells the sender exactly which segments are missing.',
+    ja: '重複 ACK で、タイマーを待たずに再送するしくみと、SACK で、どのセグメントが抜けているかを送信側に正確に知らせるしくみ。',
+  },
+  difficulty: 'intermediate',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
 export const ARP_META = {
   id: 'arp',
   kind: 'sequence',
@@ -365,6 +381,7 @@ export const THEME_META = [
   TCP_CLOSE_META,
   TCP_CONGESTION_META,
   TCP_FLOW_CONTROL_META,
+  TCP_SACK_META,
   HTTP_CACHING_META,
   CORS_META,
   HTTP2_META,

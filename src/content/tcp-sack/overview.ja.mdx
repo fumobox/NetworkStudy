@@ -1,0 +1,37 @@
+## 累積の確認応答では言えないこと
+
+TCP の ACK は**累積**の確認応答で、Ack の番号は、受信側がまだ受け取っていない最初のバイトを表す。セグメントが 1 つ失われると、その後に届くセグメントのたびに同じ ACK がまた送られる。これが**重複 ACK**。Ack は抜けを越えて進めず、抜けの後に何が届いたかも伝えられない。
+
+## 高速再送
+
+再送タイマー（RTO。最短でも 1 秒）を待つのは遅い。そこで送信側は、**3 つ目の重複 ACK** を受け取ると、そのセグメントが失われたと判断してすぐに再送する。3 つ待つのは、重複が 1 つや 2 つなら、途中でセグメントの**順序が入れ替わった**だけかもしれないから。
+
+## 1 往復に 1 つの抜け
+
+同じウィンドウのセグメントが 2 つ失われても、重複 ACK からわかるのは 1 つ目だけ。再送で 1 つ目が埋まると Ack は進むが、2 つ目の抜けで止まる。これが**部分的な確認応答**。ここで初めて送信側（NewReno）は 2 つ目のセグメントを再送するので、1 往復よけいにかかる。
+
+## SACK
+
+**SACK**（選択的確認応答）を使うと、両者は SYN のセグメントで合意し（SACK-Permitted）、ACK には抜けの後に受け取ったデータの**ブロック**を最大 4 つ（Timestamps のオプションも使うときは 3 つ）載せられる。ブロックは、受け取った最初のバイトと、その後の受け取って**いない**最初のバイトで表す（例: `3001-5001`）。最初のブロックは、いま届いたセグメントを含むもの。
+
+送信側は、どのセグメントが SACK されたかを**スコアボード**に記録する。あるセグメントより後に十分なデータ（(3 − 1) × MSS バイトより多く）が SACK されたら、そのセグメントは失われたとみなし、部分的な確認応答を待たずに再送する。複数の抜けを同じ往復の中で直せる。
+
+## 後に何も来ないとき
+
+**最後の**セグメントが失われると、その後に届くセグメントがないので、重複 ACK も SACK のブロックも出ない。送信側は RTO を待つしかない。今の TCP の実装は、テールロスプローブ（RACK-TLP、RFC 8985）でこの待ちを短くする。
+
+回復中に cwnd と ssthresh がどう変わるかは、輻輳制御のテーマを参照。
+
+## ステップ実行で見てほしいところ
+
+- 抜けの後にセグメントが届くたびに、**重複 ACK** と **SACK のブロック**が広がっていくこと。
+- 送信側の**スコアボード**（in flight、ACKed、SACKed、retransmitted）。
+- 「もしも…」のオプションで、**累積の確認応答だけ**の場合（部分的な確認応答で 1 往復かかる）、失われるのが **1 つ**の場合、**最後の**セグメントが失われる場合（RTO を待つしかない）。
+
+## 参考
+
+- [RFC 5681: TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681) — §3.2「Fast Retransmit/Fast Recovery」
+- [RFC 2018: TCP Selective Acknowledgment Options](https://www.rfc-editor.org/rfc/rfc2018)
+- [RFC 6675: A Conservative Loss Recovery Algorithm Based on Selective Acknowledgment (SACK) for TCP](https://www.rfc-editor.org/rfc/rfc6675)
+- [RFC 6582: The NewReno Modification to TCP’s Fast Recovery Algorithm](https://www.rfc-editor.org/rfc/rfc6582)
+- [RFC 8985: The RACK-TLP Loss Detection Algorithm for TCP](https://www.rfc-editor.org/rfc/rfc8985)

@@ -1,0 +1,37 @@
+## What a cumulative ACK can’t say
+
+A TCP ACK is **cumulative**: its Ack number is the first byte the receiver is still missing. When one segment is lost, every segment that arrives after it produces the same ACK again: a **duplicate ACK**. The Ack can’t move past the hole, and it can’t say what arrived after it.
+
+## Fast retransmit
+
+Waiting for the retransmission timer (RTO, at least 1 second) would be slow. Instead, when the sender sees the **third duplicate ACK**, it concludes that the segment was lost and resends it at once. It waits for three because one or two duplicates may just mean the segments were **reordered** on the way.
+
+## One hole per round trip
+
+If two segments from the same window are lost, duplicate ACKs only reveal the first one. After the retransmission fills it, the Ack jumps forward but stops at the second hole: a **partial ACK**. Only then does the sender (NewReno) resend the second segment, one round trip later.
+
+## SACK
+
+With **SACK** (Selective Acknowledgment), both sides agree in the SYN segments (SACK-Permitted), and each ACK can carry up to four **blocks** (three when the Timestamps option is also used) of data received after the hole. A block is written as the first byte received and the first byte **not** received after it, for example `3001-5001`. The first block is the one that holds the segment that just arrived.
+
+The sender keeps a **scoreboard** of which segments are SACKed. When enough data after a segment has been SACKed (more than (3 − 1) × MSS bytes), it treats that segment as lost and resends it, without waiting for a partial ACK. Several holes can be repaired in the same round trip.
+
+## When nothing comes after
+
+If the **last** segment is lost, no later segment arrives, so there are no duplicate ACKs and no SACK blocks. The sender has to wait for the RTO. Modern stacks shorten this wait with a tail loss probe (RACK-TLP, RFC 8985).
+
+How cwnd and ssthresh change during recovery is shown in the congestion control theme.
+
+## What to watch in the step-by-step view
+
+- The **duplicate ACKs** and their **SACK blocks** growing as segments arrive after the holes.
+- The **scoreboard** on the sender: in flight, ACKed, SACKed, retransmitted.
+- In “What if…”, **cumulative ACKs only** (the partial ACK costs a round trip), **one** lost segment, and a lost **last** segment (only the RTO helps).
+
+## References
+
+- [RFC 5681: TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681) — §3.2 “Fast Retransmit/Fast Recovery”
+- [RFC 2018: TCP Selective Acknowledgment Options](https://www.rfc-editor.org/rfc/rfc2018)
+- [RFC 6675: A Conservative Loss Recovery Algorithm Based on Selective Acknowledgment (SACK) for TCP](https://www.rfc-editor.org/rfc/rfc6675)
+- [RFC 6582: The NewReno Modification to TCP’s Fast Recovery Algorithm](https://www.rfc-editor.org/rfc/rfc6582)
+- [RFC 8985: The RACK-TLP Loss Detection Algorithm for TCP](https://www.rfc-editor.org/rfc/rfc8985)
