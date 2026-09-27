@@ -59,6 +59,35 @@ describe('corsScenario', () => {
   })
 
   describe('プリフライト（Fetch Standard "CORS-preflight fetch"）', () => {
+    it('資格情報を送らなければ、どの要求にも Cookie は付かない', () => {
+      const steps = build()
+      expect(messages(steps).some((m) => field(m, 'Cookie') !== undefined)).toBe(false)
+    })
+
+    it('プリフライトのキャッシュは、許可されたときだけ行が増える', () => {
+      const cacheAfter = (steps: readonly Step[]) => {
+        const index = steps.findIndex((step) => step.id === 'preflight-response')
+        const cache = deriveState(corsScenario.actors, steps, index).actorStates.browser?.values
+          .preflightCache
+        return typeof cache === 'object' ? cache.rows : null
+      }
+      expect(cacheAfter(build())).toEqual([
+        ['https://api.example.com/items', 'POST', 'content-type', '600'],
+      ])
+      expect(cacheAfter(build({ serverPolicy: 'notAllowed' }))).toEqual([])
+    })
+
+    it('許可しない応答には Access-Control-Allow-* がない', () => {
+      const denied = byId(build({ serverPolicy: 'notAllowed' }), 'preflight-response')
+      expect(
+        [
+          'Access-Control-Allow-Methods',
+          'Access-Control-Allow-Headers',
+          'Access-Control-Max-Age',
+        ].map((name) => field(denied, name)),
+      ).toEqual([undefined, undefined, undefined])
+    })
+
     it('JSON の POST は、OPTIONS → 204 → POST → 201 の順で、スクリプトに応答が返る', () => {
       const steps = build()
       expect(flow(steps)).toEqual([
@@ -124,6 +153,17 @@ describe('corsScenario', () => {
   })
 
   describe('プリフライトなしの GET（Fetch Standard "CORS-safelisted method"）', () => {
+    it('資格情報付きの GET に * で答えると、応答で CORS のチェックに通らない（サーバーは処理済み）', () => {
+      const steps = build({ request: 'simpleGet', serverPolicy: 'wildcard', credentials: true })
+      expect(field(byId(steps, 'request'), 'Cookie')).toBe('session=abc123')
+      expect(byId(steps, 'response')?.status).toBe('rejected')
+      expect(final(steps)).toEqual({
+        result: 'TypeError',
+        check: 'failed (* with credentials)',
+        handled: 'GET /items → 200',
+      })
+    })
+
     it('OPTIONS を送らず、GET に Origin を付ける', () => {
       const steps = build({ request: 'simpleGet', serverPolicy: 'wildcard' })
       expect(flow(steps).map(([, , label]) => label)).toEqual([

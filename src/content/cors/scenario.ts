@@ -11,9 +11,9 @@
  *   GET・HEAD・POST と、決まったヘッダー（Content-Type は application/x-www-form-urlencoded、multipart/form-data、text/plain のみ）
  *   だけならプリフライトは要らない
  * - "CORS-preflight fetch"（#cors-preflight-fetch）: OPTIONS に Access-Control-Request-Method と
- *   Access-Control-Request-Headers（小文字）を付け、資格情報は付けずに送る。"CORS-preflight cache"（#concept-cache）
+ *   Access-Control-Request-Headers（小文字・ソート済み）を付け、資格情報は付けずに送る。"CORS-preflight cache"（#concept-cache）
  * - "CORS check"（#concept-cors-check）: 失敗すると network error になり、スクリプトには TypeError だけが見える
- * - RFC 6454 §4、§5（オリジン = スキーム・ホスト・ポート）、RFC 9110 §9.3.7（OPTIONS）
+ * - RFC 6454 §4、§5（オリジン = スキーム・ホスト・ポート）、§7（Origin ヘッダー）、RFC 9110 §9.3.7（OPTIONS）
  * - 2014 年の W3C の CORS 勧告は Fetch Standard に置き換えられた
  *
  * 学習用の単純化: ページのオリジンは 1 つ。Access-Control-Expose-Headers、リダイレクト、Private Network Access、
@@ -50,7 +50,7 @@ const LAST_REQUEST: StateKey = 'lastRequest'
 
 export const PAGE_ORIGIN = 'https://app.example.com'
 export const API_ORIGIN = 'https://api.example.com'
-const URL = `${API_ORIGIN}/items`
+const ITEMS_URL = `${API_ORIGIN}/items`
 export const PREFLIGHT_COLUMNS = ['URL', 'Method', 'Headers', 'Max-Age'] as const
 const MAX_AGE = '600'
 const COOKIE = 'session=abc123'
@@ -70,7 +70,7 @@ const actors: readonly Actor[] = [
     kind: 'client',
     name: { en: 'Browser', ja: 'ブラウザー' },
     stateSlots: [
-      { key: CORS_CHECK, label: { en: 'CORS check', ja: 'CORS のチェック' }, initial: '-' },
+      { key: CORS_CHECK, label: { en: 'CORS', ja: 'CORS' }, initial: '-' },
       {
         key: PREFLIGHT_CACHE,
         label: { en: 'Preflight cache', ja: 'プリフライトのキャッシュ' },
@@ -184,7 +184,7 @@ function buildSteps(options: CorsOptions): readonly Step[] {
   const credentialsMode = credentials ? 'include' : 'same-origin (default)'
 
   const fetchFields: PacketField[] = [
-    { name: 'URL', value: URL },
+    { name: 'URL', value: ITEMS_URL },
     { name: 'method', value: method },
     {
       name: 'headers',
@@ -232,7 +232,7 @@ function buildSteps(options: CorsOptions): readonly Step[] {
           }
         : {
             en: `The page at ${PAGE_ORIGIN} wants to GET data from ${API_ORIGIN}, another origin. A plain GET with no extra headers can be sent without a preflight, but the browser will still check the response.`,
-            ja: `${PAGE_ORIGIN} のページが、別のオリジンの ${API_ORIGIN} からデータを GET したい。追加のヘッダーのない GET はプリフライトなしで送れるが、ブラウザーは応答を確かめる。`,
+            ja: `${PAGE_ORIGIN} のページが、別のオリジンの ${API_ORIGIN} からデータを GET したい。追加のヘッダーのない GET はプリフライトなしで送れるが、それでもブラウザーは応答を確かめる。`,
           },
       events: [
         send({
@@ -243,7 +243,7 @@ function buildSteps(options: CorsOptions): readonly Step[] {
           status: 'delivered',
           fields: fetchFields,
         }),
-        set(BROWSER, CORS_CHECK, post ? 'preflight' : 'no preflight'),
+        set(BROWSER, CORS_CHECK, post ? 'preflight required' : 'no preflight required'),
       ],
     },
   ]
@@ -368,8 +368,8 @@ function buildSteps(options: CorsOptions): readonly Step[] {
       description:
         failure === null
           ? {
-              en: 'The answer allows the page’s origin, POST and Content-Type. The browser remembers it in the preflight cache for 600 seconds and goes on to send the real request.',
-              ja: '答えは、ページのオリジンと POST と Content-Type を許している。ブラウザーはそれを 600 秒のあいだプリフライトのキャッシュに覚え、本番の要求を送る。',
+              en: `The answer allows ${serverPolicy === 'wildcard' ? 'any origin (*)' : 'the page’s origin'}, POST and Content-Type. The browser remembers it in the preflight cache for 600 seconds and goes on to send the real request.`,
+              ja: `答えは、${serverPolicy === 'wildcard' ? 'すべてのオリジン（*）' : 'ページのオリジン'}と POST と Content-Type を許している。ブラウザーはそれを 600 秒のあいだプリフライトのキャッシュに覚え、本番の要求を送る。`,
             }
           : failureText,
       events: [
@@ -386,7 +386,7 @@ function buildSteps(options: CorsOptions): readonly Step[] {
               set(BROWSER, CORS_CHECK, 'preflight OK'),
               set(BROWSER, PREFLIGHT_CACHE, {
                 columns: PREFLIGHT_COLUMNS,
-                rows: [[URL, 'POST', 'content-type', MAX_AGE]],
+                rows: [[ITEMS_URL, 'POST', 'content-type', MAX_AGE]],
               }),
             ]
           : [set(BROWSER, CORS_CHECK, `failed (${failure})`)]),
