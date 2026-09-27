@@ -29,7 +29,7 @@ Despite its name, `no-cache` does store the response. Use `no-store` for respons
 
 ## About this page
 
-Only the browser’s own (private) cache is shown; shared caches such as CDNs, `s-maxage` and `Vary` are left out. The only validator here is ETag; servers can also use `Last-Modified` with `If-Modified-Since`. Responses without `Cache-Control` may be cached for a while by a heuristic, and the older `Expires` header works like `max-age`. Age is shown as the time since the response arrived, without the `Date` and `Age` header arithmetic. HTTP is drawn unencrypted so the headers are readable; in practice it runs over HTTPS (see the HTTPS theme).
+Only the browser’s own (private) cache is shown; shared caches such as CDNs, `s-maxage` and `Vary` are left out. The only validator here is ETag; servers can also use `Last-Modified` with `If-Modified-Since`. Responses with neither `max-age` nor `Expires` may be treated as fresh for a while by a heuristic, and the older `Expires` header works like `max-age`. Age is shown as the time since the response arrived, without the `Date` and `Age` header arithmetic. HTTP is drawn unencrypted so the headers are readable; in practice it runs over HTTPS (see the HTTPS theme).
 
 ## References
 

@@ -108,8 +108,7 @@ function cacheTable(row: readonly string[] | null): StateTable {
   return { columns: CACHE_COLUMNS, rows: row === null ? [] : [row] }
 }
 function cacheRow(directive: Directive, version: Version, age: number): readonly string[] {
-  const status =
-    directive === 'noCache' ? 'validate before use' : age < MAX_AGE_S ? 'fresh' : 'stale'
+  const status = directive === 'noCache' ? 'no-cache' : age < MAX_AGE_S ? 'fresh' : 'stale'
   return [PATH, version.etag, CACHE_CONTROL[directive], String(age), status]
 }
 
@@ -231,7 +230,7 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
         en: 'The page needs /app.js. Nothing is stored in the browser cache yet, so the browser sends an ordinary GET to the server.',
         ja: 'ページには /app.js が必要。ブラウザーのキャッシュにはまだ何もないので、ふつうの GET をサーバーに送る。',
       },
-      events: [send(request('get1', null)), set(BROWSER, DECISION, 'miss (nothing stored)')],
+      events: [send(request('get1', null)), set(BROWSER, DECISION, 'miss')],
     },
     {
       id: 'first-response',
@@ -251,7 +250,7 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
       events: [
         send(ok('ok1', directive, V1)),
         set(BROWSER, CACHE, cacheTable(stores ? cacheRow(directive, V1, 0) : null)),
-        set(BROWSER, DECISION, stores ? 'stored' : 'not stored (no-store)'),
+        ...(stores ? [] : [set(BROWSER, DECISION, 'no-store')]),
       ],
     },
   ]
@@ -284,7 +283,7 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
         },
         events: [
           set(BROWSER, CACHE, cacheTable(cacheRow(directive, V1, REVISIT_AGE_S))),
-          set(BROWSER, DECISION, 'fresh: use the stored response'),
+          set(BROWSER, DECISION, 'hit (fresh)'),
         ],
       },
       {
@@ -297,7 +296,7 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
         events: [
           { kind: 'timer', actorId: BROWSER, name: 'max-age', durationMs: MAX_AGE_S * 1000 },
           set(BROWSER, CACHE, cacheTable(cacheRow(directive, V1, MAX_AGE_S))),
-          set(BROWSER, DECISION, 'stale: revalidate before use'),
+          set(BROWSER, DECISION, 'stale'),
         ],
       },
     )
@@ -319,9 +318,9 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
         directive === 'noCache'
           ? [
               set(BROWSER, CACHE, cacheTable(cacheRow(directive, V1, REVISIT_AGE_S))),
-              set(BROWSER, DECISION, 'no-cache: revalidate before use'),
+              set(BROWSER, DECISION, 'no-cache'),
             ]
-          : [set(BROWSER, DECISION, 'miss (nothing stored)')],
+          : [set(BROWSER, DECISION, 'miss')],
     })
   }
 
@@ -343,10 +342,10 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
           ja: 'ファイル全体がもう一度送られる',
         },
         description: {
-          en: `The server sends the whole file (${String(latest.length)} bytes) again, and again the browser does not keep it. no-store suits responses that must never be left on the device, such as a bank statement, not static files like app.js.`,
-          ja: `サーバーはファイル全体（${String(latest.length)} バイト）をもう一度送り、ブラウザーはまた保存しない。no-store は、銀行の明細のように端末に残してはいけない応答に使うもので、app.js のような静的なファイルには向かない。`,
+          en: `The server sends the whole file (${String(latest.length)} bytes), and again the browser does not keep it. no-store suits responses that must never be left on the device, such as a bank statement, not static files like app.js.`,
+          ja: `サーバーはまたファイル全体（${String(latest.length)} バイト）を送り、ブラウザーはまた保存しない。no-store は、銀行の明細のように端末に残してはいけない応答に使うもので、app.js のような静的なファイルには向かない。`,
         },
-        events: [send(ok('ok2', directive, latest)), set(BROWSER, DECISION, 'used, not stored')],
+        events: [send(ok('ok2', directive, latest)), set(BROWSER, DECISION, 'no-store')],
       },
     )
     return steps
@@ -362,7 +361,7 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
       en: 'Instead of downloading the file again, the browser sends a conditional request: If-None-Match carries the stored ETag, "v1". It means “send the file only if you no longer have this version”.',
       ja: 'ファイルをもう一度ダウンロードする代わりに、条件付きの要求を送る。If-None-Match に保存した ETag の "v1" を入れる。「この版でなくなっていたら送って」という意味。',
     },
-    events: [send(request('get2', V1)), set(BROWSER, DECISION, 'revalidating (If-None-Match)')],
+    events: [send(request('get2', V1)), set(BROWSER, DECISION, 'If-None-Match "v1"')],
   })
 
   if (serverChange) {
@@ -379,7 +378,7 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
       events: [
         send(ok('ok2', directive, V2)),
         set(BROWSER, CACHE, cacheTable(cacheRow(directive, V2, 0))),
-        set(BROWSER, DECISION, 'replaced with v2 (200)'),
+        set(BROWSER, DECISION, '200 (v2)'),
       ],
     })
     return steps
@@ -393,8 +392,8 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
         ja: 'ETag が一致する: 304 Not Modified',
       },
       description: {
-        en: 'The file has not changed, so the server answers 304 Not Modified with no body. It still sends Cache-Control and ETag, so the browser can update the stored response: the age starts from 0 again.',
-        ja: 'ファイルは変わっていないので、サーバーは本文のない 304 Not Modified を返す。Cache-Control と ETag は付けるので、ブラウザーは保存した応答を更新でき、経過時間は 0 に戻る。',
+        en: 'The file has not changed, so the server answers 304 Not Modified with no body. It still sends ETag and Cache-Control; the browser updates the stored response with them, and the age starts from 0 again.',
+        ja: 'ファイルは変わっていないので、サーバーは本文のない 304 Not Modified を返す。ETag と Cache-Control は付ける。ブラウザーはそれで保存した応答を更新し、経過時間は 0 に戻る。',
       },
       events: [
         send(notModified('not-modified', directive, V1)),
@@ -411,7 +410,7 @@ function buildSteps(options: HttpCachingOptions): readonly Step[] {
         en: `The browser uses the file it already had. Only a small 304 crossed the network instead of all ${String(V1.length)} bytes. On a real page with many large files, this saves a lot of time and data.`,
         ja: `ブラウザーはもともと持っていたファイルを使う。ネットワークを流れたのは ${String(V1.length)} バイトのファイル全体ではなく、小さな 304 だけ。大きなファイルがたくさんある実際のページでは、時間とデータ量を大きく節約できる。`,
       },
-      events: [set(BROWSER, DECISION, 'validated (304): use the stored response')],
+      events: [set(BROWSER, DECISION, 'hit (revalidated)')],
     },
   )
   return steps

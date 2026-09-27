@@ -52,8 +52,8 @@ export const httpCachingQuiz: Quiz = {
       ],
       answerId: 'reuse',
       explanation: {
-        en: 'A 304 has no body: it means “your copy is still right”. The browser uses the stored file, and the Cache-Control in the 304 starts a new freshness period.',
-        ja: '304 には本文がなく、「手元の版のままで正しい」という意味。ブラウザーは保存したファイルを使い、304 の Cache-Control から新しい期間が始まる。',
+        en: 'A 304 has no body: it means “your copy is still right”. The browser uses the stored file and updates the stored response with the 304’s headers, so its age starts from 0 again.',
+        ja: '304 には本文がなく、「手元の版のままで正しい」という意味。ブラウザーは保存したファイルを使い、304 のヘッダーで保存した応答を更新するので、経過時間は 0 に戻る。',
       },
     },
     {

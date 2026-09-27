@@ -87,7 +87,7 @@ describe('httpCachingScenario', () => {
       ])
       expect(final(steps)).toEqual({
         cache: [['/app.js', '"v1"', 'max-age=60', '0', 'fresh']],
-        decision: 'validated (304): use the stored response',
+        decision: 'hit (revalidated)',
         elapsedMs: 60_000,
       })
     })
@@ -137,7 +137,7 @@ describe('httpCachingScenario', () => {
         'reuse-validated',
       ])
       expect(cacheAt(steps, 'first-response')).toEqual([
-        ['/app.js', '"v1"', 'no-cache', '0', 'validate before use'],
+        ['/app.js', '"v1"', 'no-cache', '0', 'no-cache'],
       ])
       expect(exchange(steps).map(([label]) => label)).toEqual([
         'GET /app.js',

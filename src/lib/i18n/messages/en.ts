@@ -136,7 +136,7 @@ export const en = {
     },
     http: {
       title: 'HTTP for web developers',
-      lead: 'Things you meet as soon as you build for the web: how the browser caches responses, why a cross-origin request gets blocked, and how HTTP/2 and HTTP/3 (QUIC) make one connection fast.',
+      lead: 'Things you meet as soon as you build for the web, starting with how the browser caches responses and checks whether they are still valid.',
     },
   },
   theme: {
