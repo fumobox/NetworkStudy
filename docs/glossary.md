@@ -149,6 +149,7 @@
 | early data | 早期データ（0-RTT のデータ） | |
 | session ticket / resumption | セッションチケット／再開 | |
 | probe timeout (PTO) | プローブタイムアウト（PTO） | |
+| replay (attack) | リプレイ（リプレイ攻撃） | 「再送」は送り手の正当な再送信だけに使う |
 | server push | サーバープッシュ | HTTP/2 |
 | trailer | トレーラー | |
 | MAC address | MAC アドレス | |

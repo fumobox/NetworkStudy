@@ -8,6 +8,7 @@ import { httpsOverviewQuiz } from './https-overview/quiz'
 import { icmpQuiz } from './icmp/quiz'
 import { natQuiz } from './nat/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
+import { quicQuiz } from './quic/quiz'
 import { routeLookupQuiz } from './route-lookup/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
 import { tcpCloseQuiz } from './tcp-close/quiz'
@@ -24,6 +25,7 @@ import {
   ICMP_META,
   NAT_META,
   OSI_MODEL_META,
+  QUIC_META,
   ROUTE_LOOKUP_META,
   SUBNET_CALCULATOR_META,
   TCP_CLOSE_META,
@@ -56,4 +58,5 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: HTTP_CACHING_META, quiz: httpCachingQuiz },
   { meta: CORS_META, quiz: corsQuiz },
   { meta: HTTP2_META, quiz: http2Quiz },
+  { meta: QUIC_META, quiz: quicQuiz },
 ]

@@ -9,10 +9,10 @@
  *   Handshake・1-RTT のパケット）、§19.3（ACK）、§19.6（CRYPTO）、§19.8（STREAM）、§19.20（HANDSHAKE_DONE）
  * - RFC 9001 §4.1.1・§4.1.2（ハンドシェイクの完了と確定。クライアントは HANDSHAKE_DONE で確定する）、§4.1.4（暗号化レベル）、
  *   §4.6（0-RTT。§4.6.2 で拒否されたら 0-RTT のデータは届かなかったものとして扱う）、§4.9.1・§4.9.2（Initial と
- *   Handshake の鍵を捨てる時点）、§5.2（Initial の鍵は Destination Connection ID から誰でも計算できる）、§9.2（0-RTT の再送攻撃）、
+ *   Handshake の鍵を捨てる時点）、§5.2（Initial の鍵は Destination Connection ID から誰でも計算できる）、§9.2（0-RTT のリプレイ攻撃）、
  *   付録 A（例の Destination Connection ID 0x8394c8f03e515708）
- * - RFC 9002 §5.3・§6.2.1（RTT の初期値 333 ミリ秒からの PTO = 333 + 4 × 166.5 ≈ 1 秒）、§6.1.1（後のパケットが 3 つ
- *   確認されたら、確認されないパケットを失われたとみなす）
+ * - RFC 9002 §5.3・§6.2.1（RTT の初期値 333 ミリ秒からの PTO = 333 + 4 × 166.5 ≈ 1 秒）、§6.1.1（番号が 3 以上大きい
+ *   パケットが確認されたら、確認されないパケットを失われたとみなす）
  * - RFC 9114 §4.1（要求と応答は HEADERS と DATA のフレーム）、§6.1（要求ごとに 1 つの双方向ストリーム）、§10.9（0-RTT）
  * - RFC 8446 §4.6.1（NewSessionTicket）、§8（0-RTT の再送）
  *
@@ -148,13 +148,27 @@ interface PacketSpec {
   readonly showDcid?: boolean
 }
 
+/** 図のラベル用に、フレームの並びを短くする（全体はインスペクタの Frames に出す）。2 レーンの図に収めるため */
+const LABEL_ABBREVIATIONS: readonly (readonly [string, string])[] = [
+  ['CRYPTO (ClientHello), PADDING', 'CRYPTO (ClientHello)'],
+  ['CRYPTO (EncryptedExtensions, Certificate, CertificateVerify, Finished)', 'CRYPTO (… Finished)'],
+  ['STREAM 0 (HEADERS: GET /, FIN), STREAM 4 (HEADERS: GET /style.css, FIN)', 'STREAM 0, 4 (GET)'],
+  ['STREAM 0 (HEADERS 200, DATA / 1/3)', 'STREAM 0 (200, 1/3)'],
+  ['STREAM 4 (HEADERS 200, DATA /style.css, FIN)', 'STREAM 4 (200, FIN)'],
+  ['STREAM 0 (DATA / 2/3)', 'STREAM 0 (2/3)'],
+  ['STREAM 0 (DATA / 3/3, FIN)', 'STREAM 0 (3/3, FIN)'],
+]
+function shortFrames(frames: string): string {
+  return LABEL_ABBREVIATIONS.reduce((text, [full, short]) => text.replace(full, short), frames)
+}
+
 function packet(spec: PacketSpec): Message {
   const long = spec.type !== '1-RTT'
   const message: Message = {
     id: spec.id,
     from: spec.from,
     to: spec.to,
-    label: `${spec.type}[${String(spec.pn)}]: ${spec.frames}`,
+    label: `${spec.type}[${String(spec.pn)}]: ${shortFrames(spec.frames)}`,
     status: spec.status ?? 'delivered',
     encrypted: spec.type !== 'Initial',
     fields: [
@@ -197,8 +211,10 @@ function packet(spec: PacketSpec): Message {
   return spec.retransmitOf === undefined ? message : { ...message, retransmitOf: spec.retransmitOf }
 }
 
-/** 送ったパケット番号の表（空間ごと。捨てた空間は discarded） */
-/** 呼ぶのは、そのステップの next(...) をすべて済ませたあと（その時点の番号を写す） */
+/**
+ * 送ったパケット番号の表（空間ごと。捨てた空間は discarded）。
+ * 呼ぶのは、そのステップの next(...) をすべて済ませたあと（その時点の番号を写す）
+ */
 function pnTable(
   initial: readonly number[] | null,
   handshake: readonly number[] | null,
@@ -599,8 +615,8 @@ function buildSteps(options: QuicOptions): readonly Step[] {
       : { en: 'The responses arrive on their streams', ja: '応答がストリームごとに届く' },
     description: accepted
       ? {
-          en: 'The server confirms the handshake with HANDSHAKE_DONE. Now both sides drop the Handshake keys and use only 1-RTT keys.',
-          ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させる。両者は Handshake の鍵を捨て、1-RTT の鍵だけを使う。',
+          en: 'The server confirms the handshake with HANDSHAKE_DONE. The browser now drops the Handshake keys too (the server already did when it received Finished) and uses only 1-RTT keys.',
+          ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させる。ブラウザーも Handshake の鍵を捨て（サーバーは Finished を受け取ったときに捨てた）、1-RTT の鍵だけを使う。',
         }
       : loss === 'stream'
         ? {
@@ -608,8 +624,8 @@ function buildSteps(options: QuicOptions): readonly Step[] {
             ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させ、応答を送る。ストリーム 0 の最初のパケットは失われるが、ストリーム 4 の style.css の応答は全部届き、すぐに使える。QUIC はストリームごとに別々に渡すので、ストリーム 0 の抜けがストリーム 4 を止めない。',
           }
         : {
-            en: 'The server confirms the handshake with HANDSHAKE_DONE and sends the responses as HTTP/3 HEADERS and DATA frames inside STREAM frames. Both sides now drop the Handshake keys.',
-            ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させ、応答を HTTP/3 の HEADERS と DATA のフレームとして STREAM フレームに入れて送る。両者は Handshake の鍵を捨てる。',
+            en: 'The server confirms the handshake with HANDSHAKE_DONE and sends the responses as HTTP/3 HEADERS and DATA frames inside STREAM frames. The browser now drops the Handshake keys too (the server already did when it received Finished).',
+            ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させ、応答を HTTP/3 の HEADERS と DATA のフレームとして STREAM フレームに入れて送る。ブラウザーも Handshake の鍵を捨てる（サーバーは Finished を受け取ったときに捨てた）。',
           },
     events: [
       send(done),
