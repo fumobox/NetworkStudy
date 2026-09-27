@@ -130,6 +130,24 @@ describe('SequenceDiagram', () => {
     expect(screen.getByRole('button', { name: /rejected/ })).toHaveClass('text-destructive')
   })
 
+  it('現在のステップの届いたメッセージはブランドの色、それより前は通常の色', () => {
+    renderDiagram({ stepIndex: 1 })
+    const current = document.querySelector('[data-current="true"]')
+    expect(current).toHaveClass('text-primary')
+    expect(current?.getAttribute('data-status')).toBe('delivered')
+    expect(screen.getByRole('button', { name: /lost/ })).toHaveClass('text-destructive')
+  })
+
+  it('アクターの見出しとライフラインは、種類ごとの色', () => {
+    renderDiagram()
+    const header = (kind: string) => document.querySelector(`g[data-kind="${kind}"]`)
+    expect(header('client')?.querySelector('text')).toHaveClass('fill-tone-blue')
+    expect(header('client')?.querySelector('line')).toHaveClass('stroke-tone-blue')
+    expect(header('server')?.querySelector('rect')).toHaveClass('fill-tone-violet-soft')
+    // 名前も表示する（色だけに頼らない）
+    expect(header('server')).toHaveTextContent('Server')
+  })
+
   it('矢印の向きとロスの位置', () => {
     renderDiagram()
     const lines = (name: RegExp) => screen.getByRole('button', { name }).querySelector('line')

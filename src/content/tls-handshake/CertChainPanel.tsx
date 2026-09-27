@@ -122,7 +122,7 @@ function CheckItem({ label, value }: { label: string; value: string }) {
   const t = useText()
   const result =
     value === CHECK_OK
-      ? { icon: Check, text: TEXT.results.ok, className: 'text-foreground' }
+      ? { icon: Check, text: TEXT.results.ok, className: 'text-success' }
       : value === CHECK_NG
         ? { icon: X, text: TEXT.results.ng, className: 'font-semibold text-destructive' }
         : value === CANNOT_CHECK

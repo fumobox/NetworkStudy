@@ -81,6 +81,11 @@ describe('ActorStatePanel', () => {
     expect(within(section).queryByText('Secret')).toBeNull()
   })
 
+  it('アクターの名前の前に、シーケンス図と同じ種類の色の印を付ける', () => {
+    renderPanel(0)
+    expect(document.querySelector('[data-kind="client"]')).toHaveClass('bg-tone-blue')
+  })
+
   it('このステップで変わった値を強調し、読み上げ用のテキストでも示す', () => {
     renderPanel(0)
     const state = screen.getByText('SYN_SENT').closest('[data-changed]')

@@ -1,3 +1,4 @@
+import { Network } from 'lucide-react'
 import { Link } from 'react-router'
 import { localePath, useLocale, useMessages } from '@/lib/i18n'
 import { ColorSchemeToggle } from './ColorSchemeToggle'
@@ -13,7 +14,11 @@ export function Header() {
       <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-4">
         <div className="flex items-center gap-1">
           <MobileNav />
-          <Link to={localePath(locale)} className="font-heading text-lg font-semibold">
+          <Link
+            to={localePath(locale)}
+            className="flex items-center gap-2 font-heading text-lg font-semibold text-primary"
+          >
+            <Network aria-hidden className="size-5" />
             {m.common.siteName}
           </Link>
         </div>

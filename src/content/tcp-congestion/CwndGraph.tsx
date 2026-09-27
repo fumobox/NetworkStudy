@@ -64,7 +64,7 @@ export function CwndGraph({ derived, options }: ScenarioPanelsContext) {
               {t(TEXT.cwnd)}
             </li>
             <li className="flex items-center gap-1">
-              <svg width="24" height="8" className="text-muted-foreground">
+              <svg width="24" height="8" className="text-tone-amber">
                 <line
                   x1="0"
                   y1="4"
@@ -146,7 +146,7 @@ export function CwndGraph({ derived, options }: ScenarioPanelsContext) {
               stroke="currentColor"
               strokeWidth="2"
               strokeDasharray="6 4"
-              className="text-muted-foreground"
+              className="text-tone-amber"
             />
             <g className="text-primary">
               <polyline

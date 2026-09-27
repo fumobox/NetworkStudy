@@ -299,7 +299,7 @@ function BinaryCompare({ destination, route }: { destination: number; route: Rou
                           key={bitIndex}
                           className={cn(
                             octetIndex * 8 + bitIndex < route.length
-                              ? 'font-bold underline decoration-2 underline-offset-4'
+                              ? 'font-bold text-primary underline decoration-2 underline-offset-4'
                               : 'text-muted-foreground',
                           )}
                         >

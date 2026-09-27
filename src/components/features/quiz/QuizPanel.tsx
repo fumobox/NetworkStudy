@@ -100,13 +100,13 @@ function QuestionView({ question, index, total, selectedId, onAnswer }: Question
                 }}
                 className={cn(
                   'h-auto w-full justify-start py-2 text-left whitespace-normal',
-                  answered && correct && 'border-primary bg-accent',
+                  answered && correct && 'border-success bg-success-soft',
                   answered && selected && !correct && 'border-destructive text-destructive',
                   // 回答後は押せないので、ホバーや押下の見た目も出さない
                   answered && 'pointer-events-none',
                 )}
               >
-                {answered && correct && <Check aria-hidden className="text-primary" />}
+                {answered && correct && <Check aria-hidden className="text-success" />}
                 {answered && selected && !correct && <X aria-hidden />}
                 <span>{text}</span>
               </Button>
@@ -118,7 +118,7 @@ function QuestionView({ question, index, total, selectedId, onAnswer }: Question
       <div role="status" className="space-y-1 text-sm">
         {answered && (
           <>
-            <p className={cn('font-semibold', isCorrect ? 'text-primary' : 'text-destructive')}>
+            <p className={cn('font-semibold', isCorrect ? 'text-success' : 'text-destructive')}>
               {isCorrect ? m.quiz.correct : m.quiz.incorrect}
               {!isCorrect && correctChoice !== undefined && (
                 <span className="ml-1 font-normal text-foreground">

@@ -45,7 +45,7 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
               className={cn(
                 'rounded-md border px-1.5 py-0.5 text-xs',
                 message.status === 'delivered'
-                  ? 'text-muted-foreground'
+                  ? 'border-success/60 text-success'
                   : 'border-destructive text-destructive',
               )}
             >
