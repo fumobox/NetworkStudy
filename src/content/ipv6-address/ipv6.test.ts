@@ -41,6 +41,11 @@ describe('parseIPv6（RFC 4291 §2.2）', () => {
     expect(parseIPv6('fe80::')).toEqual([0xfe80, 0, 0, 0, 0, 0, 0, 0])
     expect(parseIPv6('::ffff:192.0.2.1')).toEqual([0, 0, 0, 0, 0, 0xffff, 0xc000, 0x0201])
     expect(parseIPv6('  ::1  ')).toEqual([0, 0, 0, 0, 0, 0, 0, 1])
+    // :: で 1 つのグループだけを省いた表記も読める（RFC 4291。出力では使わない、RFC 5952 §4.2.2）
+    expect(parseIPv6('::1:2:3:4:5:6:7')).toEqual([0, 1, 2, 3, 4, 5, 6, 7])
+    expect(parseIPv6('1:2:3:4:5:6:7::')).toEqual([1, 2, 3, 4, 5, 6, 7, 0])
+    expect(parseIPv6('1:2:3:4:5:6:1.2.3.4')).toEqual([1, 2, 3, 4, 5, 6, 0x102, 0x304])
+    expect(parseIPv6('1::1.2.3.4')).toEqual([1, 0, 0, 0, 0, 0, 0x102, 0x304])
   })
 
   it('正しくない表記は null', () => {
@@ -56,6 +61,13 @@ describe('parseIPv6（RFC 4291 §2.2）', () => {
       '::ffff:256.0.0.1',
       '192.0.2.1::1',
       'fe80::1%eth0',
+      '1:::2',
+      ':::',
+      '::1.2.3.4:5',
+      '::ffff:1.2.3',
+      '::ffff:1.2.3.4.5',
+      // IPv4 の部分の先頭の 0 は認めない（8 進数と読まれるおそれがある）
+      '::ffff:01.2.3.4',
     ]) {
       expect(parseIPv6(text), text).toBeNull()
     }
@@ -78,6 +90,8 @@ describe('formatFull / formatCanonical（RFC 5952）', () => {
 
   it('§4.2.2 0 が 1 つだけなら :: にしない', () => {
     expect(canonical('2001:db8:0:1:1:1:1:1')).toBe('2001:db8:0:1:1:1:1:1')
+    expect(canonical('::1:2:3:4:5:6:7')).toBe('0:1:2:3:4:5:6:7')
+    expect(canonical('1:2:3:4:5:6:7::')).toBe('1:2:3:4:5:6:7:0')
   })
 
   it('§4.2.3 同じ長さなら最初の続きを :: にする', () => {
@@ -92,6 +106,8 @@ describe('formatFull / formatCanonical（RFC 5952）', () => {
 
   it('§5 IPv4 射影アドレスは末尾を IPv4 の表記で書く', () => {
     expect(canonical('0:0:0:0:0:ffff:c000:201')).toBe('::ffff:192.0.2.1')
+    // 廃止された IPv4 互換アドレス（::/96）は IPv4 の表記にしない
+    expect(canonical('::1.2.3.4')).toBe('::102:304')
   })
 })
 
@@ -107,8 +123,16 @@ describe('classify（RFC 4291 §2.4 ほか）', () => {
     ['2001:db8::1', 'documentation', '2001:db8::/32'],
     ['3fff:123::1', 'documentation', '3fff::/20'],
     ['2400:cb00::1', 'globalUnicast', '2000::/3'],
-    ['fec0::1', 'reserved', '-'],
-    ['::2', 'reserved', '-'],
+    ['fec0::1', 'reserved', null],
+    ['::2', 'reserved', null],
+    ['::1.2.3.4', 'reserved', null],
+    ['3fff:fff::1', 'documentation', '3fff::/20'],
+    ['3fff:1000::1', 'globalUnicast', '2000::/3'],
+    ['2001:db9::1', 'globalUnicast', '2000::/3'],
+    ['4000::1', 'reserved', null],
+    ['1fff::1', 'reserved', null],
+    ['fe00::1', 'reserved', null],
+    ['fbff::1', 'reserved', null],
   ])('%s は %s（%s）', (text, kind, range) => {
     expect(classify(groups(text))).toEqual({ kind, range })
   })
@@ -120,6 +144,14 @@ describe('マルチキャスト（RFC 4291 §2.7、§2.7.1、RFC 2464 §7）', (
     expect(multicastScope(groups('ff05::2'))).toBe('siteLocal')
     expect(multicastScope(groups('ff0e::101'))).toBe('global')
     expect(multicastScope(groups('ff01::1'))).toBe('interfaceLocal')
+    expect(multicastScope(groups('ff03::1'))).toBe('realmLocal')
+    expect(multicastScope(groups('ff04::1'))).toBe('adminLocal')
+    expect(multicastScope(groups('ff08::1'))).toBe('organizationLocal')
+    expect(multicastScope(groups('ff00::1'))).toBe('reserved')
+    expect(multicastScope(groups('ff0f::1'))).toBe('reserved')
+    expect(multicastScope(groups('ff06::1'))).toBe('unassigned')
+    // フラグ（上位 4 ビット）は scope に関係しない
+    expect(multicastScope(groups('ff12::1'))).toBe('linkLocal')
   })
 
   it('よく使うグループ', () => {
@@ -127,6 +159,9 @@ describe('マルチキャスト（RFC 4291 §2.7、§2.7.1、RFC 2464 §7）', (
     expect(wellKnownGroup(groups('ff02::2'))).toBe('allRouters')
     expect(wellKnownGroup(groups('ff02::1:ff00:530a'))).toBe('solicitedNode')
     expect(wellKnownGroup(groups('ff02::fb'))).toBeNull()
+    expect(wellKnownGroup(groups('ff05::1'))).toBeNull()
+    expect(wellKnownGroup(groups('ff02::1:fe00:1'))).toBeNull()
+    expect(wellKnownGroup(groups('ff02::1:ffff:ffff'))).toBe('solicitedNode')
   })
 
   it('要請ノードマルチキャストアドレスは、ff02::1:ff と下位 24 ビット', () => {
@@ -150,6 +185,14 @@ describe('プレフィックスとインターフェース ID', () => {
     expect(formatCanonical(networkPrefix(address, 0))).toBe('::')
     expect(networkPrefix(address, 128)).toEqual(address)
     expect(formatCanonical(interfaceId(address, 128))).toBe('::')
+    expect(interfaceId(address, 0)).toEqual(address)
+    const ones = groups('ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff')
+    expect(formatCanonical(networkPrefix(ones, 1))).toBe('8000::')
+    expect(formatCanonical(networkPrefix(ones, 15))).toBe('fffe::')
+    expect(formatCanonical(networkPrefix(ones, 17))).toBe('ffff:8000::')
+    expect(formatCanonical(networkPrefix(ones, 127))).toBe(
+      'ffff:ffff:ffff:ffff:ffff:ffff:ffff:fffe',
+    )
   })
 })
 
@@ -169,6 +212,9 @@ describe('MAC アドレスと EUI-64（RFC 4291 付録 A、RFC 2464 §4）', () 
   it('MAC アドレスの表記', () => {
     expect(parseMac('00:00:5e:00:53')).toBeNull()
     expect(parseMac('zz:00:5e:00:53:0a')).toBeNull()
+    expect(parseMac('00:00:5e:00:53:0a:01')).toBeNull()
+    // 区切りはそろえる
+    expect(parseMac('00:00-5e:00-53:0a')).toBeNull()
     expect(formatMac([0, 0, 0x5e, 0, 0x53, 0x0a])).toBe('00:00:5e:00:53:0a')
   })
 })
@@ -183,6 +229,15 @@ describe('readIpv6Query', () => {
       address: DEFAULT_ADDRESS,
       prefix: DEFAULT_PREFIX,
     })
+    for (const [query, prefix] of [
+      ['prefix=0', 0],
+      ['prefix=128', 128],
+      ['prefix=064', DEFAULT_PREFIX],
+      ['prefix=-1', DEFAULT_PREFIX],
+    ] as const) {
+      expect(readIpv6Query(new URLSearchParams(query)).prefix, query).toBe(prefix)
+    }
+    expect(readIpv6Query(new URLSearchParams('address=%20FE80::1%20')).address).toBe('FE80::1')
     expect(readIpv6Query(new URLSearchParams('prefix='))).toEqual({
       address: DEFAULT_ADDRESS,
       prefix: DEFAULT_PREFIX,

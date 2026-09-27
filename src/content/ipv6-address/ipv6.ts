@@ -12,19 +12,33 @@
  *   RFC 3587・IANA（グローバルユニキャストは 2000::/3 から割り当てている）
  * - RFC 2464 §4（Ethernet の MAC アドレスからのインターフェース ID）、§7（マルチキャストの MAC アドレスは 33:33 と下位 32 ビット）
  *
- * 学習用の単純化: ゾーン ID（%eth0）、6to4、Teredo、RFC 7217 / RFC 8981 のインターフェース ID は扱わない（概要で触れる）
+ * - RFC 7346（マルチキャストの scope 3 = realm-local）
+ *
+ * 学習用の単純化: ゾーン ID（%eth0）、6to4、Teredo、RFC 7217 / RFC 8981 のインターフェース ID は扱わない（概要で触れる）。
+ * 廃止されたサイトローカル（fec0::/10、RFC 3879）と NAT64（64:ff9b::/96、RFC 6052）は「予約」に含める
  */
 import { z } from 'zod'
 
-/** 16 ビットのグループが 8 つ */
-export type Groups = readonly number[]
+/** IPv6 アドレス（16 ビットのグループが 8 つ） */
+export type Groups = readonly [number, number, number, number, number, number, number, number]
+/** 64 ビットのインターフェース ID（16 ビットのグループが 4 つ） */
+export type InterfaceId64 = readonly [number, number, number, number]
+/** MAC アドレス（6 バイト） */
+export type MacBytes = readonly [number, number, number, number, number, number]
+
+/** i 番目のグループを f(i) にしたアドレス */
+function groupsFrom(f: (i: number) => number): Groups {
+  return [f(0), f(1), f(2), f(3), f(4), f(5), f(6), f(7)]
+}
 
 export const GROUP_COUNT = 8
 export const MIN_PREFIX = 0
 export const MAX_PREFIX = 128
 
 const HEX_GROUP = /^[0-9a-f]{1,4}$/
-const IPV4 = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
+// 先頭の 0 は認めない（8 進数と読まれるおそれがある。サブネット計算の parseIPv4 と同じ）
+const OCTET = '(0|[1-9]\\d{0,2})'
+const IPV4 = new RegExp(`^${OCTET}\\.${OCTET}\\.${OCTET}\\.${OCTET}$`)
 
 /** 1 つのグループの並び（:: の片側）を読む。最後の要素は IPv4 の表記でもよい */
 function parseSide(text: string, allowIpv4: boolean): number[] | null {
@@ -61,7 +75,7 @@ export function parseIPv6(input: string): Groups | null {
   }
   if (halves.length === 1) {
     const groups = parseSide(text, true)
-    return groups?.length === GROUP_COUNT ? groups : null
+    return groups?.length === GROUP_COUNT ? groupsFrom((i) => groups[i] ?? 0) : null
   }
   const [head = '', tail = ''] = halves
   const left = parseSide(head, false)
@@ -69,8 +83,12 @@ export function parseIPv6(input: string): Groups | null {
   if (left === null || right === null || left.length + right.length > GROUP_COUNT - 1) {
     return null
   }
-  const zeros = GROUP_COUNT - left.length - right.length
-  return [...left, ...Array.from({ length: zeros }, () => 0), ...right]
+  const all = [
+    ...left,
+    ...Array.from({ length: GROUP_COUNT - left.length - right.length }, () => 0),
+    ...right,
+  ]
+  return groupsFrom((i) => all[i] ?? 0)
 }
 
 const hex = (group: number) => group.toString(16)
@@ -119,14 +137,22 @@ function compress(groups: Groups): string {
 /** RFC 5952 の正規の表記 */
 export function formatCanonical(groups: Groups): string {
   if (classify(groups).kind === 'ipv4Mapped') {
-    const high = groups[6] ?? 0
-    const low = groups[7] ?? 0
+    const [, , , , , , high, low] = groups
     return `::ffff:${[high >> 8, high & 0xff, low >> 8, low & 0xff].join('.')}`
   }
   return compress(groups)
 }
 
-/** 先頭の prefix ビットが等しいか */
+/** 表に書いた定数のアドレスを読む（書き間違いならすぐに気づけるよう例外にする） */
+function mustParse(text: string): Groups {
+  const groups = parseIPv6(text)
+  if (groups === null) {
+    throw new Error(`invalid IPv6 constant: ${text}`)
+  }
+  return groups
+}
+
+/** 先頭の length ビットが等しいか */
 function hasPrefix(groups: Groups, prefix: Groups, length: number): boolean {
   for (let bit = 0; bit < length; bit++) {
     const index = Math.floor(bit / 16)
@@ -153,50 +179,70 @@ export type AddressKind = (typeof ADDRESS_KINDS)[number]
 
 export interface Classification {
   readonly kind: AddressKind
-  /** その種類のプレフィックス（::/128、fe80::/10 など） */
-  readonly range: string
+  /** その種類のプレフィックス（::/128、fe80::/10 など）。予約は範囲を示さない */
+  readonly range: string | null
 }
 
-/** 種類を判定するための範囲。上から順に調べる */
-const RANGES: readonly (readonly [AddressKind, string, number])[] = [
-  ['unspecified', '::', 128],
-  ['loopback', '::1', 128],
-  ['ipv4Mapped', '::ffff:0:0', 96],
-  ['multicast', 'ff00::', 8],
-  ['linkLocal', 'fe80::', 10],
-  ['uniqueLocal', 'fc00::', 7],
-  ['documentation', '2001:db8::', 32],
-  ['documentation', '3fff::', 20],
-  ['globalUnicast', '2000::', 3],
+interface Range {
+  readonly kind: AddressKind
+  readonly text: string
+  readonly length: number
+  readonly groups: Groups
+}
+const range = (kind: AddressKind, text: string, length: number): Range => ({
+  kind,
+  text,
+  length,
+  groups: mustParse(text),
+})
+
+/** 種類を判定するための範囲。上から順に調べる（文書用はグローバルユニキャストより先） */
+const RANGES: readonly Range[] = [
+  range('unspecified', '::', 128),
+  range('loopback', '::1', 128),
+  range('ipv4Mapped', '::ffff:0:0', 96),
+  range('multicast', 'ff00::', 8),
+  range('linkLocal', 'fe80::', 10),
+  range('uniqueLocal', 'fc00::', 7),
+  range('documentation', '2001:db8::', 32),
+  range('documentation', '3fff::', 20),
+  range('globalUnicast', '2000::', 3),
 ]
 
 export function classify(groups: Groups): Classification {
-  for (const [kind, prefix, length] of RANGES) {
-    const prefixGroups = parseIPv6(prefix)
-    if (prefixGroups !== null && hasPrefix(groups, prefixGroups, length)) {
-      return { kind, range: `${prefix}/${String(length)}` }
-    }
-  }
-  return { kind: 'reserved', range: '-' }
+  const found = RANGES.find((candidate) => hasPrefix(groups, candidate.groups, candidate.length))
+  return found === undefined
+    ? { kind: 'reserved', range: null }
+    : { kind: found.kind, range: `${found.text}/${String(found.length)}` }
 }
 
 export const MULTICAST_SCOPES = [
   'interfaceLocal',
   'linkLocal',
+  'realmLocal',
+  'adminLocal',
   'siteLocal',
   'organizationLocal',
   'global',
-  'other',
+  'reserved',
+  'unassigned',
 ] as const
 export type MulticastScope = (typeof MULTICAST_SCOPES)[number]
 
-/** マルチキャストの scope（先頭のグループの下位 4 ビット、RFC 4291 §2.7） */
+/** マルチキャストの scope（先頭のグループの下位 4 ビット、RFC 4291 §2.7、RFC 7346） */
 export function multicastScope(groups: Groups): MulticastScope {
-  switch ((groups[0] ?? 0) & 0xf) {
+  switch (groups[0] & 0xf) {
+    case 0x0:
+    case 0xf:
+      return 'reserved'
     case 0x1:
       return 'interfaceLocal'
     case 0x2:
       return 'linkLocal'
+    case 0x3:
+      return 'realmLocal'
+    case 0x4:
+      return 'adminLocal'
     case 0x5:
       return 'siteLocal'
     case 0x8:
@@ -204,85 +250,89 @@ export function multicastScope(groups: Groups): MulticastScope {
     case 0xe:
       return 'global'
     default:
-      return 'other'
+      return 'unassigned'
   }
 }
 
 export const WELL_KNOWN_GROUPS = ['allNodes', 'allRouters', 'solicitedNode'] as const
 export type WellKnownGroup = (typeof WELL_KNOWN_GROUPS)[number]
 
+const ALL_NODES = mustParse('ff02::1')
+const ALL_ROUTERS = mustParse('ff02::2')
+const SOLICITED_NODE_PREFIX = mustParse('ff02::1:ff00:0')
+
 /** よく使うリンクローカルのマルチキャストのグループ（RFC 4291 §2.7.1） */
 export function wellKnownGroup(groups: Groups): WellKnownGroup | null {
-  const text = compress(groups)
-  if (text === 'ff02::1') {
+  if (hasPrefix(groups, ALL_NODES, 128)) {
     return 'allNodes'
   }
-  if (text === 'ff02::2') {
+  if (hasPrefix(groups, ALL_ROUTERS, 128)) {
     return 'allRouters'
   }
-  const solicited = parseIPv6('ff02::1:ff00:0')
-  return solicited !== null && hasPrefix(groups, solicited, 104) ? 'solicitedNode' : null
+  return hasPrefix(groups, SOLICITED_NODE_PREFIX, 104) ? 'solicitedNode' : null
 }
 
 /** 先頭 prefix ビットだけを残したもの（ネットワークのプレフィックス） */
 export function networkPrefix(groups: Groups, prefix: number): Groups {
-  return groups.map((group, i) => {
+  return groupsFrom((i) => {
     const bits = Math.min(16, Math.max(0, prefix - i * 16))
+    // bits が 0 のときは 16 ビットのシフトになるので、別に扱う
     const mask = bits === 0 ? 0 : (0xffff << (16 - bits)) & 0xffff
-    return group & mask
+    return (groups[i] ?? 0) & mask
   })
 }
 
 /** 先頭 prefix ビットを 0 にしたもの（インターフェース ID） */
 export function interfaceId(groups: Groups, prefix: number): Groups {
   const network = networkPrefix(groups, prefix)
-  return groups.map((group, i) => group ^ (network[i] ?? 0))
+  return groupsFrom((i) => (groups[i] ?? 0) ^ (network[i] ?? 0))
 }
 
 /** 要請ノードマルチキャストアドレス（ff02::1:ff と、下位 24 ビット） */
 export function solicitedNode(groups: Groups): Groups {
-  const high = groups[6] ?? 0
-  const low = groups[7] ?? 0
+  const [, , , , , , high, low] = groups
   return [0xff02, 0, 0, 0, 0, 1, 0xff00 | (high & 0xff), low]
 }
 
 const macHex = (byte: number) => byte.toString(16).padStart(2, '0')
 
+export function formatMac(bytes: MacBytes): string {
+  return bytes.map(macHex).join(':')
+}
+
 /** IPv6 のマルチキャストのアドレスに対応する Ethernet の MAC アドレス（33:33 と下位 32 ビット） */
 export function multicastMac(groups: Groups): string {
-  const high = groups[6] ?? 0
-  const low = groups[7] ?? 0
-  return ['33', '33', high >> 8, high & 0xff, low >> 8, low & 0xff]
-    .map((part) => (typeof part === 'string' ? part : macHex(part)))
-    .join(':')
+  const [, , , , , , high, low] = groups
+  return formatMac([0x33, 0x33, high >> 8, high & 0xff, low >> 8, low & 0xff])
 }
 
+// 区切りは : か - のどちらかにそろえる
 const MAC =
-  /^([0-9a-f]{2})[:-]([0-9a-f]{2})[:-]([0-9a-f]{2})[:-]([0-9a-f]{2})[:-]([0-9a-f]{2})[:-]([0-9a-f]{2})$/
+  /^([0-9a-f]{2})([:-])([0-9a-f]{2})\2([0-9a-f]{2})\2([0-9a-f]{2})\2([0-9a-f]{2})\2([0-9a-f]{2})$/
 
 /** MAC アドレスを 6 バイトにする。正しくなければ null */
-export function parseMac(input: string): readonly number[] | null {
+export function parseMac(input: string): MacBytes | null {
   const match = MAC.exec(input.trim().toLowerCase())
-  return match === null ? null : match.slice(1).map((byte) => Number.parseInt(byte, 16))
-}
-
-export function formatMac(bytes: readonly number[]): string {
-  return bytes.map(macHex).join(':')
+  if (match === null) {
+    return null
+  }
+  const byte = (index: number) => Number.parseInt(match[index] ?? '0', 16)
+  return [byte(1), byte(3), byte(4), byte(5), byte(6), byte(7)]
 }
 
 /** U/L ビット（最初のバイトの下から 2 ビット目） */
 export const UL_BIT = 0x02
 
-/** MAC アドレスから作る EUI-64 のインターフェース ID（4 グループ）。ff:fe を挟み、U/L ビットを反転する */
-export function eui64FromMac(mac: readonly number[]): Groups {
-  const [a = 0, b = 0, c = 0, d = 0, e = 0, f = 0] = mac
-  const bytes = [a ^ UL_BIT, b, c, 0xff, 0xfe, d, e, f]
-  return [0, 2, 4, 6].map((i) => ((bytes[i] ?? 0) << 8) | (bytes[i + 1] ?? 0))
+/** MAC アドレスから作る EUI-64 のインターフェース ID。ff:fe を挟み、U/L ビットを反転する */
+export function eui64FromMac(mac: MacBytes): InterfaceId64 {
+  const [a, b, c, d, e, f] = mac
+  return [((a ^ UL_BIT) << 8) | b, (c << 8) | 0xff, 0xfe00 | d, (e << 8) | f]
 }
 
 /** MAC アドレスから作るリンクローカルアドレス（fe80::/64 と EUI-64） */
-export function linkLocalFromMac(mac: readonly number[]): Groups {
-  return [0xfe80, 0, 0, 0, ...eui64FromMac(mac)]
+export function linkLocalFromMac(mac: MacBytes): Groups {
+  const [g4, g5, g6, g7] = eui64FromMac(mac)
+  return [0xfe80, 0, 0, 0, g4, g5, g6, g7]
 }
 
 export const DEFAULT_ADDRESS = '2001:db8:1:0:200:5eff:fe00:530a'
@@ -291,6 +341,7 @@ export const DEFAULT_PREFIX = 64
 export const ipv6QuerySchema = z.object({
   address: z
     .string()
+    .transform((text) => text.trim())
     .refine((text) => parseIPv6(text) !== null)
     .catch(DEFAULT_ADDRESS),
   // 空文字列が 0 にならないよう、数字だけの文字列に限る
