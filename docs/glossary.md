@@ -184,7 +184,6 @@
 | window update | ウィンドウの更新 | |
 | silly window syndrome | シリーウィンドウシンドローム（SWS） | |
 | delayed ACK | 遅延 ACK | |
-| receive buffer | 受信バッファー | |
 | Neighbor Discovery | 近隣探索 | |
 | neighbor cache | 近隣キャッシュ | |
 | duplicate address detection | 重複アドレス検出（DAD） | |

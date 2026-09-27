@@ -87,7 +87,7 @@ describe('tcpFlowControlScenario', () => {
         sndWnd: '4000',
         usable: '4000',
         rcvNxt: '1001',
-        buffer: '0 / 4000 bytes',
+        buffer: '0 / 4000',
         rcvWnd: '4000',
       })
       expect(stateAt(steps, 'send-window')).toMatchObject({ sndNxt: '5001', usable: '0' })
@@ -97,10 +97,18 @@ describe('tcpFlowControlScenario', () => {
         sndWnd: '0',
         usable: '0',
         rcvNxt: '5001',
-        buffer: '4000 / 4000 bytes',
+        buffer: '4000 / 4000',
         rcvWnd: '0',
       })
       expect(stateAt(steps, 'app-reads')).toMatchObject({ sndWnd: '4000', usable: '4000' })
+    })
+
+    it('受け入れられなかったプローブでは、SND.NXT は進めない（学習用の単純化）', () => {
+      expect(stateAt(build(), 'probe-1')).toMatchObject({
+        sndNxt: '5001',
+        usable: '0',
+        rcvWnd: '0',
+      })
     })
 
     it('ウィンドウの更新が失われても、倍の間隔の次のプローブで開く（プローブのバイトはデータとして数える）', () => {
@@ -118,6 +126,12 @@ describe('tcpFlowControlScenario', () => {
         step.events.flatMap((event) => (event.kind === 'timer' ? [event.durationMs] : [])),
       )
       expect(timers).toEqual([1000, 2000])
+      expect(stateAt(steps, 'probe-2')).toMatchObject({
+        sndUna: '5002',
+        sndWnd: '3999',
+        usable: '3999',
+        buffer: '1 / 4000',
+      })
     })
 
     it('ACK の Win と、送信側の Win（Window Scale なしの最大 65535）', () => {
@@ -147,7 +161,7 @@ describe('tcpFlowControlScenario', () => {
     it('500 バイトずつ読むなら、1000 バイト空くまでウィンドウを広げない（受信側の SWS 回避、RFC 9293 §3.8.6.2.2）', () => {
       const steps = build({ receiverApp: 'trickle' })
       expect(stateAt(steps, 'read-500')).toMatchObject({
-        buffer: '3500 / 4000 bytes',
+        buffer: '3500 / 4000',
         rcvWnd: '0',
       })
       expect(flow(steps).slice(8)).toEqual([
@@ -158,17 +172,19 @@ describe('tcpFlowControlScenario', () => {
         'DATA seq=6001 len=1000 delivered',
         'ACK 7001 win=3000 delivered',
       ])
+      expect(stateAt(steps, 'read-1000')).toMatchObject({ buffer: '3000 / 4000', rcvWnd: '1000' })
+      expect(elapsed(steps)).toBe(1000)
       expect(build({ receiverApp: 'trickle', updateLost: true })).toEqual(steps)
     })
+  })
 
-    it('ラベルは短い', () => {
-      for (const receiverApp of ['slow', 'fast', 'trickle'] as const) {
-        for (const updateLost of [false, true]) {
-          expect(
-            Math.max(...messages(build({ receiverApp, updateLost })).map((m) => m.label.length)),
-          ).toBeLessThanOrEqual(40)
-        }
+  it('ラベルは短い', () => {
+    for (const receiverApp of ['slow', 'fast', 'trickle'] as const) {
+      for (const updateLost of [false, true]) {
+        expect(
+          Math.max(...messages(build({ receiverApp, updateLost })).map((m) => m.label.length)),
+        ).toBeLessThanOrEqual(40)
       }
-    })
+    }
   })
 })

@@ -16,7 +16,8 @@
  * - 1 つのメッセージを 1 つのセグメントとして描く。輻輳ウィンドウ（cwnd）は受信ウィンドウより大きいものとする
  *   （実際に送れる量は min(cwnd, rwnd)。輻輳制御のテーマを参照）
  * - 遅延 ACK は 2 セグメントごとだけを描き、タイマー（最大 500 ミリ秒）は描かない
- * - プローブは 1 バイトの新しいデータ（実装によって違う）。送信側の SWS 回避（Nagle、RFC 896）は概要で触れるだけ
+ * - プローブは 1 バイトの新しいデータ（実装によって違う）。受け入れられなかったプローブでは SND.NXT を進めない（実際の送信側は
+ *   SND.NXT を進め、そのバイトを未確認のまま持ち、次のセグメントに含めて再送する）。送信側の SWS 回避（Nagle、RFC 896）は概要で触れるだけ
  */
 import { z } from 'zod'
 import type {
@@ -171,14 +172,13 @@ function createSimulation() {
       kind: 'stateChange',
       actorId: RECEIVER,
       key: BUFFER,
-      value: `${String(buffered)} / ${String(RCV_BUFF)} bytes`,
+      value: `${String(buffered)} / ${String(RCV_BUFF)}`,
     },
     { kind: 'stateChange', actorId: RECEIVER, key: RCV_WND, value: String(rcvWnd) },
   ]
 
   return {
     state: () => [...senderState(), ...receiverState()],
-    usable: () => Math.max(0, sndUna + sndWnd - sndNxt),
     remaining: () => END - sndNxt,
     /** データを送る。受信側が受け入れれば、受信バッファーに入る */
     data(length: number, options: { probe?: boolean; accepted?: boolean } = {}): Message {
@@ -188,8 +188,6 @@ function createSimulation() {
       // 受け入れられなかったプローブのバイトは、あとでもう一度送るので SND.NXT を進めない（学習用の単純化）
       if (accepted) {
         sndNxt = seq + length
-      }
-      if (accepted) {
         pending.push([seq, length])
       }
       const fields: PacketField[] = [
@@ -219,6 +217,8 @@ function createSimulation() {
       for (const [seq, length] of pending.splice(0, count)) {
         rcvNxt = seq + length
         buffered += length
+        // 右端を動かさない（受け取った分だけウィンドウが縮む）
+        rcvWnd = Math.max(0, rcvWnd - length)
       }
     },
     /** 受信側が今の状態で ACK を送る。届けば送信側の SND.UNA と SND.WND が変わる */
@@ -305,11 +305,11 @@ function buildSteps(options: TcpFlowControlOptions): readonly Step[] {
       id: 'window-slides',
       title: {
         en: 'The application reads at once: the window slides',
-        ja: 'アプリケーションがすぐに読む: ウィンドウがずれる',
+        ja: 'アプリケーションがすぐに読む: ウィンドウが進む',
       },
       description: {
         en: 'The receiving application reads the data as soon as it arrives, so the buffer never fills. Each ACK moves the acknowledged point forward and still advertises 4000 bytes: the right edge of the window slides forward.',
-        ja: '受信側のアプリケーションは、届いたデータをすぐに読むので、バッファーはいっぱいにならない。ACK のたびに確認応答の位置が進み、ウィンドウは 4000 バイトのまま。ウィンドウの右端が前へずれていく。',
+        ja: '受信側のアプリケーションは、届いたデータをすぐに読むので、バッファーはいっぱいにならない。ACK のたびに確認応答の位置が進み、ウィンドウは 4000 バイトのまま。ウィンドウの右端が前へ進んでいく。',
       },
       events: [send(ack1), send(ack2), ...sim.state()],
     })
@@ -434,8 +434,8 @@ function buildSteps(options: TcpFlowControlOptions): readonly Step[] {
     },
     description: updateLost
       ? {
-          en: 'The application finally reads all 4000 bytes, and the receiver sends a window update. But this ACK is lost. ACKs are never retransmitted, so without the persist timer both sides would now wait for each other forever.',
-          ja: 'アプリケーションがようやく 4000 バイトを全部読み、受信側はウィンドウの更新を送る。ところが、この ACK が失われる。ACK は再送されないので、パーシストタイマーがなければ、両者はいつまでもお互いを待つことになる。',
+          en: 'The application finally reads all 4000 bytes, and the receiver sends a window update. But this ACK is lost. Pure ACKs are not retransmitted, so without the persist timer both sides would now wait for each other forever.',
+          ja: 'アプリケーションがようやく 4000 バイトを全部読み、受信側はウィンドウの更新を送る。ところが、この ACK が失われる。データのない ACK は再送されないので、パーシストタイマーがなければ、両者はいつまでもお互いを待つことになる。',
         }
       : {
           en: 'The application finally reads all 4000 bytes. The receiver sends a window update: an ACK with no data that advertises 4000 bytes again.',
@@ -457,8 +457,10 @@ function buildSteps(options: TcpFlowControlOptions): readonly Step[] {
       },
       events: [persist(2 * PERSIST_MS), send(probe), send(sim.ack('probe-2-ack')), ...sim.state()],
     })
-    // 2 つ目は、1 つ目を送った後の残り（999 バイト）
-    const rest = [sim.data(MSS), sim.data(sim.remaining())]
+    const next = sim.data(MSS)
+    // 1 つ目を送った後の残り（999 バイト）
+    const last = sim.data(sim.remaining())
+    const rest = [next, last]
     sim.deliver()
     sim.shrink()
     steps.push({
@@ -480,8 +482,8 @@ function buildSteps(options: TcpFlowControlOptions): readonly Step[] {
     id: 'send-rest',
     title: { en: 'The rest is sent', ja: '残りを送る' },
     description: {
-      en: 'The usable window is 4000 bytes again, so the sender sends the last 2000 bytes. The probe byte was not accepted, so they start at 5001 again.',
-      ja: '使えるウィンドウがまた 4000 バイトになったので、送信側は残りの 2000 バイトを送る。プローブのバイトは受け入れられなかったので、また 5001 から始まる。',
+      en: 'The usable window is 4000 bytes again, so the sender sends the last 2000 bytes. The probe byte was not accepted, so they start at 5001 again (a real sender would keep that byte as unacknowledged and resend it inside this segment).',
+      ja: '使えるウィンドウがまた 4000 バイトになったので、送信側は残りの 2000 バイトを送る。プローブのバイトは受け入れられなかったので、また 5001 から始まる（実際の送信側はこのバイトを未確認のまま持ち、このセグメントに含めて再送する）。',
     },
     events: [...rest.map(send), send(sim.ack('ack-7001')), ...sim.state()],
   })
@@ -501,7 +503,7 @@ export const tcpFlowControlScenario: Scenario<TcpFlowControlOptions> = {
           value: 'slow',
           label: { en: 'Busy (reads later, all at once)', ja: '忙しい（あとでまとめて読む）' },
         },
-        { value: 'fast', label: { en: 'Reads data at once', ja: 'すぐに読む' } },
+        { value: 'fast', label: { en: 'Reads as soon as data arrives', ja: 'すぐに読む' } },
         { value: 'trickle', label: { en: 'Reads 500 bytes at a time', ja: '500 バイトずつ読む' } },
       ],
       defaultValue: 'slow',
