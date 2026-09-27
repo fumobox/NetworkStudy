@@ -1,0 +1,36 @@
+## Same origin and cross origin
+
+An **origin** is the scheme, host and port of a URL: `https://app.example.com` and `https://api.example.com` are different origins. By default, a page’s script may read responses only from its own origin (the **same-origin policy**). Otherwise any site you visit could read your mail or bank pages using your cookies.
+
+**CORS** (Cross-Origin Resource Sharing) lets a server say which other origins may read its responses. The browser adds an `Origin` header to cross-origin requests, and the server answers with `Access-Control-Allow-Origin`.
+
+## Preflight
+
+Some requests are checked before they are sent. A GET, HEAD or POST with only simple headers (a `Content-Type`, if any, must be a form encoding or `text/plain`) goes out directly. Anything else, such as a POST with `Content-Type: application/json` or a custom header, first needs a **preflight**:
+
+1. The browser sends `OPTIONS` with `Origin`, `Access-Control-Request-Method` and `Access-Control-Request-Headers`, and no cookies.
+2. The server answers with `Access-Control-Allow-Origin`, `-Allow-Methods`, `-Allow-Headers`, and optionally `-Max-Age` (how long the browser may remember the answer).
+3. Only if the answer allows it does the browser send the real request.
+
+## Cookies and `*`
+
+`Access-Control-Allow-Origin: *` allows any origin, but only for requests without credentials. If the page sends cookies (`credentials: "include"`), the server must name the exact origin and also send `Access-Control-Allow-Credentials: true`.
+
+## What CORS does not do
+
+The **browser** enforces CORS, not the server. When the check fails, the script only gets a `TypeError`; the reason appears in the developer console. A request that needs no preflight has already reached the server and been handled, so CORS does not protect a server from requests. That is the job of authentication and CSRF protection.
+
+## What to look for in the walkthrough
+
+- The `Origin` header on every request, and which `Access-Control-*` headers come back.
+- The **preflight cache** filling in after a successful preflight.
+- In the “What if…” options: a plain GET (no preflight), a server that allows `*` or nothing, and sending cookies.
+
+## About this page
+
+There is one page origin. `Access-Control-Expose-Headers`, redirects and Private Network Access are left out, and so are the limits browsers put on `Access-Control-Max-Age`. HTTP is drawn unencrypted so the headers are readable; in practice it runs over HTTPS.
+
+## References
+
+- [Fetch Standard (WHATWG)](https://fetch.spec.whatwg.org/) — “CORS protocol”, “CORS-preflight fetch”, “CORS check” (it replaced the 2014 W3C CORS Recommendation)
+- [RFC 6454: The Web Origin Concept](https://www.rfc-editor.org/rfc/rfc6454)

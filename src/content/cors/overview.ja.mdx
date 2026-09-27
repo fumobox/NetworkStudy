@@ -1,0 +1,36 @@
+## 同じオリジンと、オリジンをまたぐ要求
+
+**オリジン**は URL のスキーム・ホスト・ポートの組。`https://app.example.com` と `https://api.example.com` は別のオリジンになる。ページのスクリプトが応答を読めるのは、ふつうは自分と同じオリジンだけ（**同一オリジンポリシー**）。そうでなければ、訪れたどのサイトでも、利用者の Cookie でメールや銀行のページを読めてしまう。
+
+**CORS**（Cross-Origin Resource Sharing）は、ほかのどのオリジンに応答を読ませてよいかを、サーバーが伝えるしくみ。オリジンをまたぐ要求には、ブラウザーが `Origin` ヘッダーを付け、サーバーは `Access-Control-Allow-Origin` で答える。
+
+## プリフライト
+
+要求によっては、送る前に確かめる。GET・HEAD・POST で、ヘッダーが決まったものだけ（`Content-Type` を付けるなら、フォームの形式か `text/plain`）なら、そのまま送る。それ以外、たとえば `Content-Type: application/json` の POST や独自のヘッダー付きの要求は、先に**プリフライト**が要る。
+
+1. ブラウザーが `OPTIONS` に `Origin`、`Access-Control-Request-Method`、`Access-Control-Request-Headers` を付けて送る。Cookie は付けない。
+2. サーバーが `Access-Control-Allow-Origin`、`-Allow-Methods`、`-Allow-Headers` と、必要なら `-Max-Age`（ブラウザーが答えを覚えておいてよい時間）を返す。
+3. 答えが許していれば、ブラウザーは本番の要求を送る。
+
+## Cookie と `*`
+
+`Access-Control-Allow-Origin: *` はどのオリジンも許すが、資格情報のない要求に限る。ページが Cookie を送る（`credentials: "include"`）なら、サーバーは正確なオリジンを名指しし、`Access-Control-Allow-Credentials: true` も付ける必要がある。
+
+## CORS がしないこと
+
+CORS を強制するのは**ブラウザー**で、サーバーではない。チェックに通らないと、スクリプトには `TypeError` が返るだけで、理由は開発者ツールのコンソールに出る。プリフライトの要らない要求は、すでにサーバーに届いて処理されているので、CORS は要求からサーバーを守るしくみではない。それは認証や CSRF 対策の役目。
+
+## ステップ実行で見てほしいところ
+
+- すべての要求に付く `Origin` ヘッダーと、返ってくる `Access-Control-*` ヘッダー。
+- プリフライトが通ったあとに埋まる**プリフライトのキャッシュ**。
+- 「もしも…」のオプションで、ふつうの GET（プリフライトなし）、`*` を返すサーバーと何も返さないサーバー、Cookie を送る場合。
+
+## このページについて
+
+ページのオリジンは 1 つだけにした。`Access-Control-Expose-Headers`、リダイレクト、Private Network Access は扱わず、ブラウザーが `Access-Control-Max-Age` に設ける上限も省いた。ヘッダーを読めるよう HTTP は暗号化せずに描いているが、実際は HTTPS の上で送る。
+
+## 参考
+
+- [Fetch Standard（WHATWG）](https://fetch.spec.whatwg.org/) — “CORS protocol”、“CORS-preflight fetch”、“CORS check”（2014 年の W3C の CORS 勧告を置き換えた）
+- [RFC 6454: The Web Origin Concept](https://www.rfc-editor.org/rfc/rfc6454)

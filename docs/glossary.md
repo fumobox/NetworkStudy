@@ -35,7 +35,7 @@
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
 | HTTP のキャッシュ | Cache-Control、max-age、no-cache、no-store、s-maxage、Vary、ETag、If-None-Match、Last-Modified、If-Modified-Since、Expires、Age、Date、200 OK、304 Not Modified、GET、fresh、stale、hit、miss |
-| CORS | CORS、Origin、Access-Control-Allow-Origin、Access-Control-Allow-Credentials、Access-Control-Allow-Methods、Access-Control-Allow-Headers、Access-Control-Request-Method、Access-Control-Request-Headers、Access-Control-Max-Age、OPTIONS、POST、204 No Content、201 Created、fetch()、TypeError、credentials: include、preflight required、no preflight required |
+| CORS | CORS、Origin、Access-Control-Allow-Origin、Access-Control-Allow-Credentials、Access-Control-Allow-Methods、Access-Control-Allow-Headers、Access-Control-Request-Method、Access-Control-Request-Headers、Access-Control-Max-Age、OPTIONS、POST、204 No Content、201 Created、fetch()、TypeError、credentials: include、preflight required、no preflight required、Cookie、CSRF、Access-Control-Expose-Headers、Private Network Access |
 
 ## 3. 訳語の対応表
 
@@ -120,6 +120,7 @@
 | preflight | プリフライト | |
 | credentials | 資格情報 | Cookie など。値としての `credentials: include` は翻訳しない |
 | network error | ネットワークエラー | |
+| same-origin policy | 同一オリジンポリシー | |
 | home router / ISP router | 家庭のルーター／ISP のルーター | |
 | hop | ホップ | |
 | probe | プローブ | traceroute が送るパケット |
