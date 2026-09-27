@@ -36,6 +36,7 @@
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
 | HTTP のキャッシュ | Cache-Control、max-age、no-cache、no-store、s-maxage、Vary、ETag、If-None-Match、Last-Modified、If-Modified-Since、Expires、Age、Date、200 OK、304 Not Modified、GET、fresh、stale、hit、miss |
 | CORS | CORS、Origin、Access-Control-Allow-Origin、Access-Control-Allow-Credentials、Access-Control-Allow-Methods、Access-Control-Allow-Headers、Access-Control-Request-Method、Access-Control-Request-Headers、Access-Control-Max-Age、OPTIONS、POST、204 No Content、201 Created、fetch()、TypeError、credentials: include、preflight required、no preflight required、Cookie、CSRF、Access-Control-Expose-Headers、Private Network Access |
+| HTTP/2 | HTTP/2、HTTP/1.1、h2、ALPN、HPACK、SETTINGS、HEADERS、DATA、WINDOW_UPDATE、PRIORITY、PUSH_PROMISE、GOAWAY、END_STREAM、END_HEADERS、ENABLE_PUSH、MAX_CONCURRENT_STREAMS、Stream ID、:method、:scheme、:authority、:path、:status、keep-alive、half-closed (local)、closed、in flight、waiting、done、in order、1 segment missing、User-Agent、QUIC |
 
 ## 3. 訳語の対応表
 
@@ -132,7 +133,14 @@
 | application / presentation / session layer | アプリケーション層／プレゼンテーション層／セッション層 | OSI の第 7〜5 層 |
 | transport / network / data link / physical layer | トランスポート層／ネットワーク層／データリンク層／物理層 | OSI の第 4〜1 層 |
 | internet layer / link layer | インターネット層／リンク層 | TCP/IP の層 |
-| frame | フレーム | データリンク層の単位 |
+| frame | フレーム | データリンク層の単位。HTTP/2 のフレームも同じ語で、文脈で区別する |
+| stream | ストリーム | HTTP/2・QUIC の、1 つの要求と応答のやり取り |
+| multiplexing | 多重化 | |
+| head-of-line blocking | ヘッドオブラインブロッキング | 初出で「（HOL ブロッキング）」と添えてもよい |
+| connection preface | 序文（接続の序文） | HTTP/2 |
+| static table / dynamic table | 静的テーブル／動的テーブル | HPACK |
+| receive buffer | 受信バッファー | |
+| pipelining | パイプライン | |
 | trailer | トレーラー | |
 | MAC address | MAC アドレス | |
 | routing | 経路制御 | |
