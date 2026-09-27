@@ -78,7 +78,7 @@
 | exponential backoff | 指数バックオフ | |
 | timer | タイマー | |
 | loss / lost | ロス／失われる | |
-| port | ポート | |
+| port | ポート | スイッチのポートにも使う（TCP のポート番号とは文脈で区別する） |
 | congestion control | 輻輳制御 | |
 | sender / receiver | 送信側／受信側 | |
 | round (round trip) | ラウンド（往復） | 輻輳制御のテーマで、1 RTT 分のやり取り |
@@ -123,7 +123,6 @@
 | ageing / ageing time | エージング／エージングタイム | |
 | forwarding / filtering | 転送／フィルタリング | |
 | unknown unicast | 宛先不明のユニキャスト | |
-| port | ポート | スイッチのポート（TCP のポート番号とは文脈で区別する） |
 | hub | ハブ | |
 | fresh / stale | 新しい／古い | 状態の値としては fresh / stale のまま書く |
 | revalidation / conditional request | 再検証（確かめる）／条件付きの要求 | |

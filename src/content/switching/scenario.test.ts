@@ -125,6 +125,27 @@ describe('switchingScenario', () => {
       expect(deriveState(switchingScenario.actors, steps, steps.length - 1).elapsedMs).toBe(300_000)
     })
 
+    it('ブロードキャスト + エージング: ARP のあと表が空になり、Echo Request はまた流される', () => {
+      const steps = build({ firstFrame: 'broadcast', aging: true })
+      expect(frames(steps).map(([from, to, label]) => `${from}→${to} ${label}`)).toEqual([
+        'pc→switch ARP who-has 192.168.1.1',
+        'switch→router ARP who-has 192.168.1.1',
+        'switch→pc2 ARP who-has 192.168.1.1',
+        `router→switch ARP is-at ${ROUTER}`,
+        `switch→pc ARP is-at ${ROUTER}`,
+        `pc→switch Echo Request → ${ROUTER}`,
+        `switch→router Echo Request → ${ROUTER}`,
+        `switch→pc2 Echo Request → ${ROUTER}`,
+      ])
+    })
+
+    it('学習済みのときの表は、ルーター・PC の順（最初からある行が先）', () => {
+      expect(switchAt(build({ known: true }), 'reply').table).toEqual([
+        [ROUTER, '2'],
+        [PC, '1'],
+      ])
+    })
+
     it('ラベルは短い（2 レーンの間に収まる）', () => {
       for (const firstFrame of ['unicast', 'broadcast'] as const) {
         expect(

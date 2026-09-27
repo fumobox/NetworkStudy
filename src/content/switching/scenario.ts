@@ -7,8 +7,8 @@
  *     （フラッディング）。ブロードキャストの宛先はいつも流す
  *   - clause 8.7 "The Learning Process": 受け取ったフレームの送信元の MAC アドレスと、受け取ったポートを表に記録する
  *     （宛先からは学習しない）
- *   - clause 8.7.3 "Ageing of dynamic filtering entries": しばらく使われない行は消える（既定 300 秒）
- *   - clause 8.8 "The Filtering Database": MAC アドレスとポートの表
+ *   - clause 8.8 "The Filtering Database": MAC アドレスとポートの表。8.8.3 "Ageing of Dynamic Filtering Entries":
+ *     しばらく使われない行は消える（既定 300 秒）
  * - RFC 4188（Bridge MIB）: dot1dTpFdbTable（MAC アドレスとポートの表）、dot1dTpAgingTime（範囲 10〜1,000,000 秒、
  *   「802.1D-1998 recommends a default of 300 seconds」）
  * - RFC 9542 §2.1.2（説明用の MAC アドレス 00-00-5E-00-53-00〜FF）、付録 B（EtherType 0x0800 = IPv4、0x0806 = ARP）
@@ -332,18 +332,23 @@ function buildSteps(options: SwitchingOptions): readonly Step[] {
   steps.push(
     {
       id: 'reply',
-      title: {
-        en: 'The router answers; the switch learns port 2',
-        ja: 'ルーターが答え、スイッチがポート 2 を学習する',
-      },
-      description: known
+      title: broadcast
         ? {
-            en: 'The router’s answer enters on port 2. The router is already in the table; seeing it again refreshes the entry so that it does not age out.',
-            ja: 'ルーターの答えはポート 2 から入る。ルーターはすでに表にあり、もう一度見たことで行が新しくなり、エージングで消えなくなる。',
+            en: 'The router answers; the switch learns port 2',
+            ja: 'ルーターが答え、スイッチがポート 2 を学習する',
           }
         : {
-            en: 'The router’s answer enters the switch on port 2. The switch learns again from the source address: 00:00:5e:00:53:01 is behind port 2.',
-            ja: 'ルーターの答えはポート 2 からスイッチに入る。スイッチはまた送信元のアドレスから学習する。00:00:5e:00:53:01 はポート 2 の先にいる。',
+            en: 'The reply comes back through the router; the switch learns port 2',
+            ja: '応答がルーター経由で戻り、スイッチがポート 2 を学習する',
+          },
+      description: known
+        ? {
+            en: `${broadcast ? 'The router’s answer' : 'The Echo Reply from 192.0.2.10, relayed by the router,'} enters on port 2. Its source MAC address is the router’s, which is already in the table; seeing it again refreshes the entry so that it does not age out.`,
+            ja: `${broadcast ? 'ルーターの答え' : 'ルーターが中継した 192.0.2.10 からの Echo Reply'}はポート 2 から入る。送信元の MAC アドレスはルーターのもので、すでに表にある。もう一度見たことで行が新しくなり、エージングで消えなくなる。`,
+          }
+        : {
+            en: `${broadcast ? 'The router’s answer' : 'The Echo Reply from 192.0.2.10, relayed by the router,'} enters the switch on port 2. The switch learns again from the source address: 00:00:5e:00:53:01 (the router) is behind port 2.`,
+            ja: `${broadcast ? 'ルーターの答え' : 'ルーターが中継した 192.0.2.10 からの Echo Reply'}はポート 2 からスイッチに入る。スイッチはまた送信元のアドレスから学習する。00:00:5e:00:53:01（ルーター）はポート 2 の先にいる。`,
           },
       events: [
         send(frame('reply', ROUTER, SWITCH, answer, { kind: 'ingress', port: 2 })),
@@ -356,7 +361,7 @@ function buildSteps(options: SwitchingOptions): readonly Step[] {
       title: { en: 'The answer goes to port 1 only', ja: '答えはポート 1 にだけ送る' },
       description: {
         en: 'The destination 00:00:5e:00:53:0a was learned in the first step, so the switch sends the answer out of port 1 only. No flooding, and PC 2 receives nothing.',
-        ja: '宛先の 00:00:5e:00:53:0a は最初のステップで学習済みなので、スイッチは答えをポート 1 にだけ送る。フラッディングはせず、PC 2 には何も届かない。',
+        ja: '宛先の 00:00:5e:00:53:0a は最初のステップで学習済みなので、スイッチは答えをポート 1 にだけ送る。フラッディング（ほかの全ポートに流すこと）はせず、PC 2 には何も届かない。',
       },
       events: [
         send(frame('forward-reply', SWITCH, PC, answer, { kind: 'egress', port: 1 })),
@@ -371,8 +376,8 @@ function buildSteps(options: SwitchingOptions): readonly Step[] {
       id: 'ageing',
       title: { en: 'Nothing is sent for 5 minutes', ja: '5 分間、何も送られない' },
       description: {
-        en: 'Entries that are not refreshed are removed after the ageing time (300 seconds by default). This way, a device that moves to another port is learned again instead of being sent to the old port forever.',
-        ja: '新しくならない行は、エージングタイム（既定では 300 秒）が過ぎると消える。こうすると、別のポートに移った機器も、古いポートに送られ続けることなく学習し直せる。',
+        en: 'Entries that are not refreshed are removed after the ageing time (300 seconds by default). This way, frames to a device that moved to another port are flooded again and reach it, and the new port is learned when it sends, instead of frames going to the old port forever.',
+        ja: '新しくならない行は、エージングタイム（既定では 300 秒）が過ぎると消える。こうすると、別のポートに移った機器にも、フレームがまた流されて届き、その機器が送ったときに新しいポートを学習できる。古いポートに送られ続けることはない。',
       },
       events: [
         { kind: 'timer', actorId: SWITCH, name: 'ageing', durationMs: AGEING_MS },
@@ -393,8 +398,8 @@ function buildSteps(options: SwitchingOptions): readonly Step[] {
           ja: '表はまた空になったので、スイッチはもう一度ポート 1 を学習し、最初と同じようにフレームを流す。',
         }
       : {
-          en: 'The PC sends the next Echo Request. The switch knows the router is behind port 2 and sends the frame there only. From now on, traffic between the PC and the router never reaches PC 2.',
-          ja: 'PC が次の Echo Request を送る。スイッチはルーターがポート 2 の先にいると知っているので、そこにだけ送る。これ以降、PC とルーターの間の通信は PC 2 に届かない。',
+          en: `The PC sends ${broadcast ? 'its Echo Request' : 'the next Echo Request'}. The switch knows the router is behind port 2 and sends the frame there only. From now on, traffic between the PC and the router never reaches PC 2.`,
+          ja: `PC が${broadcast ? '' : '次の '}Echo Request を送る。スイッチはルーターがポート 2 の先にいると知っているので、そこにだけ送る。これ以降、PC とルーターの間の通信は PC 2 に届かない。`,
         },
     events: [
       send(frame('frame2', PC, SWITCH, ECHO_REQUEST, { kind: 'ingress', port: 1 })),
