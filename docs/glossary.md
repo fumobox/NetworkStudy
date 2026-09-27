@@ -23,6 +23,7 @@
 |---|---|
 | TCP のフラグ・セグメント | SYN、ACK、SYN, ACK、RST、RST, ACK、FIN |
 | TCP の状態 | CLOSED、LISTEN、SYN-SENT、SYN-RECEIVED、ESTABLISHED、FIN-WAIT-1、FIN-WAIT-2、CLOSE-WAIT、CLOSING、LAST-ACK、TIME-WAIT |
+| TCP の再送 | SACK、SACK-Permitted、DupThresh、NewReno、RACK、TLP、IsLost、in flight、ACKed、SACKed、retransmitted |
 | TCP の変数・パラメーター | ISS、IRS、SND.NXT、RCV.NXT、MSS、RTO、RTT、MSL、cwnd、ssthresh、SND.UNA、SND.WND、RCV.WND、RCV.BUFF、win、Window probe、persist、Window Scale、SWS、Nagle |
 | DNS のメッセージ・フィールド | QNAME、QTYPE、ID、QR、RD、RA、AA、RCODE、NOERROR、NXDOMAIN、SERVFAIL、TTL |
 | DNS のレコード | A、AAAA、NS、CNAME、SOA、MX |
@@ -190,6 +191,12 @@
 | stateless address autoconfiguration | ステートレスアドレス自動設定（SLAAC） | |
 | Router / Neighbor Solicitation, Advertisement | （翻訳しない） | 初出で「ルーターを探す／知らせる」「近隣に尋ねる／知らせる」と説明する |
 | unspecified address | 未指定アドレス | :: |
+| cumulative ACK | 累積の確認応答 | |
+| partial ACK | 部分的な確認応答 | |
+| hole | 抜け | 受け取っていない範囲 |
+| out of order | 順序が入れ替わった | |
+| scoreboard | スコアボード | |
+| tail loss | 末尾のロス | |
 | replay (attack) | リプレイ（リプレイ攻撃） | 「再送」は送り手の正当な再送信だけに使う |
 | server push | サーバープッシュ | HTTP/2 |
 | trailer | トレーラー | |
