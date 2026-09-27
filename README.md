@@ -18,6 +18,10 @@ Getting on the network / ネットワークにつながるまで
 - NAT: sharing one public address / NAT: 1 つのグローバルアドレスを共有する
 - Route lookup: longest prefix match / 経路の検索: 最長一致
 
+Inside the LAN / LAN の中
+
+- Switching: how a switch learns MAC addresses / スイッチ: MAC アドレスを学習する
+
 How a web page reaches you / Web のページが届くまで
 
 - DNS name resolution / DNS の名前解決
