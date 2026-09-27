@@ -7,7 +7,7 @@ A switch floods broadcasts to every other port, so every device on it is in one 
 - An **access port** belongs to one VLAN. Frames on it have no tag; the port itself decides the VLAN. PCs are normally on access ports.
 - A **trunk port** carries several VLANs on one link, for example to another switch or to a router. Each frame gets an **802.1Q tag** so the other end knows which VLAN it belongs to.
 
-The 4-byte tag sits where the EtherType would be: `TPID` 0x8100 marks it, followed by `PCP` (3 bits of priority), `DEI` (1 bit) and the 12-bit **VLAN ID** (VID 1 to 4094; 0 and 4095 are reserved). The switch adds the tag when a frame goes onto a trunk and removes it before the frame leaves an access port.
+The 4-byte tag sits where the EtherType would be: `TPID` 0x8100 marks it, followed by `PCP` (3 bits of priority), `DEI` (1 bit) and the 12-bit **VLAN ID** (VID 1 to 4094; 0 and 4095 are reserved; 0 means the tag carries only a priority). The switch adds the tag when a frame goes onto a trunk and removes it before the frame leaves an access port.
 
 ## Between VLANs
 
