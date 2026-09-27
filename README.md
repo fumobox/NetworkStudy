@@ -22,6 +22,7 @@ Getting on the network / ネットワークにつながるまで
 Inside the LAN / LAN の中
 
 - Switching: how a switch learns MAC addresses / スイッチ: MAC アドレスを学習する
+- VLAN: one switch, separate networks / VLAN: 1 台のスイッチを別々のネットワークに分ける
 
 How a web page reaches you / Web のページが届くまで
 

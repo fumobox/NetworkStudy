@@ -36,8 +36,10 @@ import {
   TCP_CONGESTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
+  VLAN_META,
 } from './themeMeta'
 import { tlsHandshakeQuiz } from './tls-handshake/quiz'
+import { vlanQuiz } from './vlan/quiz'
 import type { ThemeModule } from './types'
 
 /**
@@ -55,6 +57,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: NAT_META, quiz: natQuiz },
   { meta: ROUTE_LOOKUP_META, quiz: routeLookupQuiz },
   { meta: SWITCHING_META, quiz: switchingQuiz },
+  { meta: VLAN_META, quiz: vlanQuiz },
   { meta: DNS_RESOLUTION_META, quiz: dnsResolutionQuiz },
   { meta: TCP_HANDSHAKE_META, quiz: tcpHandshakeQuiz },
   { meta: TLS_HANDSHAKE_META, quiz: tlsHandshakeQuiz },

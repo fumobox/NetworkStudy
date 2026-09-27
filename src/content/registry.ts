@@ -17,6 +17,7 @@ import { tcpCloseTheme } from './tcp-close'
 import { tcpCongestionTheme } from './tcp-congestion'
 import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
+import { vlanTheme } from './vlan'
 import type { ThemeModule } from './types'
 
 /** 公開するテーマ（themeMeta.ts の THEME_META と同じ順・同じ id。registry.test.ts で確認する） */
@@ -30,6 +31,7 @@ export const THEMES: readonly ThemeModule[] = [
   natTheme,
   routeLookupTheme,
   switchingTheme,
+  vlanTheme,
   dnsResolutionTheme,
   tcpHandshakeTheme,
   tlsHandshakeTheme,

@@ -128,7 +128,7 @@ export const en = {
     },
     lan: {
       title: 'Inside the LAN',
-      lead: 'What a switch does with each frame: how it learns which port each device is behind, and when it sends a frame to every port.',
+      lead: 'What a switch does with each frame, and how VLANs split one switch into separate networks.',
     },
     web: {
       title: 'How a web page reaches you',

@@ -1,0 +1,30 @@
+## One switch, several networks
+
+A switch floods broadcasts to every other port, so every device on it is in one **broadcast domain**. A **VLAN** (virtual LAN) splits one switch into several separate networks: each port is assigned to a VLAN, and the switch forwards and floods frames only between ports of the same VLAN. Its MAC address table is kept per VLAN.
+
+## Access ports and trunks
+
+- An **access port** belongs to one VLAN. Frames on it have no tag; the port itself decides the VLAN. PCs are normally on access ports.
+- A **trunk port** carries several VLANs on one link, for example to another switch or to a router. Each frame gets an **802.1Q tag** so the other end knows which VLAN it belongs to.
+
+The 4-byte tag sits where the EtherType would be: `TPID` 0x8100 marks it, followed by `PCP` (3 bits of priority), `DEI` (1 bit) and the 12-bit **VLAN ID** (VID 1 to 4094; 0 and 4095 are reserved). The switch adds the tag when a frame goes onto a trunk and removes it before the frame leaves an access port.
+
+## Between VLANs
+
+A switch never moves a frame from one VLAN to another. Each VLAN is usually its own IP subnet, so traffic between them goes through a **router**, just like traffic between any two networks. Here the router is connected to a trunk and has one **subinterface** per VLAN (a “router on a stick”). An **L3 switch** can do the same routing inside the switch itself.
+
+## What to look for in the walkthrough
+
+- Which ports the ARP broadcast reaches, and that PC C in VLAN 20 receives nothing.
+- The `VID` field of frames on the trunk, and the missing tag on access ports.
+- The MAC address table with its VLAN column: the router is learned in both VLANs on port 4.
+- In the “What if…” options: a destination in the same VLAN (no router), and a switch without VLANs.
+
+## About this page
+
+There is one switch. Native VLANs, the Spanning Tree Protocol, and protocols that distribute VLAN settings are left out, and PCP and DEI are always 0. The router is assumed to know PC C’s MAC address already. VLAN IDs 10 and 20 are just examples; there is no documentation range for them. The switch itself is explained in the switching theme.
+
+## References
+
+- IEEE Std 802.1Q-2022, *Bridges and Bridged Networks* — clause 8.6 “The Forwarding Process”, 8.8 “The Filtering Database”, 9 “Tagged frame format”. IEEE 802 standards, including 802.1Q, can be read free of charge after registering through the [IEEE GET Program](https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68). See also the [IEEE SA page](https://standards.ieee.org/ieee/802.1Q/10323/).
+- [RFC 1812: Requirements for IP Version 4 Routers](https://www.rfc-editor.org/rfc/rfc1812) — §5.2, §5.3.1
