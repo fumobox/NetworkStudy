@@ -32,6 +32,7 @@
 | その他 | IP、IPv4、HTTP、HTTPS、URL、RFC、OSI、CIDR、Ethernet、Wi-Fi、MAC、FCS、UDP、UTF-8 |
 | ARP | ARP、who-has、is-at、HTYPE、PTYPE、HLEN、PLEN、OPER、SHA、SPA、THA、TPA、EtherType、LAN |
 | スイッチ | Ingress port、Egress port、learn、flood、forward、refresh、aged out、accepted、dropped (not my MAC)、ignored (not the target)、STP |
+| VLAN | VLAN、802.1Q、TPID、TCI、PCP、DEI、VID、PVID、access、trunk、eth0.10（サブインターフェースの名前）、on-link、gateway |
 | ICMP | ICMP、ping、traceroute、tracert、Echo Request、Echo Reply、Time Exceeded、Destination Unreachable、network unreachable、host unreachable、port unreachable、type / code、TTL |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
@@ -124,6 +125,12 @@
 | forwarding / filtering | 転送／フィルタリング | |
 | unknown unicast | 宛先不明のユニキャスト | |
 | hub | ハブ | |
+| broadcast domain | ブロードキャストドメイン | |
+| access port / trunk port | アクセスポート／トランクポート | |
+| tagged frame / tag | タグ付きフレーム／タグ | 802.1Q のタグ |
+| subinterface | サブインターフェース | |
+| router-on-a-stick | 1 本のトランクでつないだルーター | 初出で説明する |
+| L3 switch | L3 スイッチ | |
 | fresh / stale | 新しい／古い | 状態の値としては fresh / stale のまま書く |
 | revalidation / conditional request | 再検証（確かめる）／条件付きの要求 | |
 | private cache / shared cache | プライベートキャッシュ／共有キャッシュ | |
