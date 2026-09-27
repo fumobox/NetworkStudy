@@ -8,6 +8,7 @@ import { httpsOverviewTheme } from './https-overview'
 import { icmpTheme } from './icmp'
 import { natTheme } from './nat'
 import { osiModelTheme } from './osi-model'
+import { quicTheme } from './quic'
 import { routeLookupTheme } from './route-lookup'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { tcpCloseTheme } from './tcp-close'
@@ -34,6 +35,7 @@ export const THEMES: readonly ThemeModule[] = [
   httpCachingTheme,
   corsTheme,
   http2Theme,
+  quicTheme,
 ]
 
 export function findTheme(id: string | undefined): ThemeModule | undefined {

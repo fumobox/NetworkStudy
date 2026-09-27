@@ -252,9 +252,25 @@ export const HTTP2_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const QUIC_META = {
+  id: 'quic',
+  kind: 'sequence',
+  category: 'http',
+  title: {
+    en: 'QUIC and HTTP/3: handshake, 0-RTT, and loss',
+    ja: 'QUIC と HTTP/3: ハンドシェイク、0-RTT、ロス',
+  },
+  summary: {
+    en: 'How QUIC folds the transport and TLS handshakes into one round trip over UDP, sends requests with 0-RTT on a returning visit, and keeps a lost packet from stalling other streams.',
+    ja: 'QUIC が UDP の上でトランスポートと TLS のハンドシェイクを 1 往復にまとめるしくみ、再訪問のときに 0-RTT で要求を送るしくみ、失われたパケットがほかのストリームを止めない理由。',
+  },
+  difficulty: 'intermediate',
+  minutes: 15,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 …）
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -273,6 +289,7 @@ export const THEME_META = [
   HTTP_CACHING_META,
   CORS_META,
   HTTP2_META,
+  QUIC_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']

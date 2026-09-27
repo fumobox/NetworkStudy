@@ -11,8 +11,8 @@
  *   §4.6（0-RTT。§4.6.2 で拒否されたら 0-RTT のデータは届かなかったものとして扱う）、§4.9.1・§4.9.2（Initial と
  *   Handshake の鍵を捨てる時点）、§5.2（Initial の鍵は Destination Connection ID から誰でも計算できる）、§9.2（0-RTT の再送攻撃）、
  *   付録 A（例の Destination Connection ID 0x8394c8f03e515708）
- * - RFC 9002 §5.3・§6.2.1（RTT の初期値 333 ミリ秒からの PTO = 333 + 4 × 166.5 ≈ 1 秒）、§6.1.1（後のパケットが 3 つ
- *   確認されたら、確認されないパケットを失われたとみなす）
+ * - RFC 9002 §5.3・§6.2.1（RTT の初期値 333 ミリ秒からの PTO = 333 + 4 × 166.5 ≈ 1 秒）、§6.1.1（番号が 3 以上大きい
+ *   パケットが確認されたら、確認されないパケットを失われたとみなす）
  * - RFC 9114 §4.1（要求と応答は HEADERS と DATA のフレーム）、§6.1（要求ごとに 1 つの双方向ストリーム）、§10.9（0-RTT）
  * - RFC 8446 §4.6.1（NewSessionTicket）、§8（0-RTT の再送）
  *
@@ -197,8 +197,10 @@ function packet(spec: PacketSpec): Message {
   return spec.retransmitOf === undefined ? message : { ...message, retransmitOf: spec.retransmitOf }
 }
 
-/** 送ったパケット番号の表（空間ごと。捨てた空間は discarded） */
-/** 呼ぶのは、そのステップの next(...) をすべて済ませたあと（その時点の番号を写す） */
+/**
+ * 送ったパケット番号の表（空間ごと。捨てた空間は discarded）。
+ * 呼ぶのは、そのステップの next(...) をすべて済ませたあと（その時点の番号を写す）
+ */
 function pnTable(
   initial: readonly number[] | null,
   handshake: readonly number[] | null,
@@ -599,8 +601,8 @@ function buildSteps(options: QuicOptions): readonly Step[] {
       : { en: 'The responses arrive on their streams', ja: '応答がストリームごとに届く' },
     description: accepted
       ? {
-          en: 'The server confirms the handshake with HANDSHAKE_DONE. Now both sides drop the Handshake keys and use only 1-RTT keys.',
-          ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させる。両者は Handshake の鍵を捨て、1-RTT の鍵だけを使う。',
+          en: 'The server confirms the handshake with HANDSHAKE_DONE. The browser now drops the Handshake keys too (the server already did when it received Finished) and uses only 1-RTT keys.',
+          ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させる。ブラウザーも Handshake の鍵を捨て（サーバーは Finished を受け取ったときに捨てた）、1-RTT の鍵だけを使う。',
         }
       : loss === 'stream'
         ? {
@@ -608,8 +610,8 @@ function buildSteps(options: QuicOptions): readonly Step[] {
             ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させ、応答を送る。ストリーム 0 の最初のパケットは失われるが、ストリーム 4 の style.css の応答は全部届き、すぐに使える。QUIC はストリームごとに別々に渡すので、ストリーム 0 の抜けがストリーム 4 を止めない。',
           }
         : {
-            en: 'The server confirms the handshake with HANDSHAKE_DONE and sends the responses as HTTP/3 HEADERS and DATA frames inside STREAM frames. Both sides now drop the Handshake keys.',
-            ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させ、応答を HTTP/3 の HEADERS と DATA のフレームとして STREAM フレームに入れて送る。両者は Handshake の鍵を捨てる。',
+            en: 'The server confirms the handshake with HANDSHAKE_DONE and sends the responses as HTTP/3 HEADERS and DATA frames inside STREAM frames. The browser now drops the Handshake keys too (the server already did when it received Finished).',
+            ja: 'サーバーは HANDSHAKE_DONE でハンドシェイクを確定させ、応答を HTTP/3 の HEADERS と DATA のフレームとして STREAM フレームに入れて送る。ブラウザーも Handshake の鍵を捨てる（サーバーは Finished を受け取ったときに捨てた）。',
           },
     events: [
       send(done),
