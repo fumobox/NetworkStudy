@@ -16,7 +16,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
 
 /**
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
- * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、lan: LAN の中（スイッチ …）、
+ * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、lan: LAN の中（スイッチ、VLAN …）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
  * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）
  */
@@ -297,9 +297,25 @@ export const IPV6_ADDRESS_META = {
   minutes: 8,
 } as const satisfies ThemeMeta
 
+export const VLAN_META = {
+  id: 'vlan',
+  kind: 'sequence',
+  category: 'lan',
+  title: {
+    en: 'VLAN: one switch, separate networks',
+    ja: 'VLAN: 1 台のスイッチを別々のネットワークに分ける',
+  },
+  summary: {
+    en: 'How VLANs keep a broadcast inside one group of ports, how an 802.1Q tag carries the VLAN ID across a trunk link, and why traffic between two VLANs has to go through a router.',
+    ja: 'VLAN がブロードキャストを同じグループのポートの中に閉じ込めるしくみ、802.1Q のタグがトランクリンクで VLAN ID を運ぶしくみ、別の VLAN との通信がルーターを通らなければならない理由。',
+  },
+  difficulty: 'intermediate',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ → VLAN …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -311,6 +327,7 @@ export const THEME_META = [
   NAT_META,
   ROUTE_LOOKUP_META,
   SWITCHING_META,
+  VLAN_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,
