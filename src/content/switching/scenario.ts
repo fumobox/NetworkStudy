@@ -344,11 +344,11 @@ function buildSteps(options: SwitchingOptions): readonly Step[] {
       description: known
         ? {
             en: `${broadcast ? 'The router’s answer' : 'The Echo Reply from 192.0.2.10, relayed by the router,'} enters on port 2. Its source MAC address is the router’s, which is already in the table; seeing it again refreshes the entry so that it does not age out.`,
-            ja: `${broadcast ? 'ルーターの答え' : 'ルーターが中継した 192.0.2.10 からの Echo Reply'}はポート 2 から入る。送信元の MAC アドレスはルーターのもので、すでに表にある。もう一度見たことで行が新しくなり、エージングで消えなくなる。`,
+            ja: `${broadcast ? 'ルーターの答え' : 'ルーターが中継した 192.0.2.10 からの Echo Reply '}はポート 2 から入る。送信元の MAC アドレスはルーターのもので、すでに表にある。もう一度見たことで行が新しくなり、エージングで消えなくなる。`,
           }
         : {
             en: `${broadcast ? 'The router’s answer' : 'The Echo Reply from 192.0.2.10, relayed by the router,'} enters the switch on port 2. The switch learns again from the source address: 00:00:5e:00:53:01 (the router) is behind port 2.`,
-            ja: `${broadcast ? 'ルーターの答え' : 'ルーターが中継した 192.0.2.10 からの Echo Reply'}はポート 2 からスイッチに入る。スイッチはまた送信元のアドレスから学習する。00:00:5e:00:53:01（ルーター）はポート 2 の先にいる。`,
+            ja: `${broadcast ? 'ルーターの答え' : 'ルーターが中継した 192.0.2.10 からの Echo Reply '}はポート 2 からスイッチに入る。スイッチはまた送信元のアドレスから学習する。00:00:5e:00:53:01（ルーター）はポート 2 の先にいる。`,
           },
       events: [
         send(frame('reply', ROUTER, SWITCH, answer, { kind: 'ingress', port: 2 })),
@@ -399,7 +399,7 @@ function buildSteps(options: SwitchingOptions): readonly Step[] {
         }
       : {
           en: `The PC sends ${broadcast ? 'its Echo Request' : 'the next Echo Request'}. The switch knows the router is behind port 2 and sends the frame there only. From now on, traffic between the PC and the router never reaches PC 2.`,
-          ja: `PC が${broadcast ? '' : '次の '}Echo Request を送る。スイッチはルーターがポート 2 の先にいると知っているので、そこにだけ送る。これ以降、PC とルーターの間の通信は PC 2 に届かない。`,
+          ja: `PC が${broadcast ? ' ' : '次の '}Echo Request を送る。スイッチはルーターがポート 2 の先にいると知っているので、そこにだけ送る。これ以降、PC とルーターの間の通信は PC 2 に届かない。`,
         },
     events: [
       send(frame('frame2', PC, SWITCH, ECHO_REQUEST, { kind: 'ingress', port: 1 })),
