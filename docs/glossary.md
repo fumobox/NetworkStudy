@@ -36,6 +36,7 @@
 | VLAN | VLAN、802.1Q、TPID、TCI、PCP（Priority Code Point）、DEI、VID、PVID、access、trunk、eth0.10（サブインターフェースの名前）、on-link、gateway |
 | ICMP | ICMP、ping、traceroute、tracert、Echo Request、Echo Reply、Time Exceeded、Destination Unreachable、network unreachable、host unreachable、port unreachable、type / code、TTL |
 | 近隣探索 | NDP、ICMPv6、RS、RA、NS、NA、DAD、SLAAC、DHCPv6、MLD、RDNSS、RetransTimer、RTR_SOLICITATION_INTERVAL、MAX_RTR_SOLICITATION_DELAY、Neighbor Solicitation、Neighbor Advertisement、Router Solicitation、Router Advertisement、Cur Hop Limit、Router Lifetime、Prefix Information、M / O / L / A / R / S フラグ、tentative、preferred、duplicate、INCOMPLETE、REACHABLE、STALE、DELAY、PROBE、NUD |
+| パス MTU 探索 | MTU、PMTU、DF（Don’t Fragment）、MF（More Fragments）、Identification、Fragment offset、Total length、Fragmentation Needed、Next-Hop MTU、Packet Too Big、PPPoE、PLPMTUD、MSS clamping |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
 | IPv6 アドレス | IPv6、EUI-64、U/L ビット、ff:fe、RFC 5952 |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
@@ -207,6 +208,12 @@
 | default route | デフォルト経路 | `0.0.0.0/0` |
 | directly connected | 直接接続 | |
 | metric | メトリック | |
+| path MTU discovery | パス MTU 探索 | |
+| path MTU | パス MTU | 経路の途中のリンクの MTU のうち最小のもの |
+| fragment / fragmentation | フラグメント／フラグメント化 | 動詞は「分割する」 |
+| reassembly | 組み立て直し（再構成） | 宛先だけが行う |
+| next-hop MTU | 次のリンクの MTU | |
+| (path MTU) black hole | （パス MTU の）ブラックホール | |
 | interface | インターフェース | |
 | network card | ネットワークカード | |
 | layer | 層 | 「レイヤー」は UI の説明など一般的な文脈に限る |
