@@ -3,7 +3,7 @@ import { useMemo, type ReactNode } from 'react'
 import { useMessages } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { deriveState } from '../derive'
-import { diagramWidth, hasTimers } from '../diagram'
+import { diagramWidth, hasTimers, labelLaneWidth } from '../diagram'
 import { useScenarioOptions, type ScenarioSession } from '../hooks/useScenarioOptions'
 import { useScenarioPlayer } from '../hooks/useScenarioPlayer'
 import { useStepKeyboard } from '../hooks/useStepKeyboard'
@@ -105,8 +105,14 @@ function PlayerBody({ scenario, session, renderPanels, hiddenStateKeys }: Player
       <div
         className={cn(
           'grid grid-cols-[minmax(0,1fr)] gap-6',
-          diagramWidth(scenario.actors.length, hasTimers(steps)) <=
-            SIDE_BY_SIDE_MAX_DIAGRAM_WIDTH && 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
+          diagramWidth(
+            scenario.actors.length,
+            hasTimers(steps),
+            labelLaneWidth(
+              scenario.actors.map((actor) => actor.id),
+              steps,
+            ),
+          ) <= SIDE_BY_SIDE_MAX_DIAGRAM_WIDTH && 'lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]',
         )}
       >
         <SequenceDiagram

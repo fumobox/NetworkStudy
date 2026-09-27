@@ -1,6 +1,6 @@
 import { clampStepIndex } from './derive'
 import type { LocalizedText } from '@/lib/i18n/locale'
-import type { Message, Step, TimerEvent } from './types'
+import type { ActorId, Message, Step, TimerEvent } from './types'
 
 export type DiagramRow =
   | {
@@ -51,9 +51,48 @@ export function laneWidthFor(actorCount: number): number {
   return actorCount > MAX_ACTORS_AT_FULL_WIDTH ? NARROW_LANE_WIDTH : LANE_WIDTH
 }
 
-/** 通常の幅で描いたときのシーケンス図の幅（px） */
-export function diagramWidth(actorCount: number, withTimers: boolean): number {
-  return (withTimers ? TIME_COLUMN_WIDTH : 0) + actorCount * laneWidthFor(actorCount)
+/** 通常の幅で描いたときのシーケンス図の幅（px）。labelWidth は labelLaneWidth の値 */
+export function diagramWidth(actorCount: number, withTimers: boolean, labelWidth = 0): number {
+  return (
+    (withTimers ? TIME_COLUMN_WIDTH : 0) +
+    actorCount * Math.max(laneWidthFor(actorCount), labelWidth)
+  )
+}
+
+/** ラベルの文字の大きさ（text-xs）と、ラベルの両側に要る余白（鍵のアイコンと SVG の端までの間）（px） */
+const LABEL_FONT_SIZE = 12
+const LABEL_MARGIN = 24
+/** 再送の印（ ↻）の分の文字数 */
+const RETRANSMIT_MARK_CHARS = 2
+
+/**
+ * すべてのメッセージのラベルが SVG の中に収まるのに要るレーンの幅（px）。
+ * ラベルは送信元と宛先の中点に中央揃えで描くので、中点から SVG の左右の端までの距離が、ラベルの幅の半分と余白より長ければよい。
+ * i 番目と j 番目のレーンの間の中点は、左端からレーン (i + j + 1) / 2 本分、右端から (2n - i - j - 1) / 2 本分のところにある
+ */
+export function labelLaneWidth(actorIds: readonly ActorId[], steps: readonly Step[]): number {
+  const n = actorIds.length
+  let width = 0
+  for (const step of steps) {
+    for (const event of step.events) {
+      if (event.kind !== 'message') {
+        continue
+      }
+      const i = actorIds.indexOf(event.message.from)
+      const j = actorIds.indexOf(event.message.to)
+      if (i < 0 || j < 0) {
+        continue
+      }
+      const chars = event.message.retransmitOf === undefined ? 0 : RETRANSMIT_MARK_CHARS
+      const half =
+        (estimateTextWidth(event.message.label, LABEL_FONT_SIZE) + chars * LABEL_FONT_SIZE * 0.6) /
+          2 +
+        LABEL_MARGIN
+      const lanes = Math.min(i + j + 1, 2 * n - i - j - 1) / 2
+      width = Math.max(width, Math.ceil(half / lanes))
+    }
+  }
+  return width
 }
 
 /**
