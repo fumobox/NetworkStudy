@@ -16,11 +16,11 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
 
 /**
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
- * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、
+ * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、lan: LAN の中（スイッチ …）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
  * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）
  */
-export const THEME_CATEGORIES = ['basics', 'ip', 'web', 'tcp', 'http'] as const
+export const THEME_CATEGORIES = ['basics', 'ip', 'lan', 'web', 'tcp', 'http'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
 
 export interface ThemeMeta {
@@ -268,9 +268,25 @@ export const QUIC_META = {
   minutes: 15,
 } as const satisfies ThemeMeta
 
+export const SWITCHING_META = {
+  id: 'switching',
+  kind: 'sequence',
+  category: 'lan',
+  title: {
+    en: 'Switching: how a switch learns MAC addresses',
+    ja: 'スイッチ: MAC アドレスを学習する',
+  },
+  summary: {
+    en: 'How a switch learns which port each MAC address is behind, why it floods a frame to every other port when it does not know, and why it stops flooding once it has learned.',
+    ja: 'スイッチが MAC アドレスごとにどのポートの先にいるかを学習するしくみ、知らない宛先のフレームをほかの全ポートに流す（フラッディング）理由、学習した後は流さなくなる理由。',
+  },
+  difficulty: 'beginner',
+  minutes: 8,
+} as const satisfies ThemeMeta
+
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索 …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
+ * 基礎（OSI 参照モデル → サブネット計算）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ …）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -280,6 +296,7 @@ export const THEME_META = [
   ICMP_META,
   NAT_META,
   ROUTE_LOOKUP_META,
+  SWITCHING_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
   TLS_HANDSHAKE_META,

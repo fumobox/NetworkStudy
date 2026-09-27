@@ -11,6 +11,7 @@ import { osiModelQuiz } from './osi-model/quiz'
 import { quicQuiz } from './quic/quiz'
 import { routeLookupQuiz } from './route-lookup/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
+import { switchingQuiz } from './switching/quiz'
 import { tcpCloseQuiz } from './tcp-close/quiz'
 import { tcpCongestionQuiz } from './tcp-congestion/quiz'
 import { tcpHandshakeQuiz } from './tcp-handshake/quiz'
@@ -28,6 +29,7 @@ import {
   QUIC_META,
   ROUTE_LOOKUP_META,
   SUBNET_CALCULATOR_META,
+  SWITCHING_META,
   TCP_CLOSE_META,
   TCP_CONGESTION_META,
   TCP_HANDSHAKE_META,
@@ -49,6 +51,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: ICMP_META, quiz: icmpQuiz },
   { meta: NAT_META, quiz: natQuiz },
   { meta: ROUTE_LOOKUP_META, quiz: routeLookupQuiz },
+  { meta: SWITCHING_META, quiz: switchingQuiz },
   { meta: DNS_RESOLUTION_META, quiz: dnsResolutionQuiz },
   { meta: TCP_HANDSHAKE_META, quiz: tcpHandshakeQuiz },
   { meta: TLS_HANDSHAKE_META, quiz: tlsHandshakeQuiz },

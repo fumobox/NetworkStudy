@@ -1,0 +1,26 @@
+## What a switch does
+
+Devices on a LAN are plugged into a **switch**. The switch reads the destination MAC address of each Ethernet frame and sends it out of the right port, so that a frame between two devices does not reach everyone else. (An old **hub** simply repeated every frame to every port.)
+
+To know which port is right, the switch keeps a **MAC address table**:
+
+1. **Learning**: when a frame comes in, the switch records its *source* MAC address and the port it came in on. It never learns from the destination.
+2. **Forwarding**: if the destination is in the table, the frame goes out of that port only.
+3. **Flooding**: if the destination is not in the table yet, or it is the broadcast address `ff:ff:ff:ff:ff:ff`, the frame goes out of every port except the one it came in on. Devices that the frame is not for drop it.
+
+As devices talk, the table fills up by itself and flooding becomes rare. Entries that are not refreshed are removed after the **ageing time** (300 seconds by default), so a device that moves to another port is found again.
+
+## What to look for in the walkthrough
+
+- The **MAC address table** of the switch: which address is learned from which frame.
+- Which ports each frame goes out of, and the switch’s decision (`learn`, `flood`, `forward`).
+- In the “What if…” options: a broadcast (ARP request), a switch that already knows the router, and ageing.
+
+## About this page
+
+There is one switch and no loops, so the Spanning Tree Protocol is left out. VLANs are covered in the VLAN theme, and the ICMP and ARP messages themselves in their own themes. Real switches also handle full-duplex links, a full table, and much more.
+
+## References
+
+- IEEE Std 802.1Q-2022, *Bridges and Bridged Networks* — clause 8.6 “The Forwarding Process”, 8.7 “The Learning Process”, 8.8 “The Filtering Database” (the bridging rules of IEEE 802.1D were merged into 802.1Q in 2014). IEEE standards cannot be linked page by page like RFCs; 802.1 standards can be read free of charge after registering through the [IEEE GET Program](https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68). See also the [IEEE SA page](https://standards.ieee.org/ieee/802.1Q/10323/).
+- [RFC 4188: Definitions of Managed Objects for Bridges](https://www.rfc-editor.org/rfc/rfc4188) — `dot1dTpFdbTable`, `dot1dTpAgingTime`

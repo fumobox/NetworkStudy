@@ -7,6 +7,7 @@ import type { Difficulty, ThemeCategory } from './themeMeta'
 export const CATEGORY_TONE: Readonly<Record<ThemeCategory, Tone>> = {
   basics: 'teal',
   ip: 'amber',
+  lan: 'green',
   web: 'blue',
   tcp: 'violet',
   http: 'rose',

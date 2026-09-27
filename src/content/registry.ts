@@ -11,6 +11,7 @@ import { osiModelTheme } from './osi-model'
 import { quicTheme } from './quic'
 import { routeLookupTheme } from './route-lookup'
 import { subnetCalculatorTheme } from './subnet-calculator'
+import { switchingTheme } from './switching'
 import { tcpCloseTheme } from './tcp-close'
 import { tcpCongestionTheme } from './tcp-congestion'
 import { tcpHandshakeTheme } from './tcp-handshake'
@@ -26,6 +27,7 @@ export const THEMES: readonly ThemeModule[] = [
   icmpTheme,
   natTheme,
   routeLookupTheme,
+  switchingTheme,
   dnsResolutionTheme,
   tcpHandshakeTheme,
   tlsHandshakeTheme,
