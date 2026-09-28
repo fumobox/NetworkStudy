@@ -24,6 +24,10 @@ export const ja = {
   },
   layout: {
     skipToContent: '本文へスキップ',
+    loadErrorTitle: 'このページを読み込めませんでした',
+    loadErrorDescription:
+      '開いた後でサイトが更新されたか、接続が途切れた可能性があります。読み込み直すと、たいてい直ります。',
+    reload: 'ページを読み込み直す',
   },
   footer: {
     license: 'MIT ライセンス',
