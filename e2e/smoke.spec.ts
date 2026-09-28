@@ -73,7 +73,6 @@ test('言語を切り替えても、パスとクエリを保つ', async ({ page 
 
 test('サイドバーのリンクで別のテーマに移ると、ページの先頭から表示する', async ({ page }) => {
   const [from, to] = THEME_META
-  if (from === undefined || to === undefined) throw new Error('no themes')
   await page.goto(`en/themes/${from.id}`)
   await expect(page.getByRole('heading', { level: 1, name: from.title.en })).toBeVisible()
   await page.evaluate(() => {
