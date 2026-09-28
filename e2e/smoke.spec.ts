@@ -94,6 +94,18 @@ test('サブネット計算: 入力すると結果と URL が変わる', async (
 test.describe('スマホの幅（390px）', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
+  test('メニューはスクロールでき、最後のテーマにも移れる', async ({ page }) => {
+    await page.goto('ja/')
+    await page.getByRole('button', { name: MESSAGES.ja.nav.menu }).click()
+    const last = THEME_META[THEME_META.length - 1]
+    if (last === undefined) throw new Error('no themes')
+    const link = page.getByRole('dialog').getByRole('link', { name: last.title.ja })
+    await link.scrollIntoViewIfNeeded()
+    await expect(link).toBeInViewport()
+    await link.click()
+    await expect(page.getByRole('heading', { level: 1, name: last.title.ja })).toBeVisible()
+  })
+
   for (const meta of THEME_META) {
     test(`${meta.id} は横にはみ出さない`, async ({ page }) => {
       // 最終ステップは、図・表・状態がいちばん多い
