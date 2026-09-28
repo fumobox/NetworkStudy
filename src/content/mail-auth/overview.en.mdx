@@ -1,0 +1,42 @@
+## Anyone can write any From
+
+SMTP, the protocol that moves mail between servers, checks nothing about the sender. A server can write any address in MAIL FROM (the envelope sender, where bounces go) and any address in the From: line the reader sees. Three mechanisms, all published in DNS by the domain owner, let a receiving server tell genuine mail from forged mail.
+
+## SPF: which servers may send
+
+**SPF** lets a domain list the servers that may send its mail, in a TXT record such as `v=spf1 ip4:192.0.2.25 -all`. The receiver takes the domain of **MAIL FROM**, fetches its record, and checks the connecting IP address against it, left to right. The result is **pass**, **fail** (`-all`), **softfail** (`~all`), **neutral** (`?all`), **none** (no record), or temperror / permerror.
+
+SPF never looks at the From: line. And because it is about the connecting server, it breaks when mail is **forwarded**: the forwarder is not in the original sender’s list.
+
+## DKIM: a signature on the message
+
+**DKIM** signs the message itself. The sending server adds a **DKIM-Signature** header: the signing domain (`d=`), the **selector** (`s=`, which key), the list of signed header fields (`h=`, which must include From), a hash of the body (`bh=`), and the signature (`b=`). The receiver fetches the public key from `<selector>._domainkey.<domain>`, recomputes the hashes, and checks the signature.
+
+DKIM survives forwarding, because the message does not change. It breaks when the message is **modified**, for example by a mailing list that adds a tag to the Subject or a footer to the body.
+
+## DMARC: tying it to From
+
+Neither SPF nor DKIM checks the domain the reader actually sees. **DMARC** does: it takes the domain of From:, fetches the policy at `_dmarc.<domain>`, and passes only if SPF or DKIM passed for a domain **aligned** with it. With relaxed alignment (the default) the same organizational domain is enough, so `mail.example.com` aligns with `example.com`; strict alignment needs an exact match. A pass for an unrelated domain counts for nothing.
+
+When DMARC fails, the policy `p=` says what the domain owner would like: **none** (just monitor; the aggregate reports that receivers send to `rua=` show what fails), **quarantine** (treat as suspicious, such as the spam folder), or **reject** (refuse it; since From: is only known after DATA, the refusal is the reply to the end of the message, such as `550 5.7.1`). The receiver decides how to apply it: RFC 9989 says receivers must not reject on p=reject alone, and without other evidence should treat such mail as quarantine, although many still reject.
+
+DMARC is now specified in RFC 9989 (with RFC 9990 and RFC 9991 for reports), which replaced RFC 7489.
+
+## What DMARC does not do
+
+A DMARC pass means the From domain is genuine; it does not mean the mail is harmless. A look-alike domain registered by an attacker can pass SPF, DKIM and DMARC for itself. And strict policies hurt legitimate mail that travels indirectly: mailing lists usually work around this by rewriting From: to their own address. **ARC** (RFC 8617), which records the results the list saw, is an experimental alternative that only helps if the receiver trusts the list.
+
+## What to look for in the walkthrough
+
+- The **MAIL FROM** in the envelope and the **From:** in the message: two different identities.
+- The three DNS lookups, and the receiver’s **checks** table filling in: SPF, DKIM, then the alignment for DMARC.
+- In “What if…”, a **forged** message, a **forwarded** one (SPF fails, DKIM saves it), a **mailing list** (SPF passes for the wrong domain, DKIM breaks), and the three **policies**.
+
+## References
+
+- [RFC 7208: Sender Policy Framework (SPF)](https://www.rfc-editor.org/rfc/rfc7208)
+- [RFC 6376: DomainKeys Identified Mail (DKIM) Signatures](https://www.rfc-editor.org/rfc/rfc6376)
+- [RFC 9989: Domain-Based Message Authentication, Reporting, and Conformance (DMARC)](https://www.rfc-editor.org/rfc/rfc9989)
+- [RFC 8601: Message Header Field for Indicating Message Authentication Status](https://www.rfc-editor.org/rfc/rfc8601)
+- [RFC 7960: Interoperability Issues between DMARC and Indirect Email Flows](https://www.rfc-editor.org/rfc/rfc7960)
+- [RFC 8617: The Authenticated Received Chain (ARC) Protocol](https://www.rfc-editor.org/rfc/rfc8617)

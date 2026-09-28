@@ -1,0 +1,42 @@
+## From には誰でも何でも書ける
+
+サーバーの間でメールを運ぶ SMTP は、送信者について何も確かめない。サーバーは、MAIL FROM（エンベロープの送信者。バウンスの宛先）にも、読む人が見る From: の行にも、好きなアドレスを書ける。ドメインの所有者が DNS に公開する 3 つのしくみで、受信サーバーは本物のメールと偽のメールを見分ける。
+
+## SPF: どのサーバーが送ってよいか
+
+**SPF** では、ドメインが自分のメールを送ってよいサーバーを、`v=spf1 ip4:192.0.2.25 -all` のような TXT レコードに並べる。受信サーバーは **MAIL FROM** のドメインを取ってそのレコードを引き、接続元の IP アドレスを左から順に照らす。結果は **pass**、**fail**（`-all`）、**softfail**（`~all`）、**neutral**（`?all`）、**none**（レコードがない）、または temperror / permerror。
+
+SPF は From: の行を見ない。また、接続してきたサーバーについての確認なので、メールが**転送**されると壊れる。転送サーバーは元の送信者のリストに載っていない。
+
+## DKIM: メッセージへの署名
+
+**DKIM** はメッセージそのものに署名する。送信サーバーが **DKIM-Signature** ヘッダーを足す。署名したドメイン（`d=`）、**セレクター**（`s=`、どの鍵か）、署名したヘッダーの一覧（`h=`、From を必ず含む）、本文のハッシュ（`bh=`）、署名（`b=`）。受信サーバーは `<セレクター>._domainkey.<ドメイン>` から公開鍵を取り、ハッシュを計算し直して署名を確かめる。
+
+メッセージは変わらないので、DKIM は転送を生き延びる。メッセージが**改変**されると壊れる。たとえば、Subject にタグを、本文にフッターを足すメーリングリスト。
+
+## DMARC: From に結びつける
+
+SPF も DKIM も、読む人が実際に見るドメインは確かめない。それをするのが **DMARC**。From: のドメインを取り、`_dmarc.<ドメイン>` のポリシーを引き、そのドメインと**アライン**したドメインで SPF か DKIM が pass したときだけ pass にする。relaxed（緩やかな一致。既定）なら組織ドメインが同じならよいので、`mail.example.com` は `example.com` とアラインする。strict（厳密な一致）は完全な一致が要る。関係のないドメインの pass は、何の役にも立たない。
+
+DMARC が失敗したときにどうしてほしいかは、ポリシー `p=` で示す。**none**（監視だけ。受信側が `rua=` に送る集約レポートで、何が失敗しているかがわかる）、**quarantine**（疑わしいものとして扱う。迷惑メールフォルダーなど）、**reject**（拒否する。From: は DATA の後でしかわからないので、拒否はメッセージの終わりへの応答になる。`550 5.7.1` など）。どう当てるかは受信側が決める。RFC 9989 は、p=reject だけを理由に拒否してはいけないとし、ほかの根拠がなければ quarantine として扱うよう求めているが、それでも拒否する受信側は多い。
+
+DMARC は今は RFC 9989（レポートは RFC 9990 と RFC 9991）で定められていて、RFC 7489 を置き換えた。
+
+## DMARC がしないこと
+
+DMARC の pass は From のドメインが本物だという意味で、メールが無害だという意味ではない。攻撃者が登録したよく似たドメインは、自分のドメインとして SPF も DKIM も DMARC も pass できる。また、厳しいポリシーは、間接的に届く正当なメールも傷つける。メーリングリストはふつう From: を自分のアドレスに書き換えて回避する。リストが見た結果を記録する **ARC**（RFC 8617）は実験的な代わりの方法で、受信側がそのリストを信頼するときだけ役に立つ。
+
+## ステップ実行で見てほしいところ
+
+- エンベロープの **MAIL FROM** と、メッセージの **From:**。2 つの別の識別子。
+- 3 回の DNS の問い合わせと、受信サーバーの**確かめた識別子**の表が埋まっていくこと。SPF、DKIM、そして DMARC のアライメント。
+- 「もしも…」のオプションで、**なりすまし**、**転送**（SPF は fail、DKIM が救う）、**メーリングリスト**（SPF は別のドメインで pass、DKIM は壊れる）、3 つの**ポリシー**。
+
+## 参考
+
+- [RFC 7208: Sender Policy Framework (SPF)](https://www.rfc-editor.org/rfc/rfc7208)
+- [RFC 6376: DomainKeys Identified Mail (DKIM) Signatures](https://www.rfc-editor.org/rfc/rfc6376)
+- [RFC 9989: Domain-Based Message Authentication, Reporting, and Conformance (DMARC)](https://www.rfc-editor.org/rfc/rfc9989)
+- [RFC 8601: Message Header Field for Indicating Message Authentication Status](https://www.rfc-editor.org/rfc/rfc8601)
+- [RFC 7960: Interoperability Issues between DMARC and Indirect Email Flows](https://www.rfc-editor.org/rfc/rfc7960)
+- [RFC 8617: The Authenticated Received Chain (ARC) Protocol](https://www.rfc-editor.org/rfc/rfc8617)
