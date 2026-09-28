@@ -10,6 +10,7 @@ import { httpsOverviewTheme } from './https-overview'
 import { icmpTheme } from './icmp'
 import { ipv6AddressTheme } from './ipv6-address'
 import { ipv6NdTheme } from './ipv6-nd'
+import { mailAuthTheme } from './mail-auth'
 import { natTheme } from './nat'
 import { pmtudTheme } from './pmtud'
 import { osiModelTheme } from './osi-model'
@@ -54,6 +55,7 @@ export const THEMES: readonly ThemeModule[] = [
   quicTheme,
   firewallTheme,
   dnssecTheme,
+  mailAuthTheme,
 ]
 
 export function findTheme(id: string | undefined): ThemeModule | undefined {

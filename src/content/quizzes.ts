@@ -10,6 +10,7 @@ import { httpsOverviewQuiz } from './https-overview/quiz'
 import { icmpQuiz } from './icmp/quiz'
 import { ipv6AddressQuiz } from './ipv6-address/quiz'
 import { ipv6NdQuiz } from './ipv6-nd/quiz'
+import { mailAuthQuiz } from './mail-auth/quiz'
 import { natQuiz } from './nat/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
 import { pmtudQuiz } from './pmtud/quiz'
@@ -35,6 +36,7 @@ import {
   ICMP_META,
   IPV6_ADDRESS_META,
   IPV6_ND_META,
+  MAIL_AUTH_META,
   NAT_META,
   OSI_MODEL_META,
   PMTUD_META,
@@ -86,4 +88,5 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: QUIC_META, quiz: quicQuiz },
   { meta: FIREWALL_META, quiz: firewallQuiz },
   { meta: DNSSEC_META, quiz: dnssecQuiz },
+  { meta: MAIL_AUTH_META, quiz: mailAuthQuiz },
 ]
