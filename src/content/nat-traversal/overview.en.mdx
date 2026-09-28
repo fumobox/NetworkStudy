@@ -1,6 +1,6 @@
 ## Why peer-to-peer needs help
 
-In the NAT theme, a PC behind a NAT could reach any server, but nothing on the Internet could start a connection to the PC. A video call between two PCs behind two NATs has exactly that problem on both sides: each PC has only a private address, and each NAT drops packets it was not expecting. The app’s signalling server can pass messages between the two PCs, but carrying all the audio and video through it would be slow and expensive.
+In the NAT theme, a PC behind a NAT could reach any server, but nothing on the Internet could start a connection to the PC (without port forwarding). A video call between two PCs behind two NATs has exactly that problem on both sides: each PC has only a private address, and each NAT drops packets it was not expecting. The app’s signalling server can pass messages between the two PCs, but carrying all the audio and video through it would be slow and expensive.
 
 **NAT traversal** is the set of tricks that lets the two PCs find a path anyway: **STUN** to learn the public addresses, **TURN** as a relay when nothing else works, and **ICE** to try all the possibilities in order.
 
@@ -15,7 +15,7 @@ STUN alone does not get anyone through a NAT. It only tells each PC what the out
 RFC 4787 separates two behaviours:
 
 - **Mapping**: which external port the NAT uses. With **endpoint-independent mapping**, the same internal port always gets the same external port, whatever the destination, so the address STUN reports also works for the other PC. With **address- and port-dependent mapping** (often called a “symmetric” NAT), every new destination gets a new external port, so the address STUN reports is useless for anyone else.
-- **Filtering**: which incoming packets the NAT lets in. With **address- and port-dependent filtering**, only packets from an address the PC has already sent to get in.
+- **Filtering**: which incoming packets the NAT lets in. With **address- and port-dependent filtering**, only packets from an address and port the PC has already sent to get in.
 
 That is why **hole punching** needs both sides to send: PC A’s first packet is dropped by NAT B, but it opens NAT A for PC B, and PC B’s packet then opens NAT B for PC A.
 
@@ -23,7 +23,7 @@ That is why **hole punching** needs both sides to send: PC A’s first packet is
 
 When no direct path works, a **TURN** server relays the traffic. The PC sends **Allocate** and, after a **401** challenge, authenticates with long-term credentials. The server reserves a **relayed address** for it (here 198.51.100.3:55000) for 600 seconds.
 
-The server only relays packets from addresses the PC has given a **permission** (CreatePermission). A permission is for an IP address, whatever the port, and lasts 300 seconds. Data can be wrapped in **Send** and **Data** indications, or, after **ChannelBind**, in **ChannelData** with just a 4-byte header. Allocations, permissions and channels each expire on their own timer and must be refreshed separately; sending data refreshes none of them.
+The server only relays packets from addresses the PC has given a **permission** (CreatePermission). A permission is for an IP address, whatever the port, and lasts 300 seconds. Data can be wrapped in **Send** and **Data** indications, or, after **ChannelBind**, in **ChannelData** with just a 4-byte header. Allocations, permissions and channels each expire on their own timer and must be refreshed (ChannelBind also refreshes the permission for that peer); sending data refreshes none of them.
 
 Relaying costs the server bandwidth and adds delay, so it is the last resort.
 
@@ -46,6 +46,13 @@ While the call lasts, each side sends checks every 4–6 seconds to confirm that
 - The **checklist** states, the **prflx** candidates that appear with the “symmetric” NAT, and the **selected pair**.
 - On the server: the **permissions** (an IP without a port), the **channel**, and the lifetimes after four minutes.
 - In “What if…”, the “symmetric” NAT (the relay wins), **UDP blocked** (TURN over TLS), and a **forgotten permission** (PC B’s packets are dropped).
+
+## About this page
+
+- IPv4 only, one media stream, and UDP only for ICE. Both PCs run full ICE, which is why the offerer is the controlling side.
+- The signalling server is not drawn, and the candidates are sent after all of them are gathered (no Trickle ICE).
+- Only PC A uses TURN. NAT A filters by address and port in every case, so that the “symmetric” NAT on the other side really forces the relay.
+- Transaction IDs, ufrags, passwords and ports are example values; real ones are random.
 
 ## References
 

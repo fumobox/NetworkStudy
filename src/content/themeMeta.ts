@@ -232,19 +232,6 @@ export const WEBSOCKET_META = {
   minutes: 15,
 } as const satisfies ThemeMeta
 
-export const NAT_TRAVERSAL_META = {
-  id: 'nat-traversal',
-  kind: 'sequence',
-  category: 'ip',
-  title: { en: 'NAT traversal: STUN, TURN and ICE', ja: 'NAT 越え: STUN・TURN・ICE' },
-  summary: {
-    en: 'How two PCs behind different NATs find a path to each other: STUN tells each one its public address, ICE tries every pair of addresses, and a TURN server relays the traffic when nothing else works.',
-    ja: '別々の NAT の内側にある 2 台の PC が通り道を見つけるまで。STUN で自分のグローバルアドレスを知り、ICE でアドレスの組をすべて試し、どれも通らなければ TURN のサーバーが中継する。',
-  },
-  difficulty: 'intermediate',
-  minutes: 20,
-} as const satisfies ThemeMeta
-
 export const ARP_META = {
   id: 'arp',
   kind: 'sequence',
@@ -311,6 +298,19 @@ export const NAT_META = {
   },
   difficulty: 'intermediate',
   minutes: 10,
+} as const satisfies ThemeMeta
+
+export const NAT_TRAVERSAL_META = {
+  id: 'nat-traversal',
+  kind: 'sequence',
+  category: 'ip',
+  title: { en: 'NAT traversal: STUN, TURN and ICE', ja: 'NAT 越え: STUN・TURN・ICE' },
+  summary: {
+    en: 'How two PCs behind different NATs find a path to each other: STUN tells each one its public address, ICE tries every pair of addresses, and a TURN server relays the traffic when nothing else works.',
+    ja: '別々の NAT の内側にある 2 台の PC が通り道を見つけるまで。STUN で自分のグローバルアドレスを知り、ICE でアドレスの組をすべて試し、どれも通らなければ TURN のサーバーが中継する。',
+  },
+  difficulty: 'intermediate',
+  minutes: 20,
 } as const satisfies ThemeMeta
 
 export const ROUTE_LOOKUP_META = {

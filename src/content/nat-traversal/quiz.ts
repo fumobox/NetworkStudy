@@ -67,8 +67,8 @@ export const natTraversalQuiz: Quiz = {
       ],
       answerId: 'both',
       explanation: {
-        en: 'A NAT that filters by address and port lets in only packets from addresses it has sent to. Once both sides have sent to each other’s public address, both NATs let the traffic through: hole punching. No server can open a port on a NAT.',
-        ja: 'アドレスとポートでフィルタリングする NAT は、送ったことのある相手からのパケットしか通さない。両側が相手のグローバルアドレスに送れば、両方の NAT が通す。これがホールパンチング。NAT のポートを開けさせられるサーバーはない。',
+        en: 'A NAT that filters by address and port lets in only packets from addresses it has sent to. Once both sides have sent to each other’s public address, both NATs let the traffic through: hole punching. Neither the STUN nor the TURN server can open a port on someone else’s NAT.',
+        ja: 'アドレスとポートでフィルタリングする NAT は、送ったことのある相手からのパケットしか通さない。両側が相手のグローバルアドレスに送れば、両方の NAT が通す。これがホールパンチング。STUN や TURN のサーバーが、ほかの NAT のポートを開けさせることはできない。',
       },
     },
     {
