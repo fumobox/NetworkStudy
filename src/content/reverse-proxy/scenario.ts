@@ -527,6 +527,7 @@ function healthOk(id: MessageId, from: BackendId): Message {
     status: 'delivered',
     fields: [
       { name: 'Status line', value: 'HTTP/1.1 200 OK' },
+      { name: 'Content-Length', value: byteLength('ok') },
       { name: 'Body', value: 'ok' },
     ],
   }

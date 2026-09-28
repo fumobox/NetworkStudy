@@ -290,6 +290,7 @@ describe('reverseProxyScenario', () => {
     it('HTTP/1.1 の本文には Content-Length を付ける（バイト数）', () => {
       const steps = build()
       expect(field(byId(steps, 'forward-2'), 'Content-Length')).toBe('11')
+      expect(field(byId(steps, 'health-a-ok'), 'Content-Length')).toBe('2')
       expect(field(byId(steps, 'response-1'), 'Content-Length')).toBe(
         String(new TextEncoder().encode('{"items":[…],"served_by":"A"}').length),
       )
