@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 /**
  * 要素が横にはみ出してスクロールできるかを返す。スクロールできる領域はキーボードでも操作できるよう
  * tabIndex を付ける必要がある（axe の scrollable-region-focusable）が、はみ出していない表まで Tab で止まらないよう、
- * はみ出しているときだけ付けるために使う
+ * はみ出しているときだけ付けるために使う。見張るのは要素と、最初に描いたときの最初の子（表）。子を差し替える使い方はしない
  */
 export function useHorizontalOverflow<T extends HTMLElement>() {
   const ref = useRef<T>(null)
