@@ -23,9 +23,9 @@ export function ScenarioOptionsForm({ optionDefs, options, onChange }: ScenarioO
 
   return (
     <section aria-labelledby={`${baseId}-title`} className="space-y-3">
-      <h2 id={`${baseId}-title`} className="font-heading text-base font-semibold">
+      <h3 id={`${baseId}-title`} className="font-heading text-base font-semibold">
         {m.options.title}
-      </h2>
+      </h3>
       <div className="space-y-4">
         {entries.map(([key, def]) => {
           const id = `${baseId}-${key}`

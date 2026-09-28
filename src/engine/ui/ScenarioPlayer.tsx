@@ -1,6 +1,5 @@
 import { domAnimation, LazyMotion } from 'motion/react'
 import { useMemo, type ReactNode } from 'react'
-import { useMessages } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { deriveState } from '../derive'
 import { diagramWidth, hasTimers, labelLaneWidth } from '../diagram'
@@ -37,16 +36,15 @@ interface ScenarioPlayerProps {
 
 /** シナリオのステップ実行（オプションのフォーム・操作・図・パケットの詳細・状態）。URL と同期する */
 export function ScenarioPlayer({ scenario, renderPanels, hiddenStateKeys }: ScenarioPlayerProps) {
-  const m = useMessages()
   const session = useScenarioOptions(scenario)
 
-  // 各パネルの見出し（h2）を束ねる見出しはなく、ランドマークの名前だけを付ける。
+  // 束ねる見出し（h2）と区切りはテーマのページが付ける。各パネルの見出しは h3。
   // アニメーションを使うのはテーマのページだけなので、LazyMotion はここに置き、アニメーション機能をテーマのページのチャンクに含める
   // （バンドルを小さくするため m と domAnimation だけを使い、strict で motion.* の混入を防ぐ）。
   // 機能は同期的に渡す。動的 import にすると、読み込み前にマウントされた要素の初回アニメーションが実行されない（#52）
   return (
     <LazyMotion features={domAnimation} strict>
-      <section aria-label={m.theme.player} className="space-y-6">
+      <div className="space-y-6">
         <ScenarioOptionsForm
           optionDefs={scenario.optionDefs}
           options={session.options}
@@ -60,7 +58,7 @@ export function ScenarioPlayer({ scenario, renderPanels, hiddenStateKeys }: Scen
           renderPanels={renderPanels}
           hiddenStateKeys={hiddenStateKeys}
         />
-      </section>
+      </div>
     </LazyMotion>
   )
 }

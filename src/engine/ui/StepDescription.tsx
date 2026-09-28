@@ -13,9 +13,9 @@ export function StepDescription({ step }: StepDescriptionProps) {
     <section aria-live="polite" aria-atomic className="space-y-1">
       {step !== undefined && (
         <>
-          <h2 className="border-l-4 border-primary pl-3 font-heading text-lg font-semibold">
+          <h3 className="border-l-4 border-primary pl-3 font-heading text-lg font-semibold">
             {t(step.title)}
-          </h2>
+          </h3>
           <p className="leading-relaxed text-muted-foreground">{t(step.description)}</p>
         </>
       )}

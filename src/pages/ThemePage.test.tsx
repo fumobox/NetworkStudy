@@ -63,7 +63,7 @@ describe('ThemePage', () => {
   it('表示中のロケールの概要（MDX）を読み込んで表示する', async () => {
     await renderAt('/ja/themes/tcp-handshake')
     expect(
-      await screen.findByRole('heading', { level: 2, name: 'なぜハンドシェイクが必要か' }),
+      await screen.findByRole('heading', { level: 3, name: 'なぜハンドシェイクが必要か' }),
     ).toBeInTheDocument()
     expect(screen.queryByRole('heading', { name: 'Why a handshake?' })).toBeNull()
     expect(screen.getByRole('link', { name: /RFC 9293/ })).toHaveAttribute(
@@ -72,11 +72,27 @@ describe('ThemePage', () => {
     )
   })
 
+  it('概要・ステップ実行・理解度チェックは同じ段（h2）の見出しで区切り、概要の MDX の見出しは 1 段下げる', async () => {
+    await renderAt('/ja/themes/tcp-handshake')
+    await screen.findByRole('heading', { level: 3, name: 'なぜハンドシェイクが必要か' })
+    expect(
+      within(screen.getByRole('main'))
+        .getAllByRole('heading', { level: 2 })
+        .map((heading) => heading.textContent),
+    ).toEqual(['概要', 'ステップ実行', '理解度チェック'])
+    expect(screen.getByRole('region', { name: '概要' })).toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'ステップ実行' })).toBeInTheDocument()
+    // タイトルの下の線は分類の色（web は blue）
+    expect(screen.getByRole('heading', { level: 1 }).closest('header')).toHaveClass(
+      'border-tone-blue',
+    )
+  })
+
   it('URL の ?step= と opt.* から始める', async () => {
     await renderAt('/ja/themes/tcp-handshake?opt.serverPort=closed&step=3')
     expect(screen.getByText('ステップ 3 / 4')).toBeInTheDocument()
     expect(
-      screen.getByRole('heading', { level: 2, name: 'サーバーがリセットを返す' }),
+      screen.getByRole('heading', { level: 3, name: 'サーバーがリセットを返す' }),
     ).toBeInTheDocument()
     expect(screen.getByRole('radio', { name: '閉じている（誰も待ち受けていない）' })).toBeChecked()
   })
@@ -149,14 +165,14 @@ describe('ThemePage', () => {
     await renderAt('/en/themes/tcp-handshake?step=4')
     await user.click(screen.getByRole('button', { name: /^SYN, from Client to Server/ }))
     const inspector = screen.getByRole('region', { name: 'Packet details' })
-    expect(within(inspector).getByRole('heading', { level: 3, name: 'SYN' })).toBeInTheDocument()
+    expect(within(inspector).getByRole('heading', { level: 4, name: 'SYN' })).toBeInTheDocument()
     expect(within(inspector).getByText('1000')).toBeInTheDocument()
   })
 
   it('DNS の NXDOMAIN の分岐: 否定応答をパケットの詳細とキャッシュ表で見せる', async () => {
     await renderAt('/ja/themes/dns-resolution?opt.name=missing&step=7')
     expect(
-      screen.getByRole('heading', { level: 2, name: '名前が存在しない（NXDOMAIN）' }),
+      screen.getByRole('heading', { level: 3, name: '名前が存在しない（NXDOMAIN）' }),
     ).toBeInTheDocument()
     const inspector = screen.getByRole('region', { name: 'パケットの詳細' })
     expect(within(inspector).getAllByText('NXDOMAIN').length).toBeGreaterThan(0)
@@ -170,7 +186,7 @@ describe('ThemePage', () => {
     const panel = screen.getByRole('region', { name: 'Certificate chain' })
     expect(
       within(panel)
-        .getAllByRole('heading', { level: 3 })
+        .getAllByRole('heading', { level: 4 })
         .map((h) => h.textContent),
     ).toEqual([
       'Server certificatewww.example.com',

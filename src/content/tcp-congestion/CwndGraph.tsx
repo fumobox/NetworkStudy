@@ -48,9 +48,9 @@ export function CwndGraph({ derived, options }: ScenarioPanelsContext) {
 
   return (
     <section aria-labelledby={titleId} className="space-y-3">
-      <h2 id={titleId} className="font-heading text-base font-semibold">
+      <h3 id={titleId} className="font-heading text-base font-semibold">
         {t(TEXT.title)}
-      </h2>
+      </h3>
       {rounds.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t(TEXT.empty)}</p>
       ) : (

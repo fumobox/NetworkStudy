@@ -32,7 +32,7 @@ describe('OsiWalkthrough', () => {
   it('?step= のステップから始め、今の層を aria-current で示す', () => {
     renderAt('?step=3')
     expect(
-      screen.getByRole('heading', { level: 2, name: 'Layer 4: TCP adds its header' }),
+      screen.getByRole('heading', { level: 3, name: 'Layer 4: TCP adds its header' }),
     ).toBeInTheDocument()
     const current = within(stack('Sender (your PC)')).getByRole('listitem', { current: 'step' })
     expect(current).toHaveTextContent(/Layer 4\s*Transport/)

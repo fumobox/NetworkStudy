@@ -24,7 +24,7 @@ function QuizBody({ quiz }: QuizPanelProps) {
   return (
     <section aria-labelledby={titleId} className="space-y-6">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id={titleId} className="font-heading text-xl font-semibold">
+        <h2 id={titleId} className="font-heading text-2xl font-bold tracking-tight">
           {m.quiz.title}
         </h2>
         <p className="text-sm text-muted-foreground">

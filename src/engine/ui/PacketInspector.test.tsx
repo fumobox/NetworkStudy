@@ -85,7 +85,7 @@ function renderInspector(
 describe('PacketInspector', () => {
   it('未選択なら現在のステップの最新メッセージを表示する', () => {
     renderInspector(1, null)
-    expect(screen.getByRole('heading', { level: 3, name: 'SYN' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 4, name: 'SYN' })).toBeInTheDocument()
     expect(screen.getByText('Retransmission of SYN')).toBeInTheDocument()
   })
 

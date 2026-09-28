@@ -19,7 +19,7 @@ describe('テーマの概要（MDX）', () => {
         </Suspense>,
       )
       await screen.findAllByRole('heading', { level: 2 })
-      // ページの h1 はテーマ名なので、概要の見出しは h2 から始める
+      // MDX は h2 から書く（ページの h1 はテーマ名。ページでは「概要」の h2 の下に 1 段下げて表示する）
       expect(container.querySelector('h1, h2, h3, h4, h5, h6')?.tagName).toBe('H2')
       expect(container.querySelector('h1')).toBeNull()
       // 日本語で全角の記号の直後に ** を閉じると太字にならず、記号がそのまま表示される
