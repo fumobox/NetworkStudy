@@ -21,7 +21,7 @@
  *   （知らない送信元は peer reflexive の相手の候補。トリガーされたチェック）、§8.1.1、§8.1.2（指名。ほかのペアを除く）、§8.3.1（使わない候補は
  *   3 秒後に放す）、§11（キープアライブ 15 秒）
  * - RFC 4787 §4.1（対応づけ: エンドポイントに依存しない EIM、アドレスとポートに依存する APDM。セキュリティはフィルタリングから）、
- *   §5（フィルタリング。REQ-8 の理由: 両側が APDF でないと、ICE は peer reflexive で直接の経路を見つける）
+ *   §5（フィルタリング。REQ-1 の理由: エンドポイントに依存しない対応づけでないと、UDP の中継が要る。REQ-8 の理由: 両側が APDF でないと、ICE は peer reflexive で直接の経路を見つけるので、このページでは NAT A も APDF にする）
  * - RFC 8839 §4.2.3、§5.1（SDP の a=candidate、ice-ufrag、ice-pwd）、RFC 5769（テストベクター）
  * - 触れるだけ: RFC 8838（Trickle ICE）、RFC 7675（consent freshness: 4〜6 秒ごと、30 秒で期限切れ）
  *
@@ -30,7 +30,7 @@
  * （プライベートアドレスはインターネットで経路が広告されない）。トランザクション ID、ufrag、パスワード、タイブレーカー、ポートは例の値
  * （本当は乱数。RFC 6056）。SOFTWARE の属性は省き、MESSAGE-INTEGRITY と FINGERPRINT は大きさだけを見せる。PC A は Binding と Allocate を
  * 同じホストのポートから送る。NAT の対応の寿命は描かない。TCP・TLS・DTLS のハンドシェイクは描かない（それぞれのテーマを参照）。
- * 最初の有効なペアで指名する。4 分後に許可と割り当てをまとめて更新する。NAT A は、どの場合もフィルタリングが APDF
+ * ホストどうしのチェックや止められたチェックは、すぐに Failed として描く（実際はトランザクションのタイムアウトの後）。最初の有効なペアで指名する。4 分後に許可と割り当てをまとめて更新する。NAT A は、どの場合もフィルタリングが APDF
  */
 import { z } from 'zod'
 import type {
@@ -45,12 +45,13 @@ import type {
   StepEvent,
 } from '@/engine/types'
 import type { LocalizedText } from '@/lib/i18n/locale'
-import { priorityOf, sdpCandidate } from './ice'
+import { priorityOf, sdpCandidate, type CandidateType } from './ice'
 import {
   CREDENTIALS,
   hop,
   INTEGRITY_SHA256,
   Nat,
+  NAT_COLUMNS,
   stunFields,
   xorAttribute,
   type Attribute,
@@ -87,7 +88,6 @@ export const CHECKLIST_COLUMNS = ['Local', 'Remote', 'State'] as const
 export const ALLOCATION_COLUMNS = ['Field', 'Value'] as const
 export const PERMISSION_COLUMNS = ['Peer IP', 'Expires in'] as const
 export const CHANNEL_COLUMNS = ['Channel', 'Peer', 'Expires in'] as const
-const NAT_COLUMNS = ['Proto', 'Internal', 'External', 'Remote'] as const
 
 export const ADDRESSES = {
   aHost: '192.168.1.10:49152',
@@ -117,6 +117,7 @@ const TX = {
   permission: 'e5913a8f460956ca277d3319',
   aCheck: 'b8c3e5f1a2d4967c0e8b1f3a',
   bCheck: '4d7a2c9e8f1b3a5c6e0d2b94',
+  bCheckRelay: '8e3f1a6c2d9b4e7a0c5f3d18',
   aTriggered: 'e2a9c4b7d1f3856a0c9e2d71',
   nominate: 'f5b1d8c3a7e2496b0d3c8e15',
   channelBind: '3d8a61f0c2b94e57a1d6f028',
@@ -243,7 +244,6 @@ const actors: readonly Actor[] = [
   },
 ]
 
-type CandidateType = 'host' | 'srflx' | 'prflx' | 'relay'
 type Candidate = readonly [CandidateType, string]
 const candidates = (...rows: Candidate[]): StateTable => ({
   columns: CANDIDATE_COLUMNS,
@@ -777,7 +777,7 @@ function gather(flow: Flow) {
         flow.set(
           NAT_A,
           BEHAVIOUR,
-          network === 'udpBlocked' ? 'UDP blocked (TCP 80/443 only)' : 'EIM, APDF',
+          network === 'udpBlocked' ? 'UDP blocked, TCP 80/443' : 'EIM, APDF',
         ),
         flow.set(NAT_B, BEHAVIOUR, network === 'symmetric' ? 'APDM, APDF' : 'EIM, APDF'),
       )
@@ -1104,11 +1104,11 @@ function gather(flow: Flow) {
       section: SIGNAL,
       title: {
         en: 'Signalling: PC B answers; both build a checklist',
-        ja: 'シグナリング: PC B が答え、両方がチェックリストを作る',
+        ja: 'シグナリング: PC B がアンサーを返し、両方がチェックリストを作る',
       },
       description: {
-        en: `PC B sends its answer the same way. Each side pairs its candidates with the other side’s and sorts the pairs by priority: 2^32 × MIN(G, D) + 2 × MAX(G, D) + (G > D ? 1 : 0), where G is the controlling side’s candidate priority. Candidates with the same base as the host candidate are checked from the host, so PC A’s srflx candidate is not paired on its own. ${answerLines.join(' | ')}`,
-        ja: `PC B も同じように答えを送る。どちらの側も、自分の候補と相手の候補を組にし、優先度の順に並べる。優先度は 2^32 × MIN(G, D) + 2 × MAX(G, D) + (G > D ? 1 : 0) で、G は controlling の側の候補の優先度。ホスト候補と基底が同じ候補はホストから送るので、PC A の srflx の候補は別の組にしない。${answerLines.join(' | ')}`,
+        en: `PC B sends its answer the same way. Each side pairs its candidates with the other side’s and sorts the pairs by priority: 2^32 × MIN(G, D) + 2 × MAX(G, D) + (G > D ? 1 : 0), where G is the controlling side’s candidate priority. Server-reflexive candidates are checked from their base (the host candidate), so they are not paired separately. ${answerLines.join(' | ')}`,
+        ja: `PC B も同じようにアンサーを送る。どちらの側も、自分の候補と相手の候補を組にし、優先度の順に並べる。優先度は 2^32 × MIN(G, D) + 2 × MAX(G, D) + (G > D ? 1 : 0) で、G は controlling の側の候補の優先度。server reflexive の候補は基底（ホスト候補）から送るので、別の組にはしない。${answerLines.join(' | ')}`,
       },
     },
     () => {
@@ -1207,7 +1207,6 @@ function responseFields(tx: string, mapped: string) {
 }
 
 function direct(flow: Flow) {
-  const A_SRFLX_TO_B = A_SRFLX
   flow.step(
     {
       id: 'a-check',
@@ -1248,7 +1247,7 @@ function direct(flow: Flow) {
       },
     },
     () => {
-      flow.bToA('b-check', 'Binding Request (check)', checkFields(TX.bCheck, 'B'), A_SRFLX_TO_B)
+      flow.bToA('b-check', 'Binding Request (check)', checkFields(TX.bCheck, 'B'), A_SRFLX)
       flow.emit(
         flow.set(
           PC_B,
@@ -1268,8 +1267,8 @@ function direct(flow: Flow) {
       section: CHECKS,
       title: { en: 'PC A answers PC B’s check', ja: 'PC A が PC B のチェックに答える' },
       description: {
-        en: 'PC A answers with the source address it saw, 192.0.2.77:60001, and NAT B lets the answer in (PC B sent to 203.0.113.5:40001). PC B’s pair has succeeded. Because PC A received a check on a pair it is also checking, it schedules a triggered check on that pair.',
-        ja: 'PC A は見えた送信元のアドレス 192.0.2.77:60001 で答え、NAT B はその答えを通す（PC B が 203.0.113.5:40001 に送ったから）。PC B のペアは成功した。PC A は、自分もチェックしているペアでチェックを受け取ったので、そのペアでトリガーされたチェックを予定する。',
+        en: 'PC A answers with the source address it saw, 192.0.2.77:60001, and NAT B lets the answer in (PC B sent to 203.0.113.5:40001). PC B’s pair has succeeded. Because PC A received a check on a pair it was still checking, it cancels its own check, puts the pair back to Waiting and schedules a triggered check on it.',
+        ja: 'PC A は見えた送信元のアドレス 192.0.2.77:60001 で答え、NAT B はその応答を通す（PC B が 203.0.113.5:40001 に送ったから）。PC B のペアは成功した。PC A は、まだチェックしている途中のペアでチェックを受け取ったので、自分のチェックを取りやめ、ペアを Waiting に戻して、そのペアでトリガーされたチェックを予定する。',
       },
     },
     () => {
@@ -1278,6 +1277,18 @@ function direct(flow: Flow) {
         'Binding Success (check)',
         responseFields(TX.bCheck, B_SRFLX),
         B_SRFLX,
+      )
+      flow.emit(
+        flow.set(
+          PC_A,
+          CHECKLIST,
+          checklist(
+            [ADDRESSES.aHost, ADDRESSES.bHost, 'Failed'],
+            [ADDRESSES.aHost, B_SRFLX, 'Waiting'],
+            [ADDRESSES.relay, ADDRESSES.bHost, 'Waiting'],
+            [ADDRESSES.relay, B_SRFLX, 'Waiting'],
+          ),
+        ),
       )
       flow.emit(
         flow.set(
@@ -1307,6 +1318,18 @@ function direct(flow: Flow) {
     },
     () => {
       flow.aToB('a-triggered', 'Binding Request (check)', checkFields(TX.aTriggered, 'A'), B_SRFLX)
+      flow.emit(
+        flow.set(
+          PC_A,
+          CHECKLIST,
+          checklist(
+            [ADDRESSES.aHost, ADDRESSES.bHost, 'Failed'],
+            [ADDRESSES.aHost, B_SRFLX, 'In-Progress'],
+            [ADDRESSES.relay, ADDRESSES.bHost, 'Waiting'],
+            [ADDRESSES.relay, B_SRFLX, 'Waiting'],
+          ),
+        ),
+      )
     },
   )
   flow.step(
@@ -1550,7 +1573,7 @@ function relayed(flow: Flow, permissionExpires: boolean) {
       flow.bToServer(
         'b-check-relay',
         'Binding Request (check)',
-        checkFields(TX.bCheck, 'B'),
+        checkFields(TX.bCheckRelay, 'B'),
         ADDRESSES.relay,
       )
       flow.serverToA(
@@ -1600,11 +1623,11 @@ function relayed(flow: Flow, permissionExpires: boolean) {
       description: symmetric
         ? {
             en: 'PC A answers inside a Send indication. The server sends the answer from 198.51.100.3:55000, and NAT B lets it in, because port 60003 was opened towards exactly that address. The answer tells PC B its address as seen from the relay, 192.0.2.77:60003, which PC B adds as a peer-reflexive local candidate.',
-            ja: 'PC A は Send の通知に答えを入れる。サーバーは 198.51.100.3:55000 から答えを送り、NAT B はそれを通す。60003 番は、ちょうどそのアドレスに向けて開けたものだから。答えは、中継から見た PC B のアドレス 192.0.2.77:60003 を知らせ、PC B はそれを peer reflexive の自分の候補として加える。',
+            ja: 'PC A は Send の通知に応答を入れる。サーバーは 198.51.100.3:55000 から応答を送り、NAT B はそれを通す。60003 番は、ちょうどそのアドレスに向けて開けたものだから。応答は、中継から見た PC B のアドレス 192.0.2.77:60003 を知らせ、PC B はそれを peer reflexive の自分の候補として加える。',
           }
         : {
             en: 'PC A answers inside a Send indication. The server sends the answer from 198.51.100.3:55000, and NAT B lets it in, because PC B has just sent to that address. PC B’s pair with the relayed candidate has succeeded.',
-            ja: 'PC A は Send の通知に答えを入れる。サーバーは 198.51.100.3:55000 から答えを送り、NAT B はそれを通す。PC B がちょうどそのアドレスに送ったから。PC B の、relay の候補とのペアは成功した。',
+            ja: 'PC A は Send の通知に応答を入れる。サーバーは 198.51.100.3:55000 から応答を送り、NAT B はそれを通す。PC B がちょうどそのアドレスに送ったから。PC B の、relay の候補とのペアは成功した。',
           },
     },
     () => {
@@ -1622,7 +1645,7 @@ function relayed(flow: Flow, permissionExpires: boolean) {
       flow.serverToB(
         'a-response-relay',
         'UDP from relay (response)',
-        responseFields(TX.bCheck, peerAtRelay),
+        responseFields(TX.bCheckRelay, peerAtRelay),
         ADDRESSES.relay,
         peerAtRelay,
       )
@@ -1708,7 +1731,7 @@ function relayed(flow: Flow, permissionExpires: boolean) {
       title: { en: 'The relayed pair works', ja: '中継のペアが通る' },
       description: {
         en: 'PC B answers, and the server relays the answer to PC A in a Data indication. The mapped address in it is 198.51.100.3:55000, PC A’s relayed candidate, so PC A has a valid pair.',
-        ja: 'PC B が答え、サーバーはそれを Data の通知で PC A に中継する。中のマップされたアドレスは PC A の relay の候補 198.51.100.3:55000 なので、PC A は有効なペアを持つ。',
+        ja: 'PC B が応答し、サーバーはそれを Data の通知で PC A に中継する。中のマップされたアドレスは PC A の relay の候補 198.51.100.3:55000 なので、PC A は有効なペアを持つ。',
       },
     },
     () => {
@@ -1988,8 +2011,8 @@ function relayed(flow: Flow, permissionExpires: boolean) {
       section: KEEP,
       title: { en: 'The permission expires', ja: '許可の期限が切れる' },
       description: {
-        en: 'Another minute later, 300 seconds after the last CreatePermission, the permissions expire. The allocation and the channel are still there; only the permission for PC B’s IP address is gone.',
-        ja: 'さらに 1 分後、最後の CreatePermission から 300 秒たって、許可の期限が切れる。割り当てもチャネルも残っているが、PC B の IP アドレスの許可だけがない。',
+        en: 'Another minute later, 300 seconds after they were last installed or refreshed (by CreatePermission, then ChannelBind), the permissions expire. The allocation and the channel are still there; only the permissions for PC B’s addresses are gone.',
+        ja: 'さらに 1 分後、最後に作られるか更新されてから（CreatePermission、続いて ChannelBind）300 秒たって、許可の期限が切れる。割り当てもチャネルも残っているが、PC B のアドレスの許可だけがない。',
       },
     },
     () => {

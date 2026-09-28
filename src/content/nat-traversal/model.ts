@@ -127,8 +127,8 @@ export function stunFields(spec: StunSpec): PacketField[] {
       name: 'Transaction ID',
       value: `0x${spec.transactionId}`,
       description: {
-        en: '96 random bits chosen by the sender of a request; the response carries the same value (this page uses example values)',
-        ja: '要求を送る側が選ぶ 96 ビットの乱数。応答にも同じ値が入る（このページの値は例）',
+        en: '96 random bits chosen by the sender of a request or indication; a response carries the same value as its request (this page uses example values)',
+        ja: '要求や通知を送る側が選ぶ 96 ビットの乱数。応答には要求と同じ値が入る（このページの値は例）',
       },
     },
     ...spec.attributes.map((attribute): PacketField => {
@@ -192,8 +192,8 @@ export function hop(spec: HopSpec): Message {
       value: spec.translation,
       highlight: true,
       description: {
-        en: 'What the NAT rewrote in the IP and UDP headers. The STUN body is not touched',
-        ja: 'NAT が IP と UDP のヘッダーで書き換えたところ。STUN の本文には触れない',
+        en: 'What the NAT rewrote in the IP and UDP/TCP headers. The payload is not touched',
+        ja: 'NAT が IP と UDP・TCP のヘッダーで書き換えたところ。中身には触れない',
       },
     })
   }

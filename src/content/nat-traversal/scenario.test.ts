@@ -152,6 +152,22 @@ describe('natTraversalScenario', () => {
       expect(stepFlow(steps, 'a-triggered')).toEqual(['pcA→natA', 'natA→natB', 'natB→pcB'])
     })
 
+    it('チェックの途中でチェックを受け取ったペアは Waiting に戻し、トリガーされたチェックで In-Progress', () => {
+      const steps = build()
+      const pairState = (stepId: string) => {
+        const index = steps.findIndex((step) => step.id === stepId)
+        const value = deriveState(natTraversalScenario.actors, steps, index).actorStates.pcA?.values
+          .checklist
+        return rows(value)?.find((row) => row[1] === '192.0.2.77:60001')?.[2]
+      }
+      expect(['a-check', 'a-response', 'a-triggered', 'b-response'].map(pairState)).toEqual([
+        'In-Progress',
+        'Waiting',
+        'In-Progress',
+        'Succeeded',
+      ])
+    })
+
     it('直接のペアを選び、NAT の外側のポートは 1 つずつ。使わない中継は 3 秒後に放す', () => {
       const state = final(build())
       expect(state.aSelected).toBe('203.0.113.5:40001 ↔ 192.0.2.77:60001')
@@ -187,6 +203,13 @@ describe('natTraversalScenario', () => {
         String(priorityOf('prflx')),
       ])
       expect(state.elapsedMs).toBe(REFRESH_MS)
+    })
+
+    it('同時に進む別々のチェックは、別のトランザクション ID を使う', () => {
+      const all = messages(build({ network: 'symmetric' }))
+      const direct = all.find((m) => m.id.startsWith('b-check-') && m.from === 'pcB')
+      const relay = all.find((m) => m.id.startsWith('b-check-relay') && m.from === 'pcB')
+      expect(field(direct, 'Transaction ID')).not.toBe(field(relay, 'Transaction ID'))
     })
 
     it('ChannelData のヘッダーは 4 バイト、チャネル番号は 0x4000〜0x4FFF', () => {
