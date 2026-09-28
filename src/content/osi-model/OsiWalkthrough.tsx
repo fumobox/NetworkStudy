@@ -39,7 +39,7 @@ export function OsiWalkthrough() {
   return (
     <LazyMotion features={domAnimation} strict>
       <section aria-labelledby={titleId} className="space-y-6">
-        <h2 id={titleId} className="font-heading text-xl font-semibold">
+        <h2 id={titleId} className="font-heading text-2xl font-bold tracking-tight">
           {t(TEXT.title)}
         </h2>
         <StepControls state={state} dispatch={dispatch} />

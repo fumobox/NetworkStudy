@@ -44,9 +44,9 @@ export function CertChainPanel({ derived, stateKey = CERT_CHAIN }: CertChainPane
   return (
     <section aria-labelledby={titleId} className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id={titleId} className="font-heading text-base font-semibold">
+        <h3 id={titleId} className="font-heading text-base font-semibold">
           {t(TEXT.title)}
-        </h2>
+        </h3>
         <p className="text-xs text-muted-foreground">{t(TEXT.checkedAt)}</p>
       </div>
       {rows.length === 0 ? (
@@ -71,7 +71,7 @@ export function CertChainPanel({ derived, stateKey = CERT_CHAIN }: CertChainPane
                   )}
                 >
                   {/* 見出しに役割も含め、見出しで移動したときに「サーバー証明書」などがわかるようにする */}
-                  <h3 className="mb-2">
+                  <h4 className="mb-2">
                     {role !== undefined && (
                       <span className="block text-xs font-normal text-muted-foreground">
                         {t(role)}
@@ -80,7 +80,7 @@ export function CertChainPanel({ derived, stateKey = CERT_CHAIN }: CertChainPane
                     <span className="block font-mono text-sm font-semibold">
                       {cell(row, 'subject')}
                     </span>
-                  </h3>
+                  </h4>
                   {notSent ? (
                     <p className="text-sm">{t(TEXT.notSent)}</p>
                   ) : (

@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { useHorizontalOverflow } from '@/lib/hooks/useHorizontalOverflow'
 import { useMessages, useText } from '@/lib/i18n'
 import { TONE_CLASSES } from '@/lib/tone'
 import { cn } from '@/lib/utils'
@@ -36,9 +37,9 @@ export function ActorStatePanel({
 
   return (
     <section aria-labelledby={titleId} className="space-y-3">
-      <h2 id={titleId} className="font-heading text-base font-semibold">
+      <h3 id={titleId} className="font-heading text-base font-semibold">
         {m.actorState.title}
-      </h2>
+      </h3>
       {/* 列の最小幅を 0 にして、表が長くても狭い画面で横にはみ出さない（はみ出す分は表の中でスクロール） */}
       <div className="grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
         {visibleActors.map(({ actor, slots }) => {
@@ -46,7 +47,7 @@ export function ActorStatePanel({
           const before = previous?.actorStates[actor.id]
           return (
             <div key={actor.id} className="rounded-lg border p-3">
-              <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold">
+              <h4 className="mb-2 flex items-center gap-2 text-sm font-semibold">
                 {/* シーケンス図の見出しと同じ色の印 */}
                 <span
                   aria-hidden
@@ -57,7 +58,7 @@ export function ActorStatePanel({
                   )}
                 />
                 {t(actor.name)}
-              </h3>
+              </h4>
               <dl className="space-y-2">
                 {slots.map((slot) => {
                   const value = snapshot?.values[slot.key] ?? slot.initial
@@ -137,8 +138,14 @@ function StateTableView({
   isNew: (row: readonly string[]) => boolean
 }) {
   const m = useMessages()
+  const { ref, overflowing } = useHorizontalOverflow<HTMLDivElement>()
   return (
-    <div className="overflow-x-auto">
+    // はみ出して横にスクロールするときだけ、キーボードでも動かせるようフォーカスできるようにする
+    <div
+      ref={ref}
+      className="overflow-x-auto rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      {...(overflowing ? { tabIndex: 0 } : {})}
+    >
       <table className="w-full text-left font-mono text-xs">
         <thead className="text-muted-foreground">
           <tr>

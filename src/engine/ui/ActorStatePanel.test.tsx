@@ -75,7 +75,7 @@ describe('ActorStatePanel', () => {
   it('状態を持つアクターだけ、枠の順に表示する。隠すキーは出さない', () => {
     renderPanel(0)
     const section = screen.getByRole('region', { name: 'State of each participant' })
-    expect(within(section).getByRole('heading', { level: 3, name: 'Client' })).toBeInTheDocument()
+    expect(within(section).getByRole('heading', { level: 4, name: 'Client' })).toBeInTheDocument()
     expect(within(section).queryByRole('heading', { name: 'Server' })).toBeNull()
     expect(within(section).getByText('SYN_SENT')).toBeInTheDocument()
     expect(within(section).queryByText('Secret')).toBeNull()

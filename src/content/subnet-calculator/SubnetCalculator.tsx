@@ -69,7 +69,7 @@ export function SubnetCalculator() {
 
   return (
     <section aria-labelledby={ids.title} className="space-y-6">
-      <h2 id={ids.title} className="font-heading text-xl font-semibold">
+      <h2 id={ids.title} className="font-heading text-2xl font-bold tracking-tight">
         {t(TEXT.title)}
       </h2>
       <div className="grid gap-6 sm:grid-cols-2">

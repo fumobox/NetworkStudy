@@ -22,7 +22,7 @@ function renderPanel(certProblem: CertProblem, stepId: string, locale: Locale = 
 /** 各証明書のカードの検証項目を [ラベル, 結果] で取り出す */
 function checksOf(panel: HTMLElement, subject: string): string[][] {
   const card = within(panel)
-    .getAllByRole('heading', { level: 3 })
+    .getAllByRole('heading', { level: 4 })
     .find((heading) => heading.querySelector('.font-mono')?.textContent === subject)
     ?.closest('article')
   if (card === null || card === undefined) throw new Error(`no card for ${subject}`)
@@ -100,7 +100,7 @@ describe('CertChainPanel', () => {
     const panel = renderPanel('none', 'last')
     expect(
       within(panel)
-        .getAllByRole('heading', { level: 3 })
+        .getAllByRole('heading', { level: 4 })
         .map((h) => h.textContent),
     ).toEqual([
       'Server certificatewww.example.com',

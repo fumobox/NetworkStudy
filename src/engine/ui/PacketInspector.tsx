@@ -29,15 +29,15 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
 
   return (
     <section aria-labelledby={titleId} className="space-y-3">
-      <h2 id={titleId} className="font-heading text-base font-semibold">
+      <h3 id={titleId} className="font-heading text-base font-semibold">
         {m.inspector.title}
-      </h2>
+      </h3>
       {message === null ? (
         <p className="text-sm text-muted-foreground">{m.inspector.empty}</p>
       ) : (
         <div className="space-y-3">
           <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-            <h3 className="font-mono text-lg font-bold">{message.label}</h3>
+            <h4 className="font-mono text-lg font-bold">{message.label}</h4>
             <span className="text-sm text-muted-foreground">
               {m.inspector.route({ from: actorName(message.from), to: actorName(message.to) })}
             </span>
