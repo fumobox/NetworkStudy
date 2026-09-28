@@ -105,8 +105,8 @@ export const wifiQuiz: Quiz = {
       ],
       answerId: 'two-frames',
       explanation: {
-        en: 'In infrastructure mode, every frame goes through the AP. On the way up, Address 1 is the BSSID and Address 3 the phone; on the way down, Address 1 is the phone and Address 3 the laptop. The AP decrypts with the laptop’s TK and re-encrypts with the phone’s. Direct frames with ToDS=0 and FromDS=0 are used in an IBSS (ad hoc).',
-        ja: 'インフラストラクチャモードでは、フレームはすべて AP を通る。上りでは Address 1 が BSSID で Address 3 がスマートフォン、下りでは Address 1 がスマートフォンで Address 3 がノート PC。AP はノート PC の TK で復号し、スマートフォンの TK で暗号化し直す。ToDS=0、FromDS=0 で直接送るのは IBSS（アドホック）の場合。',
+        en: 'In infrastructure mode, frames normally go through the AP. On the way up, Address 1 is the BSSID and Address 3 the phone; on the way down, Address 1 is the phone and Address 3 the laptop. The AP decrypts with the laptop’s TK and re-encrypts with the phone’s. Direct frames with ToDS=0 and FromDS=0 are used in an IBSS (ad hoc).',
+        ja: 'インフラストラクチャモードでは、フレームはふつう AP を通る。上りでは Address 1 が BSSID で Address 3 がスマートフォン、下りでは Address 1 がスマートフォンで Address 3 がノート PC。AP はノート PC の TK で復号し、スマートフォンの TK で暗号化し直す。ToDS=0、FromDS=0 で直接送るのは IBSS（アドホック）の場合。',
       },
     },
     {
