@@ -39,6 +39,7 @@
 | 近隣探索 | NDP、ICMPv6、RS、RA、NS、NA、DAD、SLAAC、DHCPv6、MLD、RDNSS、RetransTimer、RTR_SOLICITATION_INTERVAL、MAX_RTR_SOLICITATION_DELAY、Neighbor Solicitation、Neighbor Advertisement、Router Solicitation、Router Advertisement、Cur Hop Limit、Router Lifetime、Prefix Information、M / O / L / A / R / S フラグ、tentative、preferred、duplicate、INCOMPLETE、REACHABLE、STALE、DELAY、PROBE、NUD |
 | パス MTU 探索 | MTU、PMTU、DF（Don’t Fragment）、MF（More Fragments）、Identification、Fragment offset、Total length、Fragmentation Needed、Next-Hop MTU、Packet Too Big、PPPoE、PLPMTUD、MSS clamping |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
+| NAT 越え（STUN・TURN・ICE） | STUN、TURN、ICE、WebRTC、SDP、Trickle ICE、coturn、turns:、Binding Request、Binding Success Response、Allocate、Refresh、CreatePermission、ChannelBind、Send indication、Data indication、ChannelData、XOR-MAPPED-ADDRESS、XOR-RELAYED-ADDRESS、XOR-PEER-ADDRESS、REQUESTED-TRANSPORT、LIFETIME、CHANNEL-NUMBER、DATA、USERNAME、REALM、NONCE、MESSAGE-INTEGRITY、MESSAGE-INTEGRITY-SHA256、PASSWORD-ALGORITHMS、PASSWORD-ALGORITHM、FINGERPRINT、ERROR-CODE、PRIORITY、USE-CANDIDATE、ICE-CONTROLLING、ICE-CONTROLLED、Message Type、Message Length、Magic Cookie、Transaction ID、X-Port、X-Address、401 Unauthenticated、host、srflx、prflx、relay、ice-ufrag、ice-pwd、a=candidate、typ、raddr、rport、Waiting、In-Progress、Succeeded、Failed、Running、Completed、controlling、controlled、EIM、APDM、APDF、SRTP、DTLS、consent freshness（状態の値 UDP blocked, TCP 80/443、Succeeded, nominated、フィールド名 IP Src → Dst、Transport、Translation、Payload、Padding、ChannelData header と、表の列 Type、Address、Priority、Local、Remote、State、Field、Value、Peer IP、Expires in、Channel、Peer、5-tuple、Relayed、Lifetime、Username も翻訳しない） |
 | ファイアウォール | NEW、ESTABLISHED、RELATED、INVALID、UNREPLIED、REPLIED、accept、drop、reject、conntrack、ct state、5-tuple、filtered、closed（ポートスキャンの結果）、Port Unreachable、communication administratively prohibited、connection refused、SSH |
 | IPv6 アドレス | IPv6、EUI-64、U/L ビット、ff:fe、RFC 5952 |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
@@ -262,6 +263,24 @@
 | default deny | 既定で拒否 | |
 | inbound / outbound | 内向き／外向き | |
 | unsolicited | 頼んでいない | |
+| NAT traversal | NAT 越え | 初出で「NAT トラバーサル」と添える |
+| candidate / host candidate | 候補／ホスト候補 | ICE |
+| server-reflexive / peer-reflexive / relayed candidate | server reflexive の候補（srflx）／peer reflexive の候補（prflx）／relay の候補 | |
+| base (of a candidate) | 基底 | 実際に送るアドレス |
+| connectivity check / triggered check | 接続性チェック／トリガーされたチェック | |
+| candidate pair / checklist / valid pair / selected pair | 候補ペア（ペア）／チェックリスト／有効なペア／選ばれたペア | |
+| nominate / nomination | 指名する／指名 | |
+| controlling / controlled agent | controlling の側（制御する側）／controlled の側 | |
+| hole punching | ホールパンチング | |
+| relay (verb) / relayed address | 中継する／中継のアドレス | |
+| allocation / permission / channel | 割り当て／許可／チャネル | TURN |
+| long-term / short-term credential | 長期の資格情報／短期の資格情報 | |
+| realm / nonce / magic cookie / transaction ID | レルム／ノンス／マジッククッキー／トランザクション ID | |
+| endpoint-independent / address- and port-dependent mapping | 宛先によらない対応づけ／宛先のアドレスとポートごとの対応づけ | RFC 4787 |
+| “symmetric” NAT | いわゆるシンメトリック NAT | RFC 4787 はこの呼び方を避ける |
+| signalling / offer / answer | シグナリング／オファー／アンサー | SDP の answer。STUN の response は「応答」 |
+| username fragment | ユーザー名のフラグメント（ufrag） | |
+| keepalive | キープアライブ | |
 | drop / reject | 黙って捨てる／拒否する | reject は「RST か ICMP のエラーで答える」 |
 | pseudo-connection | 擬似的な接続 | UDP |
 | idle timer / idle timeout | アイドルタイマー／アイドルタイムアウト | |
