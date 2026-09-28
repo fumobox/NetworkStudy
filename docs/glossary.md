@@ -38,6 +38,7 @@
 | 近隣探索 | NDP、ICMPv6、RS、RA、NS、NA、DAD、SLAAC、DHCPv6、MLD、RDNSS、RetransTimer、RTR_SOLICITATION_INTERVAL、MAX_RTR_SOLICITATION_DELAY、Neighbor Solicitation、Neighbor Advertisement、Router Solicitation、Router Advertisement、Cur Hop Limit、Router Lifetime、Prefix Information、M / O / L / A / R / S フラグ、tentative、preferred、duplicate、INCOMPLETE、REACHABLE、STALE、DELAY、PROBE、NUD |
 | パス MTU 探索 | MTU、PMTU、DF（Don’t Fragment）、MF（More Fragments）、Identification、Fragment offset、Total length、Fragmentation Needed、Next-Hop MTU、Packet Too Big、PPPoE、PLPMTUD、MSS clamping |
 | NAT | NAT、NAPT、ALG、UPnP、PCP |
+| ファイアウォール | NEW、ESTABLISHED、RELATED、INVALID、UNREPLIED、REPLIED、accept、drop、reject、conntrack、ct state、5-tuple、filtered、closed（ポートスキャンの結果）、Port Unreachable、communication administratively prohibited、connection refused、SSH |
 | IPv6 アドレス | IPv6、EUI-64、U/L ビット、ff:fe、RFC 5952 |
 | DHCP | DHCP、DHCPDISCOVER、DHCPOFFER、DHCPREQUEST、DHCPACK、DHCPNAK、DHCPDECLINE、DHCPRELEASE、DHCPINFORM、DORA、xid、secs、flags、ciaddr、yiaddr、siaddr、giaddr、chaddr、INIT、SELECTING、REQUESTING、BOUND、RENEWING、REBINDING、INIT-REBOOT、REBOOTING、T1、T2 |
 | HTTP のキャッシュ | Cache-Control、max-age、no-cache、no-store、s-maxage、Vary、ETag、If-None-Match、Last-Modified、If-Modified-Since、Expires、Age、Date、200 OK、304 Not Modified、GET、fresh、stale、hit、miss |
@@ -210,6 +211,19 @@
 | default route | デフォルト経路 | `0.0.0.0/0` |
 | directly connected | 直接接続 | |
 | metric | メトリック | |
+| stateful firewall | ステートフルファイアウォール | |
+| packet filter | パケットフィルター | |
+| connection tracking | 接続の追跡 | |
+| state table | 状態表 | |
+| rule / policy | ルール／ポリシー | |
+| default deny | 既定で拒否 | |
+| inbound / outbound | 内向き／外向き | |
+| unsolicited | 頼んでいない | |
+| drop / reject | 黙って捨てる／拒否する | reject は「RST か ICMP のエラーで答える」 |
+| pseudo-connection | 擬似的な接続 | UDP |
+| idle timer / idle timeout | アイドルタイマー／アイドルタイムアウト | |
+| port scan / scanner | ポートスキャン／スキャナー | |
+| connection refused | 接続の拒否（connection refused） | |
 | path MTU discovery | パス MTU 探索 | |
 | path MTU | パス MTU | 経路の途中のリンクの MTU のうち最小のもの |
 | fragment / fragmentation | フラグメント／フラグメント化 | 動詞は「分割する」 |
