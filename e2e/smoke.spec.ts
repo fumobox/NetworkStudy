@@ -71,6 +71,24 @@ test('言語を切り替えても、パスとクエリを保つ', async ({ page 
   await expect(page.getByText(MESSAGES.ja.stepper.counter({ current: 2, total: 5 }))).toBeVisible()
 })
 
+test('サイドバーのリンクで別のテーマに移ると、ページの先頭から表示する', async ({ page }) => {
+  const [from, to] = THEME_META
+  if (from === undefined || to === undefined) throw new Error('no themes')
+  await page.goto(`en/themes/${from.id}`)
+  await expect(page.getByRole('heading', { level: 1, name: from.title.en })).toBeVisible()
+  await page.evaluate(() => {
+    window.scrollTo(0, document.body.scrollHeight)
+  })
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+  await page
+    .getByRole('navigation', { name: MESSAGES.en.nav.themes })
+    .getByRole('link', { name: to.title.en })
+    .click()
+  await expect(page.getByRole('heading', { level: 1, name: to.title.en })).toBeVisible()
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+  await expect(page.getByRole('main')).toBeFocused()
+})
+
 test('ロケールのないパスは、ロケール付きのパスへ移る', async ({ page }) => {
   await page.goto('themes/dns-resolution')
   await expect(page).toHaveURL(/\/NetworkStudy\/(en|ja)\/themes\/dns-resolution$/)
@@ -104,6 +122,9 @@ test.describe('スマホの幅（390px）', () => {
     await expect(link).toBeInViewport()
     await link.click()
     await expect(page.getByRole('heading', { level: 1, name: last.title.ja })).toBeVisible()
+    // メニューを閉じても、フォーカスはメニューのボタンに戻らず、移った先のページの main にある
+    await expect(page.getByRole('main')).toBeFocused()
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
   })
 
   for (const meta of THEME_META) {
