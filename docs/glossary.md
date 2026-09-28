@@ -46,6 +46,7 @@
 | CORS | CORS、Origin、Access-Control-Allow-Origin、Access-Control-Allow-Credentials、Access-Control-Allow-Methods、Access-Control-Allow-Headers、Access-Control-Request-Method、Access-Control-Request-Headers、Access-Control-Max-Age、OPTIONS、POST、204 No Content、201 Created、fetch()、TypeError、credentials: include、preflight required、no preflight required、Cookie、CSRF、Access-Control-Expose-Headers、Private Network Access |
 | HTTP/2 | HTTP/2、HTTP/1.1、h2、ALPN、HPACK、SETTINGS、HEADERS、DATA、WINDOW_UPDATE、PRIORITY、PUSH_PROMISE、GOAWAY、END_STREAM、END_HEADERS、ENABLE_PUSH、MAX_CONCURRENT_STREAMS、Stream ID、:method、:scheme、:authority、:path、:status、keep-alive、half-closed (local)、closed、in flight、waiting、done、in order、1 segment missing、User-Agent、QUIC |
 | QUIC | HTTP/3、UDP、Initial、Handshake、0-RTT、1-RTT、CRYPTO、ACK、STREAM、PADDING、HANDSHAKE_DONE、FIN、PTO、Destination Connection ID、DCID、SCID、Packet number、ALPN h3、quic_transport_parameters、pre_shared_key、early_data、NewSessionTicket、Retry、QPACK、Alt-Svc、in progress、complete、confirmed、discarded、sent、sent (0-RTT)、0-RTT rejected、1 packet missing |
+| メールの送信ドメイン認証 | SPF、DKIM、DMARC、ARC、SMTP、MX、EHLO、MAIL FROM、RCPT TO、DATA、From、To、Subject、DKIM-Signature、Authentication-Results、Received、List-Id、_domainkey、_dmarc、v=spf1、ip4、-all、~all、?all、v=DKIM1、k=rsa、d=、s=、h=、bh=、b=、c=、relaxed、strict、v=DMARC1、p=none、p=quarantine、p=reject、adkim、aspf、rua、pass、fail、softfail、neutral、none、temperror、permerror、RFC5321.MailFrom、RFC5322.From、250、550 5.7.1、SRS、smtp.mailfrom、header.d、header.from、accept、quarantine、reject、yes、no（状態の値と表の列 Identifier、Domain、Result、Aligned も翻訳しない） |
 
 ## 3. 訳語の対応表
 
@@ -131,6 +132,22 @@
 | encrypted | 暗号化された | |
 | key exchange | 鍵交換 | |
 | header | ヘッダー | |
+| email authentication | 送信ドメイン認証 | |
+| envelope / envelope sender | エンベロープ／エンベロープの送信者 | SMTP の MAIL FROM |
+| sending server / receiving server | 送信サーバー／受信サーバー | |
+| mailing list | メーリングリスト | |
+| alias | エイリアス | メールの転送 |
+| spoofing / forged mail | なりすまし／偽のメール | |
+| selector | セレクター | DKIM |
+| alignment | アライメント | 識別子のドメインと From のドメインの一致。「アラインする」 |
+| organizational domain | 組織ドメイン | |
+| aggregate report | 集約レポート | DMARC |
+| bounce | バウンス | 配送のエラーの通知 |
+| body hash | 本文のハッシュ | |
+| canonicalization | 正規化 | |
+| public key / private key | 公開鍵／秘密鍵 | |
+| domain owner | ドメインの所有者 | |
+| inbox / spam folder | 受信箱／迷惑メールフォルダー | |
 | encapsulation | カプセル化 | |
 | ARP cache | ARP キャッシュ | |
 | ARP request / reply | ARP の要求／応答 | |
