@@ -49,6 +49,7 @@
 | QUIC | HTTP/3、UDP、Initial、Handshake、0-RTT、1-RTT、CRYPTO、ACK、STREAM、PADDING、HANDSHAKE_DONE、FIN、PTO、Destination Connection ID、DCID、SCID、Packet number、ALPN h3、quic_transport_parameters、pre_shared_key、early_data、NewSessionTicket、Retry、QPACK、Alt-Svc、in progress、complete、confirmed、discarded、sent、sent (0-RTT)、0-RTT rejected、1 packet missing |
 | WebSocket | WebSocket、ws://、wss://、Upgrade、Connection: Upgrade、Sec-WebSocket-Key、Sec-WebSocket-Accept、Sec-WebSocket-Version、Sec-WebSocket-Protocol、Sec-WebSocket-Extensions、101 Switching Protocols、403 Forbidden、426 Upgrade Required、GUID、SHA-1、base64、FIN（フレームのビット。TCP FIN とは文脈で区別する）、RSV1-3、Opcode、MASK、Masking key、Payload length、Header bytes、Text、Binary、Continuation、Close、Ping、Pong、readyState、CONNECTING、OPEN、CLOSING、CLOSED、open、message、error、close、wasClean、binaryType、Blob、1000、1001、1002、1005、1006、1008、1009、1011、1015、permessage-deflate、extended CONNECT、:protocol、Server-Sent Events、EventSource、CSWSH、TCP FIN、hb-1（状態とフィールドの値 waiting for 101、Accept OK、Accept mismatch、allowed: …、Ping sent、Pong received、Pong timeout、(forgotten)、1000 (normal closure)、N bytes、N fragments、message: …、error, close: 1006、close: 1000, wasClean true と、表の列 Stage、Value も翻訳しない。Text、Binary、Continuation はラベルとフィールドの値。本文ではテキスト、バイナリー、継続と書く） |
 | メールの送信ドメイン認証 | SPF、DKIM、DMARC、ARC、SMTP、MX、EHLO、MAIL FROM、RCPT TO、DATA、From、To、Subject、DKIM-Signature、Authentication-Results、Received、List-Id、_domainkey、_dmarc、v=spf1、ip4、-all、~all、?all、v=DKIM1、k=rsa、d=、s=、h=、bh=、b=、c=、relaxed、strict、v=DMARC1、p=none、p=quarantine、p=reject、adkim、aspf、rua、pass、fail、softfail、neutral、none、temperror、permerror、RFC5321.MailFrom、RFC5322.From、250、550 5.7.1、SRS、smtp.mailfrom、header.d、header.from、accept、accept (p=none)、quarantine、reject、reject (550 5.7.1)、yes、no（状態の値と表の列・行 Identifier、Domain、Result、Aligned、SPF (MAIL FROM)、DKIM (d=)、From (header)、Name、TXT も翻訳しない） |
+| Wi-Fi（802.11） | 802.11、WPA2、WPA2-Personal、WPA2-PSK、WPA3、WPA3-Personal、WEP、SAE、PMF、802.11w、RSN、RSNA、RSNE、AKM、CCMP、CCMP-128、PBKDF2、HMAC-SHA1、PRF-384、AES Key Wrap、KRACK、SSID、BSSID、BSS、ESS、IBSS、DS、STA、AP、TSF、TU、TIM、DTIM、Beacon、Probe Request、Probe Response、Authentication、Association Request、Association Response、Deauthentication、Open System、AID、EAPOL、EAPOL-Key、802.1X、ANonce、SNonce、PMK、PTK、GTK、KCK、KEK、TK、MIC、KDE、Key Information、Key Replay Counter、Install、Key Ack、Key MIC、Secure、Encrypted Key Data、Frame Control、ToDS、FromDS、Retry、Protected、Duration、Address 1〜3、RA、TA、DA、SA、Ack（802.11 のフレーム。TCP の ACK とは別）、RTS、CTS、NAV、CCA、SIFS、DIFS、AIFS、CW、CSMA/CA、CSMA/CD、DCF、EDCA、OFDM、ATIM、Wi-Fi Direct、802.11s（状態の値 State 1〜4、EAPOL only、open、not used、derived、installed、received、duplicate discarded、MIC invalid (discarded)、MIC valid、Ack received、sending (…)、no Ack: …、NAV … (busy)、NAV expired: …、paused (hears the AP’s Ack)、collision (nothing decoded)、ignored (not an AP)、Beacon (TSF synced)、CTS for STA …、Data from STA … (…)、IBSS started、looking for …、joined …、理由コードの 4-way handshake timeout と、表の列 SSID、BSSID、Security、Via、Key、Bits、Value、MAC、State、AID も翻訳しない） |
 
 ## 3. 訳語の対応表
 
@@ -292,6 +293,27 @@
 | reassembly | 組み立て直し（再構成） | 宛先だけが行う |
 | next-hop MTU | 次のリンクの MTU | |
 | (path MTU) black hole | （パス MTU の）ブラックホール | |
+| access point | アクセスポイント | |
+| station | STA（端末） | 802.11 の用語としては STA と書く |
+| association | アソシエーション | |
+| deauthenticate | 認証を解除する | |
+| passive scanning / active scanning | パッシブスキャン／アクティブスキャン | |
+| beacon | ビーコン | フレームの名前は Beacon |
+| 4-way handshake | 4 ウェイハンドシェイク | |
+| passphrase | パスフレーズ | |
+| pairwise master key / pairwise transient key / group temporal key | ペアワイズマスター鍵（PMK）／ペアワイズ一時鍵（PTK）／グループ一時鍵（GTK） | |
+| distribution system | ディストリビューションシステム（DS） | |
+| infrastructure mode / ad hoc mode | インフラストラクチャモード／アドホックモード | |
+| hidden node | 隠れ端末 | |
+| collision / collision avoidance | 衝突／衝突回避 | |
+| carrier sense / virtual carrier sense | キャリアセンス／仮想キャリアセンス | |
+| backoff | バックオフ | |
+| contention window | コンテンションウィンドウ（CW） | |
+| slot | スロット | |
+| network allocation vector | ネットワーク割り当てベクター（NAV） | |
+| radio range | 電波の届く範囲 | |
+| offline dictionary attack | オフラインの辞書攻撃 | |
+| downgrade | 格下げ | |
 | interface | インターフェース | |
 | network card | ネットワークカード | |
 | layer | 層 | 「レイヤー」は UI の説明など一般的な文脈に限る |
