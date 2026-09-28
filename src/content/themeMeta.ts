@@ -16,7 +16,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
 
 /**
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
- * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、lan: LAN の中（スイッチ、VLAN、IPv6 の近隣探索）、
+ * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、パス MTU 探索、NAT、NAT 越え、経路制御）、lan: LAN の中（スイッチ、VLAN、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
  * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket）、security: ネットワークのセキュリティ（ファイアウォール、DNSSEC、メールの送信ドメイン認証）
  */
@@ -300,6 +300,19 @@ export const NAT_META = {
   minutes: 10,
 } as const satisfies ThemeMeta
 
+export const NAT_TRAVERSAL_META = {
+  id: 'nat-traversal',
+  kind: 'sequence',
+  category: 'ip',
+  title: { en: 'NAT traversal: STUN, TURN and ICE', ja: 'NAT 越え: STUN・TURN・ICE' },
+  summary: {
+    en: 'How two PCs behind different NATs find a path to each other: STUN tells each one its public address, ICE tries every pair of addresses, and a TURN server relays the traffic when nothing else works.',
+    ja: '別々の NAT の内側にある 2 台の PC が通り道を見つけるまで。STUN で自分のグローバルアドレスを知り、ICE でアドレスの組をすべて試し、どれも通らなければ TURN のサーバーが中継する。',
+  },
+  difficulty: 'intermediate',
+  minutes: 20,
+} as const satisfies ThemeMeta
+
 export const ROUTE_LOOKUP_META = {
   id: 'route-lookup',
   kind: 'custom',
@@ -440,7 +453,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ → VLAN → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -451,6 +464,7 @@ export const THEME_META = [
   ICMP_META,
   PMTUD_META,
   NAT_META,
+  NAT_TRAVERSAL_META,
   ROUTE_LOOKUP_META,
   SWITCHING_META,
   VLAN_META,

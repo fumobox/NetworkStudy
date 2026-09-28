@@ -12,6 +12,7 @@ import { ipv6AddressQuiz } from './ipv6-address/quiz'
 import { ipv6NdQuiz } from './ipv6-nd/quiz'
 import { mailAuthQuiz } from './mail-auth/quiz'
 import { natQuiz } from './nat/quiz'
+import { natTraversalQuiz } from './nat-traversal/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
 import { pmtudQuiz } from './pmtud/quiz'
 import { quicQuiz } from './quic/quiz'
@@ -38,6 +39,7 @@ import {
   IPV6_ND_META,
   MAIL_AUTH_META,
   NAT_META,
+  NAT_TRAVERSAL_META,
   OSI_MODEL_META,
   PMTUD_META,
   QUIC_META,
@@ -72,6 +74,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: ICMP_META, quiz: icmpQuiz },
   { meta: PMTUD_META, quiz: pmtudQuiz },
   { meta: NAT_META, quiz: natQuiz },
+  { meta: NAT_TRAVERSAL_META, quiz: natTraversalQuiz },
   { meta: ROUTE_LOOKUP_META, quiz: routeLookupQuiz },
   { meta: SWITCHING_META, quiz: switchingQuiz },
   { meta: VLAN_META, quiz: vlanQuiz },

@@ -1,6 +1,7 @@
 import { Lock, Timer } from 'lucide-react'
 import { m, useReducedMotionConfig } from 'motion/react'
 import type { KeyboardEvent } from 'react'
+import { useHorizontalOverflow } from '@/lib/hooks/useHorizontalOverflow'
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery'
 import { formatSeconds, useLocale, useMessages, useText } from '@/lib/i18n'
 import { TONE_CLASSES } from '@/lib/tone'
@@ -67,6 +68,7 @@ export function SequenceDiagram({
   const t = useText()
   const locale = useLocale()
 
+  const { ref: scrollRef, overflowing } = useHorizontalOverflow<HTMLDivElement>()
   const currentStep = clampStepIndex(steps.length, stepIndex)
   const rows = diagramRows(steps, currentStep)
   const showElapsed = hasTimers(steps)
@@ -107,7 +109,12 @@ export function SequenceDiagram({
   }
 
   return (
-    <div className="overflow-x-auto rounded-lg border bg-card">
+    // 図が横にはみ出すときは、メッセージがまだなくてもキーボードでスクロールできるようにする
+    <div
+      ref={scrollRef}
+      className="overflow-x-auto rounded-lg border bg-card focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      {...(overflowing ? { tabIndex: 0 } : {})}
+    >
       <svg
         role="group"
         aria-label={m.diagram.label}
