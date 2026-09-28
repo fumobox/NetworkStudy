@@ -132,7 +132,7 @@ export const en = {
     },
     lan: {
       title: 'Inside the LAN',
-      lead: 'What a switch does with each frame, how VLANs split one switch into separate networks, and how IPv6 hosts find their neighbors and configure their own addresses.',
+      lead: 'What a switch does with each frame, how VLANs split one switch into separate networks, how a device joins a Wi-Fi network and shares the air, and how IPv6 hosts find their neighbors and configure their own addresses.',
     },
     web: {
       title: 'How a web page reaches you',

@@ -27,6 +27,7 @@ import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
 import { vlanTheme } from './vlan'
 import { webSocketTheme } from './websocket'
+import { wifiTheme } from './wifi'
 import type { ThemeModule } from './types'
 
 /** 公開するテーマ（themeMeta.ts の THEME_META と同じ順・同じ id。registry.test.ts で確認する） */
@@ -43,6 +44,7 @@ export const THEMES: readonly ThemeModule[] = [
   routeLookupTheme,
   switchingTheme,
   vlanTheme,
+  wifiTheme,
   ipv6NdTheme,
   dnsResolutionTheme,
   tcpHandshakeTheme,

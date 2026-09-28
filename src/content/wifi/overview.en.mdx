@@ -1,0 +1,114 @@
+## A network without wires
+
+Wi-Fi is the IEEE 802.11 family of standards. In the usual **infrastructure mode**, devices (**stations**, STA) connect to an **access point** (AP). The AP and its stations form a **BSS** (basic service set). The BSS has a name, the **SSID**, and an identifier, the **BSSID**, which is the AP’s MAC address. The AP is also a bridge to the wired LAN, which 802.11 calls the **distribution system** (DS). Several APs with the same SSID on one DS form an ESS (extended service set).
+
+Before a station can send an IP packet, it goes through three stages: it finds the network, it authenticates and associates, and it runs the 4-way handshake to agree on keys.
+
+## Finding a network
+
+- **Passive scanning**: the AP broadcasts a **Beacon** about every 100 TU (1 TU = 1,024 µs, so 102.4 ms). The Beacon carries the SSID, the BSSID, the supported rates and an **RSN element** (RSNE) that lists the ciphers and the key management it accepts. For WPA2-Personal these are CCMP-128 and a pre-shared key.
+- **Active scanning**: the station broadcasts a **Probe Request**, often with a wildcard SSID (length 0). APs answer with a unicast **Probe Response**.
+
+Many devices use a random, locally administered MAC address while scanning or for each network, so that they cannot be tracked by their MAC address.
+
+## Authentication and association
+
+The names mislead: 802.11 **Open System authentication** is not security. The station says who it is and the AP accepts everyone. The step remains for historical reasons: the old WEP used it for a shared-key method. **Association** makes the station a member of the BSS. The AP records it and gives it an **association ID** (AID).
+
+802.11 describes this with four states:
+
+| State | Meaning |
+|---|---|
+| State 1 | Not authenticated, not associated |
+| State 2 | Authenticated, not associated |
+| State 3 | Associated, but the keys are not established yet (of the data frames, only EAPOL may pass) |
+| State 4 | Associated, and the keys are established (or none are needed): data may flow |
+
+## The 4-way handshake
+
+With WPA2-Personal, both sides already share the **PMK** (pairwise master key). It comes from the passphrase: PBKDF2 with HMAC-SHA1, the SSID as the salt, 4,096 iterations and 256 bits (RFC 8018). The handshake never sends the PMK. Instead it proves that both sides know it.
+
+1. The AP sends a random **ANonce**. This message has no MIC, because there is no key to compute one yet.
+2. The station picks an **SNonce** and derives the **PTK** (pairwise transient key) from the PMK, both MAC addresses and both nonces. The PTK is split into the **KCK** (for MICs), the **KEK** (for wrapping keys) and the **TK** (for encrypting data). The station sends its SNonce with a **MIC** computed with the KCK. The AP derives the same PTK and checks the MIC. A match proves that the station knows the PMK.
+3. The AP sends a MIC of its own, which proves that the AP knows the PMK as well. It also sends the **GTK** (group temporal key), used for broadcast and multicast. The frame is not encrypted, but its Key Data field is: the GTK is wrapped with the KEK. The Install bit tells the station to install the PTK.
+4. The station confirms. It then installs the PTK and the GTK, and the AP installs the PTK. The 802.1X port opens. In practice the next step is usually DHCP.
+
+The AP also checks that the RSNE in message 2 matches the Association Request, and the station checks that the RSNE in message 3 matches the Beacon. This detects an attacker who tries to downgrade the security. In 2017 the **KRACK** attacks showed that many clients reinstalled the key when message 3 was resent, which reset their nonces. Patches fixed this.
+
+## Why WPA2-Personal is weak, and WPA3
+
+Anyone who records messages 1 and 2 of a handshake can try passphrases offline: compute the PMK and the PTK for each guess and check the MIC, exactly as the AP does. This is an **offline dictionary attack**. A short passphrase does not survive it. Because the SSID is the salt, networks with a common SSID also share precomputed tables.
+
+**WPA3-Personal** replaces the pre-shared key with **SAE**, a password-authenticated key exchange that runs in the Authentication frames. A recorded exchange does not help an attacker to guess offline, and even someone who later learns the password cannot decrypt traffic recorded earlier (forward secrecy). With WPA2-Personal, anyone who knows the passphrase and records the handshake can compute the PTK. WPA3 also requires **PMF** (protected management frames, 802.11w), which protects frames such as Deauthentication from being forged.
+
+## Data frames and their addresses
+
+A data frame has up to four address fields. Two bits in the Frame Control field, **ToDS** and **FromDS**, say what they mean. Address 1 is always the receiver on this hop, and Address 2 is always the transmitter.
+
+| ToDS / FromDS | Case | Address 1 | Address 2 | Address 3 |
+|---|---|---|---|---|
+| 0 / 0 | In an IBSS | DA | SA | BSSID |
+| 1 / 0 | STA to AP | BSSID | SA | DA |
+| 0 / 1 | AP to STA | DA | BSSID | SA |
+
+Both bits set to 1 means four addresses, used for mesh and bridge links; this page does not cover it. Even when two stations are in the same BSS, their traffic normally goes through the AP as two frames. The AP decrypts with the sender’s TK and re-encrypts with the receiver’s TK.
+
+## Sharing the air: CSMA/CA
+
+All stations on a channel share one medium, and a radio cannot hear a collision while it is transmitting. The collision happens at the receiver, and the sender may not even hear the other station that caused it. So Wi-Fi uses **collision avoidance** (CSMA/CA) instead of the collision detection (CSMA/CD) of early Ethernet. Success is known only from the **Ack**.
+
+- **Carrier sense**: a station listens before sending. Physical carrier sense is the radio’s CCA. Virtual carrier sense is the **NAV**, which a station sets from the Duration field of frames it hears.
+- The medium must be idle for **DIFS**. Then the station counts down a random **backoff** of 0 to CW slots. If the medium becomes busy, the countdown pauses.
+- The receiver sends an Ack after **SIFS**. SIFS is shorter than DIFS, so no one can start in between. Frames sent to a group address get no Ack.
+- If no Ack arrives, the station doubles CW (15 → 31 → 63 … up to 1,023) and sends the frame again with the **Retry** bit and the same sequence number. The receiver can then discard a duplicate, but it still sends the Ack.
+
+Times for 5 GHz OFDM (802.11a and the non-HT rates of later PHYs):
+
+| | Time |
+|---|---|
+| Slot | 9 µs |
+| SIFS | 16 µs |
+| DIFS = SIFS + 2 slots (DCF) | 34 µs |
+| AIFS for best effort = SIFS + 3 slots (EDCA) | 43 µs |
+| Ack at 24 Mb/s | 28 µs |
+
+Today’s 802.11n/ac/ax devices use **EDCA**, which gives each traffic class its own AIFS and CW, with best effort being the usual one. This page uses the simpler DCF with DIFS.
+
+## Hidden nodes and RTS/CTS
+
+Two stations on opposite sides of an AP may both hear the AP, but not each other. Carrier sense then fails. Each thinks the medium is idle, their frames overlap at the AP, and both are lost. With **RTS/CTS**, a station first sends a short RTS (request to send). The AP answers with a CTS (clear to send). Every station that hears the CTS sets its NAV from the CTS’s Duration and stays quiet for the whole exchange, even if it cannot hear the sender. This costs two extra frames, so it is usually used only for frames above an RTS threshold.
+
+## Ad hoc (IBSS)
+
+Without an AP, stations can form an **IBSS** (independent BSS). There is no association and no DS: data goes straight from station to station, with ToDS = FromDS = 0. The station that starts the IBSS picks a random BSSID, with the group bit 0 and the locally administered bit 1. All stations share the job of sending Beacons. At each beacon time, each station waits a random delay, and the first to send wins. Ad hoc mode is little used today. Wi-Fi Direct, where one device acts as the AP (the group owner), and 802.11s mesh networks fill that role.
+
+## What to look for in the walkthrough
+
+- The Capability field of the Beacon (ESS or IBSS), and the RSNE.
+- The laptop’s 802.11 state (1 → 2 → 3 → 4) and its 802.1X port.
+- The Key Information, Key Replay Counter and Key MIC fields of the four EAPOL-Key messages, and the laptop’s key table.
+- The ToDS / FromDS bits and the three addresses of data frames on each hop.
+- The Duration field, and the “Medium access” state of each station.
+- In the “What if…” options:
+  - a wrong passphrase: message 2 is discarded;
+  - a lost Ack: the frame is retransmitted and the AP discards the duplicate;
+  - hidden nodes, with and without RTS/CTS;
+  - ad hoc mode.
+
+## About this page
+
+- One 5 GHz channel with non-HT OFDM at 24 Mb/s and DCF. There are no QoS headers, power save, fragmentation or aggregation.
+- Management and EAPOL frames also get Acks, but these are drawn only in the data section.
+- Nonces are not shown, and the MIC is shown only by its size. Sequence numbers and packet numbers are example values.
+- The wired side (DHCP, the router) is not drawn. The ad hoc network is open, without encryption.
+- MAC addresses are from the documentation range (RFC 9542), except the example random BSSID of the IBSS.
+
+After joining, the laptop would get an address with [DHCP](/themes/dhcp) and find the next hop’s MAC address with [ARP](/themes/arp). The AP’s bridge to the wired side works like a [switch](/themes/switching). Wi-Fi’s place in the layers is shown in [the OSI model](/themes/osi-model).
+
+## References
+
+- IEEE Std 802.11-2024, *Wireless LAN Medium Access Control (MAC) and Physical Layer (PHY) Specifications* — clause 9 “Frame formats”, 10.3 “DCF”, 11.1 “Synchronization”, 11.3 (the states), 12.7.6 “4-way handshake”, 17 “Orthogonal frequency division multiplexing (OFDM) PHY specification”, Annex J.4 (the pass-phrase-to-PSK mapping). IEEE 802 standards, including 802.11, can be read free of charge after registering through the [IEEE GET Program](https://ieeexplore.ieee.org/browse/standards/get-program/page/series?id=68). See also the [IEEE SA page](https://standards.ieee.org/ieee/802.11/10548/).
+- [RFC 8018: PKCS #5: Password-Based Cryptography Specification Version 2.1](https://www.rfc-editor.org/rfc/rfc8018) — §5.2 (PBKDF2)
+- [RFC 3394: Advanced Encryption Standard (AES) Key Wrap Algorithm](https://www.rfc-editor.org/rfc/rfc3394)
+- [RFC 9542: IANA Considerations and IETF Protocol and Documentation Usage for IEEE 802 Parameters](https://www.rfc-editor.org/rfc/rfc9542) — §2.1.4 (documentation MAC addresses)
+- Mathy Vanhoef and Frank Piessens, “Key Reinstallation Attacks: Forcing Nonce Reuse in WPA2”, ACM CCS 2017 ([krackattacks.com](https://www.krackattacks.com/))
