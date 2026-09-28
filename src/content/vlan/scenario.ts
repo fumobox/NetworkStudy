@@ -11,7 +11,7 @@
  * - RFC 1812 §5.2（ルーターは直接つながったネットワークの間でパケットを転送する）、§5.3.1（転送するパケットの TTL を 1 減らす）、
  *   §5.2.7.2（ICMP Redirect は、来たのと同じインターフェースに出し、送信元が次のホップと同じ論理サブネットのときだけ。
  *   VLAN を使わない場合もサブネットが違うので Redirect は送らない）
- * - RFC 826（ARP）、RFC 9542 §2.1.2（説明用の MAC アドレス）、RFC 1918（プライベートアドレス）
+ * - RFC 826（ARP）、RFC 9542 §2.1.4（説明用の MAC アドレス）、RFC 1918（プライベートアドレス）
  * - VLAN ID には説明用の範囲がないので 10 と 20 を使う（1 は既定の VLAN、0 と 4095 は予約）
  *
  * 学習用の単純化: スイッチは 1 台。ルーターはトランクの 1 本のリンクにサブインターフェースを持つ（L3 スイッチは概要で触れる）。
@@ -54,7 +54,7 @@ export const VLAN_COLUMNS = ['Port', 'Mode', 'VLAN'] as const
 export const MAC_COLUMNS = ['VLAN', 'MAC', 'Port'] as const
 export const INTERFACE_COLUMNS = ['Interface', 'VLAN', 'IP'] as const
 
-/** 機器のアドレス（RFC 1918、RFC 9542 §2.1.2）、ポート、VLAN */
+/** 機器のアドレス（RFC 1918、RFC 9542 §2.1.4）、ポート、VLAN */
 export const HOSTS = {
   pcA: { ip: '192.168.10.10', mac: '00:00:5e:00:53:0a', port: 1, vlan: 10 },
   pcB: { ip: '192.168.10.20', mac: '00:00:5e:00:53:14', port: 2, vlan: 10 },
