@@ -28,7 +28,7 @@
  * 続けて 2 回失敗したら外す（例の値。受動的な失敗と能動的な失敗を同じ回数で数えるが、製品によって数え方は違う）。Forwarded と X-Forwarded-For にはクライアントの IP アドレスをそのまま入れる。
  * ブラウザーは Forwarded も X-Forwarded-For も送らない。Host は :authority のまま渡す（製品によっては既定で書き換える）。
  * Via は両方向に付ける。TCP のハンドシェイクと ACK、HPACK、SETTINGS は L4 の場合を除いて描かず、TLS のハンドシェイクは
- * 3 つにまとめる。Date は省き、Age はプロキシのキャッシュにあった時間だけとする。ブラウザー自身のキャッシュは描かない。
+ * 3 つにまとめる。Date は省き、Age はプロキシのキャッシュにあった時間だけとする。本文は「…」で縮めて示し、Content-Length は示した本文のバイト数とする。ブラウザー自身のキャッシュは描かない。
  * バックエンドにも説明用のアドレスを使う（実際はプライベートアドレスのことが多い）。PROXY protocol は文字列の版 1 で示す
  */
 import { z } from 'zod'
@@ -457,7 +457,6 @@ function h2Relay(
   }
 }
 
-/** プロキシが自分で作るエラーの応答（バックエンドの応答ではないので Cache-Status は付けない） */
 const REASON_PHRASES = {
   502: 'Bad Gateway',
   503: 'Service Unavailable',
@@ -470,6 +469,7 @@ export function errorStatus(error: ProxyError): string {
   return `${String(code)} ${REASON_PHRASES[code]}`
 }
 
+/** プロキシが自分で作るエラーの応答（バックエンドの応答ではないので Cache-Status は付けない） */
 function h2Error(id: MessageId, stream: number, error: ProxyError, nextHop?: string): Message {
   const status = errorStatus(error)
   const proxyStatus = formatProxyStatus(PROXY_NAME, error, nextHop)
@@ -1442,6 +1442,16 @@ function l4Steps(model: ProxyModel): Step[] {
           send(tcp('syn-ack', PROXY, BROWSER, 'SYN, ACK', [{ name: 'Flags', value: 'SYN, ACK' }])),
           send(tcp('ack', BROWSER, PROXY, 'ACK', [{ name: 'Flags', value: 'ACK' }])),
           set(BROWSER, CONNECTION, `TCP to ${ADDR.proxy}:443`),
+          // L4 では TLS をそのまま流すので、バックエンドのポートは 443（ヘルスチェックは描かないが、通っているものとする）
+          set(PROXY, POOL, {
+            columns: POOL_COLUMNS,
+            rows: ([BACKEND_A, BACKEND_B] as const).map((id) => [
+              BACKENDS[id].letter,
+              `${BACKENDS[id].ip}:${String(TLS_PORT)}`,
+              'up',
+              '0',
+            ]),
+          }),
         ],
       },
       {
@@ -1465,16 +1475,6 @@ function l4Steps(model: ProxyModel): Step[] {
           ),
           send(tcp('back-ack', PROXY, backend, 'ACK', [{ name: 'Flags', value: 'ACK' }])),
           conn(),
-          // L4 では TLS をそのまま流すので、バックエンドのポートは 443（ヘルスチェックは描かないが、通っているものとする）
-          set(PROXY, POOL, {
-            columns: POOL_COLUMNS,
-            rows: ([BACKEND_A, BACKEND_B] as const).map((id) => [
-              BACKENDS[id].letter,
-              `${BACKENDS[id].ip}:${String(TLS_PORT)}`,
-              'up',
-              '0',
-            ]),
-          }),
           model.rotation(),
         ],
       },

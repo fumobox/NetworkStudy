@@ -210,6 +210,7 @@ describe('reverseProxyScenario', () => {
         ],
       })
       expect(field(byId(steps, 'back-syn'), 'Dst')).toBe('198.51.100.11:443')
+      expect(stateAt(steps, 'tcp-front').proxy?.values.pool).toEqual(proxy?.values.pool)
     })
 
     it('共有キャッシュ: s-maxage で保存し、20 秒後はバックエンドに聞かずに返す。private は保存しない', () => {
