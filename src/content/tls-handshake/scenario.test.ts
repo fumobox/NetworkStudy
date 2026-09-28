@@ -47,7 +47,7 @@ describe('tlsHandshakeScenario', () => {
     expect(handle.resolve({ certProblem: 'bogus' }).options).toEqual({ certProblem: 'none' })
   })
 
-  describe('正常系（RFC 8446 §2 Figure 1）', () => {
+  describe('正常系（RFC 9846 §2 Figure 1）', () => {
     const steps = build()
 
     it('ClientHello から Finished まで 1 往復で進み、その後アプリケーションデータが流れる', () => {
@@ -99,7 +99,7 @@ describe('tlsHandshakeScenario', () => {
       expect(field(serverHello, 'key_share')).toMatch(/^x25519/)
     })
 
-    it('状態は RFC 8446 付録 A の状態機械に沿って進む', () => {
+    it('状態は RFC 9846 付録 A の状態機械に沿って進む', () => {
       const client = steps.map((_, i) => stateAt(steps, i).client?.state)
       const server = steps.map((_, i) => stateAt(steps, i).server?.state)
       expect(client).toEqual([
@@ -165,7 +165,7 @@ describe('tlsHandshakeScenario', () => {
     })
   })
 
-  describe('証明書の問題（RFC 5280 §6、RFC 8446 §6.2）', () => {
+  describe('証明書の問題（RFC 5280 §6、RFC 9846 §6.2）', () => {
     it.each([
       ['expired', 'certificate_expired (45)'],
       ['nameMismatch', 'certificate_unknown (46)'],

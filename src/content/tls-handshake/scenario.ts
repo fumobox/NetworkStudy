@@ -2,14 +2,14 @@
  * TLS 1.3 のハンドシェイク（フルハンドシェイク、1-RTT）とサーバー証明書の検証
  *
  * 根拠:
- * - RFC 8446 §2（概要と Figure 1）, §4.1.2 / §4.1.3（ClientHello / ServerHello）, §4.2（拡張: supported_versions,
- *   key_share, signature_algorithms, server_name（RFC 6066））, §4.3.1（EncryptedExtensions）, §4.4.2（Certificate）,
- *   §4.4.3（CertificateVerify）, §4.4.4（Finished）, §5.1（暗号化後のレコードの外側の型は application_data）,
+ * - RFC 9846（RFC 8446 を置き換えた TLS 1.3）§2（概要と Figure 1）, §4.2.2 / §4.2.3（ClientHello / ServerHello）,
+ *   §4.3（拡張: supported_versions, key_share, signature_algorithms, server_name（RFC 6066））, §4.4.1（EncryptedExtensions）,
+ *   §4.5.1（Certificate）, §4.5.2（CertificateVerify）, §4.5.3（Finished）, §5.2（暗号化後のレコードの外側の型は application_data）,
  *   §6.2（エラーのアラート）, §7.1（鍵の階層）, 付録 A（状態機械）
  * - RFC 5280 §6（証明書パスの検証）, RFC 9525（サーバーの名前の確認）
  * 日付・名前・鍵は学習用の値。検証する時刻は 2026-10-01 とする
  * 状態機械のうち、サーバーの RECVD_CH（ClientHello の受信直後）と WAIT_FLIGHT2（クライアント認証がなければすぐ WAIT_FINISHED に移る）は省いている。
- * RFC 8446 の状態機械には終了状態がないので、アラートで中断した後は CLOSED と表示する
+ * RFC 9846 の状態機械には終了状態がないので、アラートで中断した後は CLOSED と表示する
  */
 import { z } from 'zod'
 import type {
@@ -499,7 +499,7 @@ function buildSteps(options: TlsOptions): readonly Step[] {
         send(serverHello),
         set(SERVER, SEND_KEYS, 'handshake'),
         set(CLIENT, STATE, 'WAIT_EE'),
-        // RFC 8446 付録 A.1 では、クライアントの K_send を handshake にするのはサーバーの Finished の後
+        // RFC 9846 付録 A.1 では、クライアントの K_send を handshake にするのはサーバーの Finished の後
         // （0-RTT のデータを送っている可能性があるため）。このシナリオには 0-RTT がなく、中断時のアラートを
         // handshake の鍵で送るので、ここで切り替えている
         set(CLIENT, SEND_KEYS, 'handshake'),
@@ -625,8 +625,8 @@ function buildSteps(options: TlsOptions): readonly Step[] {
                   value: `${alert.description} (${String(alert.code)})`,
                   highlight: true,
                   description: {
-                    en: 'Why the handshake failed (RFC 8446 §6.2)',
-                    ja: 'ハンドシェイクが失敗した理由（RFC 8446 §6.2）',
+                    en: 'Why the handshake failed (RFC 9846 §6.2)',
+                    ja: 'ハンドシェイクが失敗した理由（RFC 9846 §6.2）',
                   },
                 },
               ],

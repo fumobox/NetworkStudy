@@ -5,7 +5,7 @@
  * 根拠:
  * - RFC 9113 §8.3.2（Response Pseudo-Header Fields）: 応答のステータスは :status 疑似ヘッダーで送る
  * - RFC 9113 §6.1 / §6.2: 本文は DATA フレーム、ヘッダーは HEADERS フレームで送る
- * - RFC 8446 §5.2: 暗号化されたレコードは、外からは application_data に見える
+ * - RFC 9846 §5.2: 暗号化されたレコードは、外からは application_data に見える
  */
 import { z } from 'zod'
 import type { Actor, Scenario, Step } from '@/engine/types'
