@@ -27,6 +27,7 @@
 | TCP の変数・パラメーター | ISS、IRS、SND.NXT、RCV.NXT、MSS、RTO、RTT、MSL、cwnd、ssthresh、SND.UNA、SND.WND、RCV.WND、RCV.BUFF、win、Window probe、persist、Window Scale、SWS、Nagle |
 | DNS のメッセージ・フィールド | QNAME、QTYPE、ID、QR、RD、RA、AA、RCODE、NOERROR、NXDOMAIN、SERVFAIL、TTL |
 | DNS のレコード | A、AAAA、NS、CNAME、SOA、MX |
+| DNSSEC | DNSSEC、DNSKEY、DS、RRSIG、NSEC、NSEC3、Opt-Out、KSK、ZSK、SEP、key tag、DO、AD、CD、EDNS0、OPT、RRset、Secure、Insecure、Bogus、Indeterminate、ECDSAP256SHA256、RSASHA256、SHA-256、DoT、DoH |
 | TLS 1.3 のメッセージ | ClientHello、ServerHello、EncryptedExtensions、Certificate、CertificateVerify、Finished、Alert |
 | TLS の拡張・値 | key_share、supported_versions、signature_algorithms、server_name（SNI）、certificate_expired、certificate_unknown、unknown_ca |
 | 証明書 | SAN（subjectAltName）、CA、X.509 |
@@ -61,6 +62,18 @@
 | top-level domain (TLD) | トップレベルドメイン（TLD） | |
 | referral | 紹介 | 担当のサーバーを教える応答（委任の応答） |
 | delegation | 委任 | ゾーンの管理を下位のサーバーに任せること |
+| chain of trust | 信頼の連鎖 | |
+| trust anchor | トラストアンカー | 状態の値としては trust anchor、pending、DS pending、DS verified、no DS、signature invalid、RRSIG expired、no AD のまま書く |
+| validating resolver | 検証するリゾルバー | |
+| key-signing key / zone-signing key | 鍵署名鍵（KSK）／ゾーン署名鍵（ZSK） | |
+| digest | ダイジェスト | |
+| sign / re-sign | 署名する／再署名する | |
+| validate | 検証する | |
+| authenticated denial of existence | 不在証明 | |
+| insecure delegation | 署名のない委任 | |
+| forged / altered | 偽の／書き換えられた | |
+| confidentiality | 機密性 | |
+| Secure / Insecure / Bogus | （翻訳しない） | 初出で「検証できた／署名がない／偽物」を添える |
 | query | 問い合わせ | フィールド名の QNAME などは訳さない |
 | response / answer | 応答 | |
 | cache | キャッシュ | |
