@@ -41,7 +41,8 @@ export function reloadOnStaleChunk(target: ReloadTarget = window, now: () => num
     const last = lastReload(target)
     if (last !== null && time - last < RELOAD_GUARD_MS) return
     if (!rememberReload(target, time)) return
-    // エラーを投げさせずに、新しいバージョンを読み込む
+    // エラーを投げさせずに、新しいバージョンを読み込む。preventDefault すると import は undefined で解決し、React.lazy が
+    // 読み込み直しの前に TypeError を投げることがあるが、ページはすでに読み込み直しに入っているので害はない
     event.preventDefault()
     target.location.reload()
   })
