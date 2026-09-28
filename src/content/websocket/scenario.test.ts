@@ -6,6 +6,7 @@ import type { Message, Step } from '@/engine/types'
 import { validateScenario } from '@/engine/validate'
 import { maskPayload, utf8, type MaskingKey } from './frame'
 import {
+  ACCEPT_SHA1,
   ACCEPT_VALUE,
   FRAGMENTS,
   GUID,
@@ -15,6 +16,7 @@ import {
   PONG_TIMEOUT_MS,
   webSocketScenario,
   WRONG_ACCEPT,
+  WRONG_SHA1,
   type WebSocketOptions,
 } from './scenario'
 
@@ -54,6 +56,11 @@ const bytes = (value: string | undefined) =>
     .filter(Boolean)
     .map((b) => Number.parseInt(b, 16))
 
+async function sha1Hex(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text))
+  return Array.from(new Uint8Array(digest), (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 async function sha1Base64(text: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-1', new TextEncoder().encode(text))
   return btoa(String.fromCharCode(...new Uint8Array(digest)))
@@ -76,6 +83,8 @@ describe('webSocketScenario', () => {
     it('Sec-WebSocket-Accept は base64(SHA-1(キー + GUID))。誤った値はキーだけのハッシュ', async () => {
       expect(await sha1Base64(KEY + GUID)).toBe(ACCEPT_VALUE)
       expect(await sha1Base64(KEY)).toBe(WRONG_ACCEPT)
+      expect(await sha1Hex(KEY + GUID)).toBe(ACCEPT_SHA1)
+      expect(await sha1Hex(KEY)).toBe(WRONG_SHA1)
       const response = messages(build()).find((m) => m.id === 'handshake-response')
       expect(field(response, 'Sec-WebSocket-Accept')).toBe('s3pPLMBiTxaQ9kYGzzhZRbK+xOo=')
     })
@@ -221,9 +230,9 @@ describe('webSocketScenario', () => {
           deriveState(webSocketScenario.actors, steps, i).actorStates.browser?.values.readyState,
       )
       expect(states).not.toContain('OPEN')
-      expect(final(steps).browser).toMatchObject({
-        readyState: 'CLOSED',
-        event: 'error, close: 1006',
+      expect(final(steps)).toMatchObject({
+        browser: { readyState: 'CLOSED', event: 'error, close: 1006', tcp: 'TIME-WAIT' },
+        server: { connection: 'CLOSED (1006)', tcp: 'CLOSED' },
       })
       expect(build({ problem: 'badAccept', fragment: true })).toEqual(steps)
     })
@@ -238,7 +247,7 @@ describe('webSocketScenario', () => {
       expect(timers).toEqual([PING_INTERVAL_MS, PONG_TIMEOUT_MS])
       expect(final(steps)).toMatchObject({
         browser: { readyState: 'OPEN' },
-        server: { connection: 'CLOSED (1006)', heartbeat: 'Pong timeout' },
+        server: { connection: 'CLOSED (1006)', heartbeat: 'Pong timeout', tcp: 'FIN-WAIT-1' },
         elapsedMs: 40_000,
       })
     })

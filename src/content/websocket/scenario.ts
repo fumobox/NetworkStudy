@@ -173,8 +173,8 @@ const TEXT = {
     ja: '0x0 継続、0x1 テキスト、0x2 バイナリー、0x8 Close、0x9 Ping、0xA Pong',
   },
   masked: {
-    en: 'MASK = 1: every frame from the client is masked, even over TLS, so that a script cannot choose the exact bytes on the wire (which could confuse proxies). Masking is not encryption: the key is in the frame',
-    ja: 'MASK = 1: クライアントからのフレームは、TLS の上でもすべてマスクする。スクリプトが通信路のバイト列を思いどおりに作れないようにするため（プロキシを混乱させうる）。マスクは暗号化ではない。キーはフレームの中にある',
+    en: 'MASK = 1: every frame from the client is masked, even over TLS, so that a script cannot choose the exact bytes on the wire, which a proxy that does not understand WebSocket could mistake for HTTP and use to poison its cache. Masking is not encryption: the key is in the frame',
+    ja: 'MASK = 1: クライアントからのフレームは、TLS の上でもすべてマスクする。スクリプトが通信路のバイト列を思いどおりに作れると、WebSocket を知らないプロキシが HTTP と取り違えて、キャッシュを汚しうるため。マスクは暗号化ではない。キーはフレームの中にある',
   },
   unmasked: {
     en: 'MASK = 0: frames from the server are never masked',
@@ -201,17 +201,13 @@ interface FrameMessage {
   readonly length?: number
   readonly payloadText: string
   readonly status?: Message['status']
+  /** ブラウザーからのフレームだけ。フレームごとに別のキーを渡す */
+  readonly maskingKey?: MaskingKey
 }
 
 function frame(spec: FrameMessage): Message {
   const fromBrowser = spec.from === BROWSER
-  const key: MaskingKey | undefined = fromBrowser
-    ? spec.opcode === 'pong'
-      ? MASKING_KEYS.pong
-      : spec.opcode === 'close'
-        ? MASKING_KEYS.close
-        : MASKING_KEYS.text
-    : undefined
+  const key = spec.maskingKey
   const length = spec.payload?.length ?? spec.length ?? 0
   const header = frameHeader({
     fin: spec.fin,
@@ -463,6 +459,7 @@ function messageSteps(fragment: boolean): Step[] {
             opcode: 'text',
             payload: utf8('Hello'),
             payloadText: '"Hello"',
+            maskingKey: MASKING_KEYS.text,
           }),
         ),
       ],
@@ -515,7 +512,7 @@ function messageSteps(fragment: boolean): Step[] {
             fin: true,
             opcode: 'binary',
             length: PHOTO_BYTES,
-            payloadText: '(photo, 100,000 bytes)',
+            payloadText: '100,000 bytes',
           }),
         ),
         set(BROWSER, EVENT, 'message: Blob (100,000 bytes)'),
@@ -568,7 +565,7 @@ function messageSteps(fragment: boolean): Step[] {
             fin: last,
             opcode: i === 0 ? 'binary' : 'continuation',
             length: size,
-            payloadText: `(photo, bytes ${String(received - size + 1)}–${String(received)})`,
+            payloadText: `bytes ${(received - size + 1).toLocaleString('en-US')}–${received.toLocaleString('en-US')}`,
           }),
         ),
         set(
@@ -643,7 +640,8 @@ function pongStep(): Step {
           fin: true,
           opcode: 'pong',
           payload: PING_PAYLOAD,
-          payloadText: '"hb-1" (the same as the Ping)',
+          payloadText: '"hb-1"',
+          maskingKey: MASKING_KEYS.pong,
         }),
       ),
       set(SERVER, HEARTBEAT, 'Pong received (hb-1)'),
@@ -660,8 +658,8 @@ function pongTimeoutStep(): Step {
       ja: 'Pong が来ない: サーバーはあきらめる',
     },
     description: {
-      en: 'No Pong arrives within 10 seconds (the timeout is the application’s choice). The server decides the connection is dead and closes it without a Close frame, since the browser probably cannot receive one; for the server the result is 1006. The browser still shows OPEN: nothing reached it. It only finds out when its own TCP gives up or it notices the network change, then fails the connection (error, then close with 1006), and the page should reconnect.',
-      ja: '10 秒待っても Pong が来ない（待ち時間はアプリケーションが決める）。サーバーは接続が切れたと判断し、ブラウザーは受け取れないだろうから、Close フレームなしで閉じる。サーバーにとっての結果は 1006。ブラウザーは OPEN のまま。何も届いていないから。自分の TCP があきらめるか、ネットワークの変化に気づいたときに初めて接続を失敗にし（error、続いて 1006 の close）、ページはつなぎ直すべき。',
+      en: 'No Pong arrives within 10 seconds (the timeout is the application’s choice). The server decides the connection is dead and closes it without a Close frame, since the browser probably cannot receive one; for the server the result is 1006. The browser still shows OPEN: nothing reached it. It only finds out when it next sends something and TCP gives up after retransmitting, or when the OS reports the network change, then fails the connection (error, then close with 1006), and the page should reconnect.',
+      ja: '10 秒待っても Pong が来ない（待ち時間はアプリケーションが決める）。サーバーは接続が切れたと判断し、ブラウザーは受け取れないだろうから、Close フレームなしで閉じる。サーバーにとっての結果は 1006。ブラウザーは OPEN のまま。何も届いていないから。次に何かを送って TCP が再送の末にあきらめるか、OS がネットワークの変化を知らせたときに初めて接続を失敗にし（error、続いて 1006 の close）、ページはつなぎ直すべき。',
     },
     events: [
       timer('Pong timeout', PONG_TIMEOUT_MS),
@@ -697,6 +695,7 @@ function closeSteps(): Step[] {
             opcode: 'close',
             payload: close,
             payloadText: '1000 (normal closure)',
+            maskingKey: MASKING_KEYS.close,
           }),
         ),
         set(BROWSER, READY_STATE, 'CLOSING'),
@@ -708,8 +707,8 @@ function closeSteps(): Step[] {
       section: CLOSE_SECTION,
       title: { en: 'The server answers: Close 1000', ja: 'サーバーが答える: Close 1000' },
       description: {
-        en: 'The server answers with its own Close, echoing the code 1000. It has now both sent and received a Close, so the WebSocket connection is closed from its point of view, and it must close the TCP connection right away.',
-        ja: 'サーバーは、コード 1000 をそのまま返す自分の Close で答える。これで Close を送りも受け取りもしたので、サーバーから見て WebSocket の接続は閉じた。すぐに TCP の接続を閉じなければならない。',
+        en: 'The server answers with its own Close, echoing the code 1000. It has now both sent and received a Close, so it considers the WebSocket connection closed and must close the TCP connection right away (its state shows CLOSING until TCP is closed).',
+        ja: 'サーバーは、コード 1000 をそのまま返す自分の Close で答える。これで Close を送りも受け取りもしたので、サーバーは WebSocket の接続が閉じたとみなし、すぐに TCP の接続を閉じなければならない（TCP を閉じるまで、状態は CLOSING のまま）。',
       },
       events: [
         send(
