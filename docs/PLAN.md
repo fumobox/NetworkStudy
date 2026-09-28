@@ -574,8 +574,8 @@ Issue は #182〜#188 に分けて起票した（どのテーマも、シナリ�
 | CD | 検証してから、結果にかかわらずデータを返す。検証できたときは AD も立てる（CD のときは検証しない実装もあると注記） | RFC 4035 §3.2.2 はどちらも許す |
 | DMARC の根拠 | RFC 9989（2026 年 5 月。RFC 7489 を置き換えた）と RFC 9990 / 9991 | pct や PSL など RFC 7489 だけの概念は使わない |
 | p=reject | 受信側は 550 5.7.1 で拒否するが、RFC 9989 §7.4 が p=reject だけを理由にした拒否を禁じ、quarantine として扱うよう求めていることを文章で示す | 実際には拒否が多い。学ぶ人が RFC の求めを取り違えないように |
-| 状態の値 | pass / fail、accept / quarantine / reject など短い語だけにする | 状態の値は翻訳しない（ProtocolTerm）。レビューの指摘 |
-| 扱わないもの | ファイアウォールの INVALID と TCP の順序の追跡、NSEC / NSEC3 による NXDOMAIN の不在証明、DNSSEC のキャッシュ、DKIM の l= / i=、DMARC の sp / np / t / 失敗レポート / ツリーウォーク、SRS、STARTTLS / MTA-STS / DANE / BIMI | 主題がぼやける。一部は概要で触れる |
+| メールの状態の値 | pass / fail、accept / quarantine / reject など短い語だけにする | 状態の値は翻訳しない（ProtocolTerm）。レビューの指摘 |
+| 扱わないもの | ファイアウォールの INVALID と TCP の順序の追跡、NSEC / NSEC3 による NXDOMAIN の不在証明、DNSSEC のキャッシュ、DKIM の l= / i= / x= と複数の署名、DMARC の sp / np / t / 失敗レポート / ツリーウォーク、SRS、STARTTLS / MTA-STS / DANE / BIMI | 主題がぼやける。一部は概要で触れる |
 
 ## 9. リスクと対策
 
