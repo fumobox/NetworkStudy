@@ -16,6 +16,7 @@ import { natTraversalTheme } from './nat-traversal'
 import { pmtudTheme } from './pmtud'
 import { osiModelTheme } from './osi-model'
 import { quicTheme } from './quic'
+import { reverseProxyTheme } from './reverse-proxy'
 import { routeLookupTheme } from './route-lookup'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { switchingTheme } from './switching'
@@ -59,6 +60,7 @@ export const THEMES: readonly ThemeModule[] = [
   http2Theme,
   quicTheme,
   webSocketTheme,
+  reverseProxyTheme,
   firewallTheme,
   dnssecTheme,
   mailAuthTheme,

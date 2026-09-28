@@ -232,6 +232,22 @@ export const WEBSOCKET_META = {
   minutes: 15,
 } as const satisfies ThemeMeta
 
+export const REVERSE_PROXY_META = {
+  id: 'reverse-proxy',
+  kind: 'sequence',
+  category: 'http',
+  title: {
+    en: 'Reverse proxies and load balancers',
+    ja: 'リバースプロキシとロードバランサー',
+  },
+  summary: {
+    en: 'How a reverse proxy ends TLS and spreads requests over several backends, what it tells them with Forwarded, X-Forwarded-For and Via, and what happens when a backend crashes (502) or is too slow (504). Also sticky sessions, health checks, layer-4 load balancing with the PROXY protocol, and the proxy as a shared cache.',
+    ja: 'リバースプロキシが TLS を終端し、要求を何台かのバックエンドに振り分けるしくみ、Forwarded・X-Forwarded-For・Via で伝えること、バックエンドが落ちたとき（502）や遅いとき（504）に起きること。スティッキーセッション、ヘルスチェック、PROXY protocol を使う L4 の負荷分散、共有キャッシュとしてのプロキシも。',
+  },
+  difficulty: 'intermediate',
+  minutes: 15,
+} as const satisfies ThemeMeta
+
 export const ARP_META = {
   id: 'arp',
   kind: 'sequence',
@@ -469,7 +485,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -499,6 +515,7 @@ export const THEME_META = [
   HTTP2_META,
   QUIC_META,
   WEBSOCKET_META,
+  REVERSE_PROXY_META,
   FIREWALL_META,
   DNSSEC_META,
   MAIL_AUTH_META,
