@@ -9,7 +9,7 @@
  * - 9.2.4.1.4 "To DS and From DS subfields" と 9.3.2.1（データフレームのアドレスの中身の表）: To DS / From DS の組み合わせで
  *   Address 1〜3 の意味が変わる。Address 1 は受信者（RA）、Address 2 は送信者（TA）
  * - MAC アドレスの最初のオクテットの最下位ビットは I/G（1 ならグループ）、次のビットは U/L（1 ならローカルに管理された
- *   アドレス）（RFC 9542 §2.1）
+ *   アドレス）（RFC 9542 §2.1.1）
  */
 
 const TYPE_VALUES = { management: 0, control: 1, data: 2 } as const

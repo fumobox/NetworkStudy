@@ -10,7 +10,7 @@
  *     Authentication、Association Request / Response、Deauthentication、9.4.1 の Authentication Algorithm Number（0 は Open System）、
  *     Capability Information（ESS、IBSS、Privacy）、Reason Code（15 は 4-Way Handshake timeout）、AID、Status Code、
  *     9.4.2 の SSID 要素（長さ 0 はワイルドカード）と RSNE
- *   - clause 10 "MAC service definition": 10.3 "DCF"（キャリアセンス、DIFS、ランダムなバックオフ、SIFS 後の Ack、再送、
+ *   - clause 10 "MAC sublayer functional description": 10.3 "DCF"（キャリアセンス、DIFS、ランダムなバックオフ、SIFS 後の Ack、再送、
  *     NAV による仮想キャリアセンス、RTS/CTS、重複の検出）
  *   - clause 11 "MLME": 11.1 "Synchronization"（IBSS ではすべての STA がビーコンを送る。各ビーコン時刻にランダムに待ち、
  *     先に届いたら自分の分を取りやめる。受け取った TSF が自分より進んでいれば合わせる）、11.1.4 のパッシブ・アクティブスキャン、
@@ -52,8 +52,10 @@ import type {
 import type { LocalizedText } from '@/lib/i18n/locale'
 import {
   ACK_BYTES,
+  CTS_BYTES,
   CW_MIN,
   DIFS_US,
+  RTS_BYTES,
   SIFS_US,
   SLOT_US,
   TU_US,
@@ -138,6 +140,8 @@ export const CTS_DURATION_US = ctsDurationUs(RTS_DURATION_US, RATE)
 const DATA_AIRTIME_US = ofdmTxTimeUs(PROTECTED_MPDU_BYTES, RATE)
 const OPEN_AIRTIME_US = ofdmTxTimeUs(OPEN_MPDU_BYTES, RATE)
 const ACK_AIRTIME_US = ofdmTxTimeUs(ACK_BYTES, RATE)
+const RTS_AIRTIME_US = ofdmTxTimeUs(RTS_BYTES, RATE)
+const CTS_AIRTIME_US = ofdmTxTimeUs(CTS_BYTES, RATE)
 const RETRY_CW = nextCw(CW_MIN)
 
 const shortKey = (key: string) => `${key.slice(0, 8)}…${key.slice(-6)}`
@@ -262,8 +266,8 @@ const FIELD_TEXT = {
     ja: 'フレームの種類（タイプとサブタイプ）と、ToDS / FromDS、Retry、Protected などのフラグ',
   },
   duration: {
-    en: 'How long the medium stays reserved after this frame. Stations that hear it set their NAV to this value',
-    ja: 'このフレームのあと、媒体を予約しておく時間。聞こえた STA は NAV をこの値にする',
+    en: 'How long the medium stays reserved after this frame. Other stations that hear it set their NAV to this value, if it is longer than their current NAV',
+    ja: 'このフレームのあと、媒体を予約しておく時間。聞こえたほかの STA は、今の NAV より長ければ NAV をこの値にする',
   },
   address1: {
     en: 'Address 1 is always the receiver on this hop (RA)',
@@ -786,7 +790,7 @@ const message1Step = (wrongPassphrase: boolean): Omit<Step, 'section'> => ({
   id: 'message-1',
   title: { en: 'Message 1: the AP’s nonce', ja: 'メッセージ 1: AP のノンス' },
   description: {
-    en: 'The AP sends a random number, the ANonce, in an EAPOL-Key frame (a data frame with EtherType 0x888e). Message 1 has no MIC: there is no key to compute one yet. The laptop picks its own random SNonce and derives the pairwise transient key (PTK) = PRF-384(PMK, "Pairwise key expansion", both MAC addresses, both nonces). The 384 bits are split into three 128-bit keys: the KCK (for MICs), the KEK (for wrapping keys) and the TK (for encrypting data).',
+    en: `The AP sends a random number, the ANonce, in an EAPOL-Key frame (a data frame with EtherType 0x888e). Message 1 has no MIC: there is no key to compute one yet. The laptop picks its own random SNonce and derives the pairwise transient key (PTK) = PRF-384(PMK, "Pairwise key expansion", both MAC addresses, both nonces). The 384 bits are split into three 128-bit keys: the KCK (for MICs), the KEK (for wrapping keys) and the TK (for encrypting data).${wrongPassphrase ? ' Because the PMK is different, this PTK is different from the AP’s too.' : ''}`,
     ja: `AP は乱数の ANonce を EAPOL-Key フレーム（EtherType 0x888e のデータフレーム）で送る。メッセージ 1 には MIC がない。まだ計算に使う鍵がないから。ノート PC は自分の乱数 SNonce を選び、ペアワイズ一時鍵（PTK）= PRF-384(PMK, "Pairwise key expansion", 両者の MAC アドレス, 両者のノンス) を導く。384 ビットを 128 ビットずつ 3 つの鍵に分ける。KCK（MIC 用）、KEK（鍵を包む用）、TK（データの暗号化用）。${wrongPassphrase ? 'PMK が違うので、この PTK も AP のものとは違う。' : ''}`,
   },
   events: [
@@ -836,11 +840,11 @@ function handshake(): Omit<Step, 'section'>[] {
       id: 'message-3',
       title: {
         en: 'Message 3: install the keys, here is the GTK',
-        ja: 'メッセージ 3: 鍵を入れよ、GTK も渡す',
+        ja: 'メッセージ 3: 鍵を入れる指示と GTK',
       },
       description: {
         en: 'The AP sends the ANonce again, a MIC that proves to the laptop that the AP knows the PMK too, and the group temporal key (GTK) that the AP uses for broadcast and multicast. The frame itself is not encrypted, but its Key Data field is: the GTK is wrapped with the KEK (AES Key Wrap). The Install bit tells the laptop to install the PTK. The laptop checks that the RSN element matches the beacon’s, which detects a downgrade by an attacker.',
-        ja: 'AP は ANonce をもう一度と、AP も PMK を知っていることをノート PC に示す MIC、そして AP がブロードキャストとマルチキャストに使うグループ一時鍵（GTK）を送る。フレーム自体は暗号化されていないが、Key Data のフィールドは暗号化されている。GTK は KEK で包まれている（AES Key Wrap）。Install のビットは、PTK を入れるようノート PC に伝える。ノート PC は RSN 要素がビーコンのものと同じことを確かめ、攻撃者による格下げに気づけるようにする。',
+        ja: 'AP は、もう一度 ANonce を送るとともに、AP も PMK を知っていることをノート PC に示す MIC と、AP がブロードキャストとマルチキャストに使うグループ一時鍵（GTK）を送る。フレーム自体は暗号化されていないが、Key Data のフィールドは暗号化されている。GTK は KEK で包まれている（AES Key Wrap）。Install のビットは、PTK を入れるようノート PC に伝える。ノート PC は RSN 要素がビーコンのものと同じことを確かめ、攻撃者による格下げに気づけるようにする。',
       },
       events: [
         send(
@@ -996,8 +1000,8 @@ const relayStep: Omit<Step, 'section'> = {
     ja: 'AP がパケットをスマートフォンに中継する',
   },
   description: {
-    en: 'The AP decrypts the frame with the laptop’s TK and sends the packet on to the phone, encrypted with the phone’s own TK. FromDS=1: the frame comes from the distribution system. Now Address 1 is the phone, Address 2 the AP, and Address 3 keeps the original sender, the laptop. Before sending, the AP waits for DIFS and a backoff like any station. Even between two stations of the same BSS, every frame goes through the AP: 2 frames, not 1.',
-    ja: 'AP はノート PC の TK でフレームを復号し、スマートフォンの TK で暗号化し直してパケットを送る。FromDS=1 は、フレームがディストリビューションシステムの側から来たという意味。今度は Address 1 がスマートフォン、Address 2 が AP で、Address 3 に元の送信者のノート PC が残る。AP も送る前に、ほかの STA と同じく DIFS とバックオフを待つ。同じ BSS の STA どうしでも、フレームはすべて AP を通る。1 回ではなく 2 回送ることになる。',
+    en: 'The AP decrypts the frame with the laptop’s TK and sends the packet on to the phone, encrypted with the phone’s own TK. FromDS=1: the frame comes from the distribution system. Now Address 1 is the phone, Address 2 the AP, and Address 3 keeps the original sender, the laptop. Before sending, the AP waits for DIFS and a backoff like any station. Even between two stations of the same BSS, frames normally go through the AP: 2 frames, not 1.',
+    ja: 'AP はノート PC の TK でフレームを復号し、スマートフォンの TK で暗号化し直してパケットを送る。FromDS=1 は、フレームがディストリビューションシステムの側から来たという意味。今度は Address 1 がスマートフォン、Address 2 が AP で、Address 3 に元の送信者のノート PC が残る。AP も送る前に、ほかの STA と同じく DIFS とバックオフを待つ。同じ BSS の STA どうしでも、フレームはふつう AP を通る。1 回ではなく 2 回送ることになる。',
   },
   events: [
     set(AP, MEDIUM, backoff(5, CW_MIN)),
@@ -1234,6 +1238,7 @@ function rts(id: MessageId, from: 'staA' | 'staB'): Message {
       },
       { name: 'Address 1 (RA)', value: MAC.ap, description: FIELD_TEXT.address1 },
       { name: 'Address 2 (TA)', value: from === 'staA' ? MAC.staA : MAC.staB },
+      { name: 'Airtime', value: us(RTS_AIRTIME_US), description: FIELD_TEXT.airtime },
     ],
   })
 }
@@ -1253,6 +1258,7 @@ function cts(id: MessageId, to: 'staA' | 'staB', ra: string): Message {
         description: FIELD_TEXT.duration,
       },
       { name: 'Address 1 (RA)', value: ra, description: FIELD_TEXT.address1 },
+      { name: 'Airtime', value: us(CTS_AIRTIME_US), description: FIELD_TEXT.airtime },
     ],
   })
 }
@@ -1264,17 +1270,17 @@ function rtsCtsData(): Omit<Step, 'section'>[] {
       id: 'contend',
       title: { en: 'Two stations, one AP', ja: '2 台の STA と 1 台の AP' },
       description: {
-        en: `${HIDDEN_CONTEND_TEXT.en} This time the stations send an RTS before every data frame.`,
-        ja: `${HIDDEN_CONTEND_TEXT.ja}今回は、STA がデータフレームの前に必ず RTS を送る。`,
+        en: 'Now both the laptop and the phone have a packet for a server on the wired LAN (the frames go to the AP, and Address 3 is the router’s MAC address; the wired side is not drawn). This time the stations send an RTS before every data frame. Both wait for DIFS and count down a backoff: the laptop drew 9 slots, the phone 2.',
+        ja: '今度はノート PC とスマートフォンの両方に、有線 LAN のサーバー宛てのパケットがある（フレームは AP に送り、Address 3 はルーターの MAC アドレス。有線の側は描かない）。今回は、STA がデータフレームの前に必ず RTS を送る。両方が DIFS を待ってバックオフを数える。ノート PC は 9 スロット、スマートフォンは 2 スロットを選んだ。',
       },
-      events: [set(STA_A, MEDIUM, backoff(5, CW_MIN)), set(STA_B, MEDIUM, backoff(2, CW_MIN))],
+      events: [set(STA_A, MEDIUM, backoff(9, CW_MIN)), set(STA_B, MEDIUM, backoff(2, CW_MIN))],
     },
     {
       id: 'rts-b',
       title: { en: 'The phone asks first: RTS', ja: 'スマートフォンが先に求める: RTS' },
       description: {
-        en: `Instead of the data, the phone first sends a short RTS (request to send, ${String(20)} bytes). Its Duration covers the whole exchange that follows. The laptop cannot hear the RTS either; if it started sending now, only the short RTS would be lost, not a long data frame.`,
-        ja: `スマートフォンはデータの代わりに、まず短い RTS（送信の要求、20 バイト）を送る。Duration は、続くやり取り全体の時間。ノート PC にはこの RTS も聞こえない。もしいま送り始めても、失われるのは長いデータフレームではなく短い RTS だけ。`,
+        en: `Instead of the data, the phone first sends a short RTS (request to send, ${String(RTS_BYTES)} bytes). Its Duration covers the whole exchange that follows. The laptop cannot hear the RTS either; if it started sending now, only the short RTS would be lost, not a long data frame.`,
+        ja: `スマートフォンはデータの代わりに、まず短い RTS（送信の要求、${String(RTS_BYTES)} バイト）を送る。Duration は、続くやり取り全体の時間。ノート PC にはこの RTS も聞こえない。もしいま送り始めても、失われるのは長いデータフレームではなく短い RTS だけ。`,
       },
       events: [send(rts('rts-b', 'staB'))],
     },
@@ -1282,8 +1288,8 @@ function rtsCtsData(): Omit<Step, 'section'>[] {
       id: 'cts-b',
       title: { en: 'The AP answers: CTS', ja: 'AP が答える: CTS' },
       description: {
-        en: `The AP answers with a CTS (clear to send) addressed to the phone. The laptop can hear the AP, so it receives the CTS too. It is not the receiver, but it reads the Duration field and sets its NAV (network allocation vector) to ${us(CTS_DURATION_US)}: for that long it treats the medium as busy and pauses its countdown, although it cannot hear the phone. This is virtual carrier sense, alongside the physical carrier sense of the radio (CCA).`,
-        ja: `AP はスマートフォン宛ての CTS（送信の許可）で答える。ノート PC には AP の電波が届くので、CTS も受け取る。宛先ではないが、Duration のフィールドを読んで NAV（ネットワーク割り当てベクター）を ${us(CTS_DURATION_US)} にする。スマートフォンの電波は聞こえないのに、そのあいだは媒体が使用中とみなし、数えるのを止める。これが仮想キャリアセンスで、無線の物理的なキャリアセンス（CCA）と組み合わせて使う。`,
+        en: `The AP answers with a CTS (clear to send) addressed to the phone. The laptop can hear the AP, so it receives the CTS too. It is not the receiver, but it reads the Duration field and sets its NAV (network allocation vector) to ${us(CTS_DURATION_US)}: for that long it treats the medium as busy and pauses its countdown, with 3 of its 9 slots left, although it cannot hear the phone. This is virtual carrier sense, alongside the physical carrier sense of the radio (CCA).`,
+        ja: `AP はスマートフォン宛ての CTS（送信の許可）で答える。ノート PC には AP の電波が届くので、CTS も受け取る。宛先ではないが、Duration のフィールドを読んで NAV（ネットワーク割り当てベクター）を ${us(CTS_DURATION_US)} にする。スマートフォンの電波は聞こえないのに、そのあいだは媒体が使用中とみなし、9 スロットのうち 3 スロットを残して数えるのを止める。これが仮想キャリアセンスで、無線の物理的なキャリアセンス（CCA）と組み合わせて使う。`,
       },
       events: [
         send(cts('cts-b', 'staB', MAC.staB)),
@@ -1296,14 +1302,14 @@ function rtsCtsData(): Omit<Step, 'section'>[] {
       id: 'data-b',
       title: { en: 'The phone sends safely', ja: 'スマートフォンが安全に送る' },
       description: {
-        en: `The phone sends its data and the AP acknowledges. The laptop’s NAV covers exactly this: SIFS + data + SIFS + Ack = ${us(CTS_DURATION_US)}. When it expires, the laptop waits for DIFS and counts down the rest of its backoff.`,
-        ja: `スマートフォンがデータを送り、AP が Ack を返す。ノート PC の NAV は、ちょうどこの時間（SIFS + データ + SIFS + Ack = ${us(CTS_DURATION_US)}）をまかなう。NAV が切れると、ノート PC は DIFS を待ち、バックオフの残りを数える。`,
+        en: `The phone sends its data and the AP acknowledges. The laptop’s NAV covers exactly this: SIFS + data + SIFS + Ack = ${us(CTS_DURATION_US)}. When it expires, the laptop waits for DIFS and counts down the 3 slots left.`,
+        ja: `スマートフォンがデータを送り、AP が Ack を返す。ノート PC の NAV は、ちょうどこの時間（SIFS + データ + SIFS + Ack = ${us(CTS_DURATION_US)}）をまかなう。NAV が切れると、ノート PC は DIFS を待ち、残りの 3 スロットを数える。`,
       },
       events: [
         send(toRouter('staB', false)),
         send(ack('ack-b', AP, STA_B, MAC.staB)),
         set(STA_B, MEDIUM, 'Ack received'),
-        set(STA_A, MEDIUM, 'NAV expired: DIFS + rest of backoff'),
+        set(STA_A, MEDIUM, 'NAV expired: DIFS + 3 slots left'),
         set(AP, LAST_FRAME, 'Data from STA B (seq 88)'),
       ],
     },
