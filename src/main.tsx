@@ -4,7 +4,10 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
 import { AppRoutes } from '@/app/AppRoutes'
 import { TooltipProvider } from '@/components/ui/tooltip'
+import { reloadOnStaleChunk } from '@/lib/staleChunk'
 import '@/index.css'
+
+reloadOnStaleChunk()
 
 const rootElement = document.getElementById('root')
 if (rootElement === null) {
