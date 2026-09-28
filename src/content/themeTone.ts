@@ -11,6 +11,7 @@ export const CATEGORY_TONE: Readonly<Record<ThemeCategory, Tone>> = {
   web: 'blue',
   tcp: 'violet',
   http: 'rose',
+  security: 'orange',
 }
 
 /** 難易度のバッジの色（文字も必ず表示する） */

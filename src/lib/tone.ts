@@ -2,7 +2,7 @@
  * 色相（src/index.css の --tone-*）と Tailwind のクラスの対応。
  * Tailwind はソースの文字列を走査してクラスを生成するので、クラス名は組み立てずに完全な形で書く
  */
-export const TONES = ['blue', 'violet', 'teal', 'amber', 'green', 'rose'] as const
+export const TONES = ['blue', 'violet', 'teal', 'amber', 'green', 'rose', 'orange'] as const
 export type Tone = (typeof TONES)[number]
 
 export interface ToneClasses {
@@ -75,5 +75,14 @@ export const TONE_CLASSES: Readonly<Record<Tone, ToneClasses>> = {
     stroke: 'stroke-tone-rose',
     fill: 'fill-tone-rose',
     fillSoft: 'fill-tone-rose-soft',
+  },
+  orange: {
+    text: 'text-tone-orange',
+    bg: 'bg-tone-orange',
+    soft: 'bg-tone-orange-soft',
+    border: 'border-tone-orange',
+    stroke: 'stroke-tone-orange',
+    fill: 'fill-tone-orange',
+    fillSoft: 'fill-tone-orange-soft',
   },
 }

@@ -20,7 +20,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
  * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）
  */
-export const THEME_CATEGORIES = ['basics', 'ip', 'lan', 'web', 'tcp', 'http'] as const
+export const THEME_CATEGORIES = ['basics', 'ip', 'lan', 'web', 'tcp', 'http', 'security'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
 
 export interface ThemeMeta {
@@ -163,6 +163,22 @@ export const TCP_SACK_META = {
   summary: {
     en: 'How duplicate ACKs trigger a retransmission without waiting for the timer, and how SACK tells the sender exactly which segments are missing.',
     ja: '重複 ACK で、タイマーを待たずに再送するしくみと、SACK で、どのセグメントが抜けているかを送信側に正確に知らせるしくみ。',
+  },
+  difficulty: 'intermediate',
+  minutes: 12,
+} as const satisfies ThemeMeta
+
+export const FIREWALL_META = {
+  id: 'firewall',
+  kind: 'sequence',
+  category: 'security',
+  title: {
+    en: 'Stateful firewall: letting replies in, keeping strangers out',
+    ja: 'ステートフルファイアウォール: 返事は通し、見知らぬ相手は止める',
+  },
+  summary: {
+    en: 'How a firewall remembers the connections your PC opened, lets the replies back in without any inbound rule, tracks UDP with a timer, and drops or rejects a connection nobody asked for.',
+    ja: 'ファイアウォールが PC の開いた接続を覚え、内向きのルールなしで返事を通し、UDP をタイマーで追い、誰も頼んでいない接続を捨てるか拒否するしくみ。',
   },
   difficulty: 'intermediate',
   minutes: 12,
@@ -376,7 +392,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ → VLAN → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ → VLAN → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）→ ネットワークのセキュリティ（ファイアウォール）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -403,6 +419,7 @@ export const THEME_META = [
   CORS_META,
   HTTP2_META,
   QUIC_META,
+  FIREWALL_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']

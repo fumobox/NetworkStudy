@@ -41,6 +41,8 @@
   --color-tone-green-soft: var(--tone-green-soft);
   --color-tone-rose: var(--tone-rose);
   --color-tone-rose-soft: var(--tone-rose-soft);
+  --color-tone-orange: var(--tone-orange);
+  --color-tone-orange-soft: var(--tone-orange-soft);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -108,6 +110,8 @@
   --tone-green-soft: oklch(0.95 0.035 152);
   --tone-rose: oklch(0.5 0.17 355);
   --tone-rose-soft: oklch(0.95 0.03 355);
+  --tone-orange: oklch(0.5 0.14 45);
+  --tone-orange-soft: oklch(0.95 0.03 50);
   --success: var(--tone-green);
   --success-soft: var(--tone-green-soft);
   --radius: 0.625rem;
@@ -158,6 +162,8 @@
   --tone-green-soft: oklch(0.28 0.045 155);
   --tone-rose: oklch(0.8 0.12 355);
   --tone-rose-soft: oklch(0.29 0.05 355);
+  --tone-orange: oklch(0.8 0.12 55);
+  --tone-orange-soft: oklch(0.29 0.05 50);
   --success: var(--tone-green);
   --success-soft: var(--tone-green-soft);
   --sidebar: oklch(0.205 0 0);
