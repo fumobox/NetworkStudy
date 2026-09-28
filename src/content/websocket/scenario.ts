@@ -66,7 +66,7 @@ const ORIGIN: StateKey = 'origin'
 const ACCEPT: StateKey = 'accept'
 const HEARTBEAT: StateKey = 'heartbeat'
 
-export const ACCEPT_COLUMNS = ['Step', 'Value'] as const
+export const ACCEPT_COLUMNS = ['Stage', 'Value'] as const
 
 /** RFC 6455 §1.3 の例 */
 export const KEY = 'dGhlIHNhbXBsZSBub25jZQ=='
