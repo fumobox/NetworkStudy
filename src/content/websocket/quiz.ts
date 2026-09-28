@@ -119,8 +119,8 @@ export const webSocketQuiz: Quiz = {
       ],
       answerId: 'server',
       explanation: {
-        en: 'WebSocket has no same-origin policy and no CORS: the browser connects to any origin and sends its cookies. If the server does not check Origin, another site can use the user’s session (cross-site WebSocket hijacking). Non-browser clients can send any Origin, so use tokens too.',
-        ja: 'WebSocket には同一オリジンポリシーも CORS もない。ブラウザーはどのオリジンにも接続し、Cookie も送る。サーバーが Origin を確かめなければ、別のサイトがユーザーのセッションを使える（クロスサイト WebSocket ハイジャック）。ブラウザー以外のクライアントは好きな Origin を送れるので、トークンも使う。',
+        en: 'WebSocket has no same-origin policy and no CORS: the browser connects to any origin and sends its cookies (those that SameSite does not restrict). If the server does not check Origin, another site can use the user’s session (cross-site WebSocket hijacking). Non-browser clients can send any Origin, so use tokens too.',
+        ja: 'WebSocket には同一オリジンポリシーも CORS もない。ブラウザーはどのオリジンにも接続し、Cookie（SameSite で制限されないもの）も送る。サーバーが Origin を確かめなければ、別のサイトがユーザーのセッションを使える（クロスサイト WebSocket ハイジャック）。ブラウザー以外のクライアントは好きな Origin を送れるので、トークンも使う。',
       },
     },
   ],
