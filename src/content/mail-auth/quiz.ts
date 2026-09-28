@@ -71,8 +71,8 @@ export const mailAuthQuiz: Quiz = {
     {
       id: 'forwarding',
       prompt: {
-        en: 'A server forwards a message without changing it. What happens at the final receiver?',
-        ja: 'サーバーがメッセージを変えずに転送した。最終的な受信サーバーではどうなる？',
+        en: 'A server forwards a message without changing it or its envelope sender. The sender’s SPF record ends in -all. What happens at the final receiver?',
+        ja: 'サーバーが、メッセージもエンベロープの送信者も変えずに転送した。送信元の SPF のレコードは -all で終わる。最終的な受信サーバーではどうなる？',
       },
       choices: [
         {
