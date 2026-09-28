@@ -207,7 +207,7 @@ describe('natTraversalScenario', () => {
 
     it('同時に進む別々のチェックは、別のトランザクション ID を使う', () => {
       const all = messages(build({ network: 'symmetric' }))
-      const direct = all.find((m) => m.id.startsWith('b-check-') && m.from === 'pcB')
+      const direct = all.find((m) => /^b-check-\d+$/.test(m.id) && m.from === 'pcB')
       const relay = all.find((m) => m.id.startsWith('b-check-relay') && m.from === 'pcB')
       expect(field(direct, 'Transaction ID')).not.toBe(field(relay, 'Transaction ID'))
     })
