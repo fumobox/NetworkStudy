@@ -18,6 +18,7 @@ Getting on the network / ネットワークにつながるまで
 - ICMP: ping and traceroute / ICMP: ping と traceroute
 - Path MTU discovery: when a packet is too big / パス MTU 探索: パケットが大きすぎるとき
 - NAT: sharing one public address / NAT: 1 つのグローバルアドレスを共有する
+- NAT traversal: STUN, TURN and ICE / NAT 越え: STUN・TURN・ICE
 - Route lookup: longest prefix match / 経路の検索: 最長一致
 
 Inside the LAN / LAN の中

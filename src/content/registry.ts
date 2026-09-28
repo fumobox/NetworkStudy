@@ -12,6 +12,7 @@ import { ipv6AddressTheme } from './ipv6-address'
 import { ipv6NdTheme } from './ipv6-nd'
 import { mailAuthTheme } from './mail-auth'
 import { natTheme } from './nat'
+import { natTraversalTheme } from './nat-traversal'
 import { pmtudTheme } from './pmtud'
 import { osiModelTheme } from './osi-model'
 import { quicTheme } from './quic'
@@ -38,6 +39,7 @@ export const THEMES: readonly ThemeModule[] = [
   icmpTheme,
   pmtudTheme,
   natTheme,
+  natTraversalTheme,
   routeLookupTheme,
   switchingTheme,
   vlanTheme,
