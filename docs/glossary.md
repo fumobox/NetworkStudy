@@ -50,6 +50,7 @@
 | WebSocket | WebSocket、ws://、wss://、Upgrade、Connection: Upgrade、Sec-WebSocket-Key、Sec-WebSocket-Accept、Sec-WebSocket-Version、Sec-WebSocket-Protocol、Sec-WebSocket-Extensions、101 Switching Protocols、403 Forbidden、426 Upgrade Required、GUID、SHA-1、base64、FIN（フレームのビット。TCP FIN とは文脈で区別する）、RSV1-3、Opcode、MASK、Masking key、Payload length、Header bytes、Text、Binary、Continuation、Close、Ping、Pong、readyState、CONNECTING、OPEN、CLOSING、CLOSED、open、message、error、close、wasClean、binaryType、Blob、1000、1001、1002、1005、1006、1008、1009、1011、1015、permessage-deflate、extended CONNECT、:protocol、Server-Sent Events、EventSource、CSWSH、TCP FIN、hb-1（状態とフィールドの値 waiting for 101、Accept OK、Accept mismatch、allowed: …、Ping sent、Pong received、Pong timeout、(forgotten)、1000 (normal closure)、N bytes、N fragments、message: …、error, close: 1006、close: 1000, wasClean true と、表の列 Stage、Value も翻訳しない。Text、Binary、Continuation はラベルとフィールドの値。本文ではテキスト、バイナリー、継続と書く） |
 | メールの送信ドメイン認証 | SPF、DKIM、DMARC、ARC、SMTP、MX、EHLO、MAIL FROM、RCPT TO、DATA、From、To、Subject、DKIM-Signature、Authentication-Results、Received、List-Id、_domainkey、_dmarc、v=spf1、ip4、-all、~all、?all、v=DKIM1、k=rsa、d=、s=、h=、bh=、b=、c=、relaxed、strict、v=DMARC1、p=none、p=quarantine、p=reject、adkim、aspf、rua、pass、fail、softfail、neutral、none、temperror、permerror、RFC5321.MailFrom、RFC5322.From、250、550 5.7.1、SRS、smtp.mailfrom、header.d、header.from、accept、accept (p=none)、quarantine、reject、reject (550 5.7.1)、yes、no（状態の値と表の列・行 Identifier、Domain、Result、Aligned、SPF (MAIL FROM)、DKIM (d=)、From (header)、Name、TXT も翻訳しない） |
 | Wi-Fi（802.11） | 802.11、WPA2、WPA2-Personal、WPA2-PSK、WPA3、WPA3-Personal、WEP、SAE、PMF、802.11w、RSN、RSNA、RSNE、AKM、CCMP、CCMP-128、PBKDF2、HMAC-SHA1、PRF-384、AES Key Wrap、KRACK、SSID、BSSID、BSS、ESS、IBSS、DS、STA、AP、TSF、TU、TIM、DTIM、Beacon、Probe Request、Probe Response、Authentication、Association Request、Association Response、Deauthentication、Open System、AID、EAPOL、EAPOL-Key、802.1X、ANonce、SNonce、PMK、PTK、GTK、KCK、KEK、TK、MIC、KDE、Key Information、Key Replay Counter、Install、Key Ack、Key MIC、Secure、Encrypted Key Data、Frame Control、ToDS、FromDS、Retry、Protected、Duration、Address 1〜3、RA、TA、DA、SA、Ack（802.11 のフレーム。TCP の ACK とは別）、RTS、CTS、NAV、CCA、SIFS、DIFS、AIFS、CW、CSMA/CA、CSMA/CD、DCF、EDCA、OFDM、ATIM、Wi-Fi Direct、802.11s（状態の値 State 1〜4（State N (unauthenticated) などの説明付き）、… (channel …, WPA2-PSK)、EAPOL only、open、not used、derived、installed、received、duplicate discarded、MIC invalid (discarded)、MIC valid、EAPOL-Key 4/4 (MIC valid)、Ack received、Ack received (CW back to …)、Beacon (from STA B)、DIFS … + N × … (CW …)、sending (…)、no Ack: …、NAV … (busy)、NAV expired: …、paused (hears the AP’s Ack)、collision (nothing decoded)、ignored (not an AP)、Beacon (TSF synced)、CTS for STA …、Data from STA … (…)、IBSS started、looking for …、joined …、理由コードの 4-way handshake timeout と、表の列 SSID、BSSID、Security、Via、Key、Bits、Value、MAC、State、AID も翻訳しない） |
+| リバースプロキシとロードバランサー | Forwarded、for、by、host、proto、X-Forwarded-For、X-Forwarded-Proto、Via、Host、:authority、:scheme、:method、:path、:status、Connection、Keep-Alive、Proxy-Connection、TE、Transfer-Encoding、Upgrade、Location、Proxy-Status、Retry-After、Authorization、Set-Cookie、Cookie、Cache-Status、connection_terminated、connection_refused、http_response_timeout、destination_unavailable、next-hop、hit、fwd、uri-miss、stored、ttl、s-maxage、private、public、must-revalidate、502 Bad Gateway、503 Service Unavailable、504 Gateway Timeout、201 Created、SERVERID、Path、Secure、HttpOnly、PROXY protocol、SNI、ALPN、h2、L4、L7、DSR、SNAT、HAProxy、nginx、NGINX Plus、/healthz、FIN、RST（状態の値 unknown、up、down、idle、in use、closed、not visible、running、crashed、busy (45 s)、order 1001 created、terminated (cert …)、passthrough (ciphertext only)、B (A by cookie)、A (B is down)、h2, TLS 1.3 to …、TCP to …、フィールド名 Frames、Removed、Line、Visible to the LB、Inside (encrypted) と、表の列 Backend、Address、Health、Fails、Conn、Requests、State、URL、Cache-Control、Age、Status、Field、Value、TCP peer、Scheme、Forwarded for、Forwarded proto、PROXY src、TLS も翻訳しない） |
 
 ## 3. 訳語の対応表
 
@@ -314,6 +315,20 @@
 | radio range | 電波の届く範囲 | |
 | offline dictionary attack | オフラインの辞書攻撃 | |
 | downgrade | 格下げ | |
+| reverse proxy | リバースプロキシ | RFC 9110 では gateway と呼ぶ |
+| gateway (HTTP) | ゲートウェイ | 502 / 504 の Gateway。デフォルトゲートウェイとは別 |
+| intermediary | 仲介者 | RFC 9110 §3.7 |
+| load balancer / load balancing | ロードバランサー／負荷分散 | 「ロードバランサ」としない |
+| backend (server) | バックエンド（サーバー） | |
+| round robin | ラウンドロビン | |
+| health check (active / passive) | ヘルスチェック（能動的／受動的） | |
+| sticky session | スティッキーセッション | |
+| TLS termination / passthrough | TLS の終端／パススルー | |
+| persistent connection / connection reuse | 持続的な接続／接続の使い回し | |
+| idempotent | べき等 | |
+| retry | 再試行 | TCP の再送（retransmission）と区別する |
+| timeout | タイムアウト | |
+| shared cache | 共有キャッシュ | |
 | interface | インターフェース | |
 | network card | ネットワークカード | |
 | layer | 層 | 「レイヤー」は UI の説明など一般的な文脈に限る |
