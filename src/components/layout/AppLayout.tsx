@@ -4,10 +4,9 @@ import { useMessages } from '@/lib/i18n'
 import { Footer } from './Footer'
 import { Header } from './Header'
 import { LoadErrorBoundary } from './LoadErrorBoundary'
+import { MAIN_ID } from './mainId'
 import { Sidebar } from './Sidebar'
 import { useResetScrollOnNavigate } from './useResetScrollOnNavigate'
-
-const MAIN_ID = 'main'
 
 export function AppLayout() {
   const m = useMessages()
@@ -28,7 +27,7 @@ export function AppLayout() {
         <aside className="hidden w-56 shrink-0 lg:block">
           <Sidebar />
         </aside>
-        {/* ページを移ったときにフォーカスを受ける（操作できる要素ではないので枠は描かない） */}
+        {/* スキップリンクとページの移動でフォーカスを受ける。Tab の順には入らず、操作できる要素でもないので枠は描かない */}
         <main ref={main} id={MAIN_ID} tabIndex={-1} className="min-w-0 flex-1 outline-none">
           {/* 遅延読み込みのページ（テーマ）を開くあいだの表示 */}
           {/* 読み込みに失敗したときの表示。別のページに移ったらリセットする（言語の切り替えでページの状態は失わない） */}

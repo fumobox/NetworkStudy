@@ -121,9 +121,33 @@ test.describe('スマホの幅（390px）', () => {
     await expect(link).toBeInViewport()
     await link.click()
     await expect(page.getByRole('heading', { level: 1, name: last.title.ja })).toBeVisible()
-    // メニューを閉じても、フォーカスはメニューのボタンに戻らず、移った先のページの main にある
+    // メニューが閉じ終わっても、フォーカスはメニューのボタンに戻らず、移った先のページの main にある
+    await expect(page.getByRole('dialog')).toBeHidden()
     await expect(page.getByRole('main')).toBeFocused()
+  })
+
+  test('メニューから移るとページの先頭から表示し、今いるページのリンクでもフォーカスを失わない', async ({
+    page,
+  }) => {
+    const [from, to] = THEME_META
+    await page.goto(`ja/themes/${from.id}`)
+    await expect(page.getByRole('heading', { level: 1, name: from.title.ja })).toBeVisible()
+    await page.evaluate(() => {
+      window.scrollTo(0, document.body.scrollHeight)
+    })
+    await expect.poll(() => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+    const menu = page.getByRole('button', { name: MESSAGES.ja.nav.menu })
+    await menu.click()
+    await page.getByRole('dialog').getByRole('link', { name: to.title.ja }).click()
+    await expect(page.getByRole('heading', { level: 1, name: to.title.ja })).toBeVisible()
+    await expect(page.getByRole('dialog')).toBeHidden()
     await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0)
+    await expect(page.getByRole('main')).toBeFocused()
+    // 今いるページのリンク: パスは変わらないが、メニューを閉じたあともフォーカスは main にある
+    await menu.click()
+    await page.getByRole('dialog').getByRole('link', { name: to.title.ja }).click()
+    await expect(page.getByRole('dialog')).toBeHidden()
+    await expect(page.getByRole('main')).toBeFocused()
   })
 
   for (const meta of THEME_META) {

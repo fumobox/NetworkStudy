@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useResetScrollOnNavigate } from './useResetScrollOnNavigate'
 
 const TARGETS = [
+  '/en/themes/tcp-handshake',
   '/en/themes/dns-resolution',
   '/en/themes/tcp-handshake?step=3',
   '/ja/themes/tcp-handshake',
@@ -69,6 +70,13 @@ describe('useResetScrollOnNavigate', () => {
   it('言語の切り替えでは動かさない', () => {
     click('/ja/themes/tcp-handshake')
     expect(scrollTo).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'back' }))
+  })
+
+  it('同じページへの移動では動かさない', () => {
+    click('/en/themes/tcp-handshake')
+    expect(scrollTo).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'back' }))
   })
 
   it('戻る・進む（POP）では動かさない', () => {
