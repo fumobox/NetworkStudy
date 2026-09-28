@@ -59,7 +59,7 @@ export const RTR_SOLICITATION_INTERVAL_MS = 4000
 export const MAX_RTR_SOLICITATIONS = 3
 export const MAX_RTR_SOLICITATION_DELAY_MS = 1000
 
-/** アドレス（RFC 3849、RFC 9542 §2.1.2）。インターフェース ID は MAC アドレスからの EUI-64 */
+/** アドレス（RFC 3849、RFC 9542 §2.1.4）。インターフェース ID は MAC アドレスからの EUI-64 */
 export const HOSTS = {
   pc: {
     mac: '00:00:5e:00:53:0a',

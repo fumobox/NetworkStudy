@@ -11,7 +11,7 @@
  *     しばらく使われない行は消える（既定 300 秒）
  * - RFC 4188（Bridge MIB）: dot1dTpFdbTable（MAC アドレスとポートの表）、dot1dTpAgingTime（範囲 10〜1,000,000 秒、
  *   「802.1D-1998 recommends a default of 300 seconds」）
- * - RFC 9542 §2.1.2（説明用の MAC アドレス 00-00-5E-00-53-00〜FF）、付録 B（EtherType 0x0800 = IPv4、0x0806 = ARP）
+ * - RFC 9542 §2.1.4（説明用の MAC アドレス 00-00-5E-00-53-00〜FF）、付録 B（EtherType 0x0800 = IPv4、0x0806 = ARP）
  * - RFC 792（Echo Request / Echo Reply）、RFC 826（ARP）
  *
  * 学習用の単純化: スイッチは 1 台で、STP、表があふれる場合、VLAN（VLAN のテーマを参照）は扱わない。
@@ -50,7 +50,7 @@ export const MAC_COLUMNS = ['MAC', 'Port'] as const
 /** エージングタイムの既定（IEEE 802.1Q、RFC 4188 dot1dTpAgingTime） */
 export const AGEING_MS = 300_000
 
-/** Phase 4 のテーマと同じアドレス（RFC 1918、RFC 9542 §2.1.2）と、つながっているポート */
+/** Phase 4 のテーマと同じアドレス（RFC 1918、RFC 9542 §2.1.4）と、つながっているポート */
 export const HOSTS = {
   pc: { ip: '192.168.1.10', mac: '00:00:5e:00:53:0a', port: 1 },
   router: { ip: '192.168.1.1', mac: '00:00:5e:00:53:01', port: 2 },
