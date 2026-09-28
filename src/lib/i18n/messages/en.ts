@@ -144,7 +144,7 @@ export const en = {
     },
     http: {
       title: 'HTTP for web developers',
-      lead: 'Things you meet as soon as you build for the web: how the browser caches responses and checks whether they are still valid, why the browser may not let a page read a response from another origin, and how HTTP/2 and HTTP/3 (QUIC) make one connection fast.',
+      lead: 'Things you meet as soon as you build for the web: how the browser caches responses and checks whether they are still valid, why the browser may not let a page read a response from another origin, how HTTP/2 and HTTP/3 (QUIC) make one connection fast, and how WebSocket keeps one connection open for messages in both directions.',
     },
     security: {
       title: 'Network security',

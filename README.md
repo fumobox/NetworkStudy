@@ -46,6 +46,7 @@ HTTP for web developers / Web 開発で出会う HTTP
 - CORS: cross-origin requests and preflight / CORS: オリジンをまたぐ要求とプリフライト
 - HTTP/1.1 vs HTTP/2: many requests on one connection / HTTP/1.1 と HTTP/2: 1 つの接続でたくさんの要求
 - QUIC and HTTP/3: handshake, 0-RTT, and loss / QUIC と HTTP/3: ハンドシェイク、0-RTT、ロス
+- WebSocket: handshake, frames, and closing / WebSocket: ハンドシェイク、フレーム、接続の終了
 
 Network security / ネットワークのセキュリティ
 

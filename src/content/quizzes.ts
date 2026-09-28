@@ -51,9 +51,11 @@ import {
   TCP_SACK_META,
   TLS_HANDSHAKE_META,
   VLAN_META,
+  WEBSOCKET_META,
 } from './themeMeta'
 import { tlsHandshakeQuiz } from './tls-handshake/quiz'
 import { vlanQuiz } from './vlan/quiz'
+import { webSocketQuiz } from './websocket/quiz'
 import type { ThemeModule } from './types'
 
 /**
@@ -86,6 +88,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: CORS_META, quiz: corsQuiz },
   { meta: HTTP2_META, quiz: http2Quiz },
   { meta: QUIC_META, quiz: quicQuiz },
+  { meta: WEBSOCKET_META, quiz: webSocketQuiz },
   { meta: FIREWALL_META, quiz: firewallQuiz },
   { meta: DNSSEC_META, quiz: dnssecQuiz },
   { meta: MAIL_AUTH_META, quiz: mailAuthQuiz },

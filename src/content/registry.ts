@@ -25,6 +25,7 @@ import { tcpSackTheme } from './tcp-sack'
 import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
 import { vlanTheme } from './vlan'
+import { webSocketTheme } from './websocket'
 import type { ThemeModule } from './types'
 
 /** 公開するテーマ（themeMeta.ts の THEME_META と同じ順・同じ id。registry.test.ts で確認する） */
@@ -53,6 +54,7 @@ export const THEMES: readonly ThemeModule[] = [
   corsTheme,
   http2Theme,
   quicTheme,
+  webSocketTheme,
   firewallTheme,
   dnssecTheme,
   mailAuthTheme,
