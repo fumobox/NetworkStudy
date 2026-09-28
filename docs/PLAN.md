@@ -56,6 +56,7 @@
 | — | ステートフルファイアウォール、DNSSEC、メールの送信ドメイン認証（SPF・DKIM・DMARC） | シーケンス図 | Phase 8 で追加 |
 | — | WebSocket | シーケンス図 | Phase 9 で追加 |
 | — | NAT 越え（STUN・TURN・ICE） | シーケンス図 | Phase 10 で追加 |
+| — | Wi-Fi（無線 LAN への参加、4 ウェイハンドシェイク、CSMA/CA） | シーケンス図 | Phase 11 で追加 |
 
 ## 3. 技術スタック
 
@@ -637,6 +638,37 @@ Issue は #210〜#212 に分けて起票した。
 | 更新の時刻 | 4 分後に ChannelBind（許可とチャネル）と Refresh（割り当て） | 許可は 300 秒、割り当てとチャネルは 600 秒。データを送っても更新されない |
 | 用語 | SDP の answer は「アンサー」、STUN の response は「応答」 | 用語集で書き分ける |
 | 扱わないもの | IPv6、ICE-TCP、TURN の TCP の割り当て（RFC 6062。PC A とサーバーの間の TLS は扱う）、Trickle ICE の流れ、mDNS のホスト候補、ICE の再起動、ice-lite、役割の衝突（487）、438、ALTERNATE-SERVER、DTLS-SRTP の詳細 | 主題がぼやける。IPv6、ICE-TCP、Trickle ICE は概要で触れる |
+
+### Phase 11: Wi-Fi
+
+**完了条件**: 「LAN の中」（`lan`）の VLAN の次に、Wi-Fi に参加するテーマがあり、根拠の規格、クイズ、en／ja の概要がある。
+
+**完了**（#216〜#218）: テーマは 29 → 30（Wi-Fi）。Frame Control とアドレスの並び（`frame.ts`）、OFDM の通信時間と Duration・CW（`airtime.ts`）、EAPOL-Key の Key Information（`eapol.ts`）の純関数を足した。あわせて、ほかのテーマの説明用の MAC アドレスの根拠を RFC 9542 §2.1.4 に、EtherType の根拠を IANA のレジストリに直した（#219）。
+
+| # | タスク | ラベル |
+|---|---|---|
+| 11-1 | Wi-Fi のシナリオ（Beacon、Probe、Open System 認証、アソシエーションと AID、EAPOL-Key 1〜4、ToDS / FromDS と 3 つのアドレス、DIFS とバックオフ、SIFS 後の Ack。もしも: パスフレーズの誤り、Ack の消失、隠れ端末、隠れ端末と RTS/CTS、アドホック）とテスト | content |
+| 11-2 | Wi-Fi のページ（概要、クイズ、登録） | content |
+| 11-3 | PLAN、CLAUDE.md、README、用語集の仕上げ | content |
+
+Issue は #216〜#218 に分けて起票した。
+
+#### Phase 11 の判断
+
+| 項目 | 判断 | 理由 |
+|---|---|---|
+| 分類と位置 | `lan` の VLAN の次 | 有線のスイッチ・VLAN のあとに、無線の LAN。参加したあとの DHCP・ARP はリンクするだけで繰り返さない |
+| テーマの数 | 1 つ（インフラストラクチャモードが主、アドホックはもしもの 1 つ） | 同じ図で AP を通る 2 区間と、IBSS の 1 区間を見比べられる |
+| 根拠の版 | IEEE Std 802.11-2024（節の番号は 2016 / 2020 と同じ並び） | 2020 は置き換えられた。IEEE の規格は節の題名で引き、IEEE GET Program を案内する |
+| レーン | ノート PC（STA A）、AP、スマートフォン（STA B）の 3 本。AP の種類は `switch` | AP は無線と有線の間の L2 のブリッジ。ActorKind は色にしか使わないのでエンジンは変えない。有線の側は描かない |
+| 電波の届く範囲 | 各アクターの状態 `hears` と、矢印を描かないことで示す | 線のない網では、図だけでは誰に届くかわからない |
+| オプション | `situation`（normal / wrongPassphrase / lostAck / hiddenNode / rtsCts / adhoc）の 1 つの選択 | 2 つの軸にすると意味のない組み合わせ（オープンな IBSS でパスフレーズの誤りなど）ができる |
+| PHY とメディアアクセス | 5 GHz の non-HT OFDM（24 Mb/s）、DCF と DIFS | 今の機器は EDCA（ベストエフォートの AIFS 43 µs）だが、しくみは同じ。概要で比べる |
+| 時間 | タイマーは使わず、µs の値はフィールドと状態で示す | `formatSeconds` は秒の小数 1 桁までなので、µs は 0 s になる |
+| バックオフの数 | 隠れ端末では 5 と 2 スロット（衝突する）、RTS/CTS では 9 と 2 スロット（CTS が届いたとき 3 スロット残る） | RTS（28 µs）と CTS の時刻を計算して、図の話と合わせた |
+| PMK | PBKDF2 の値をテストで WebCrypto と照らし合わせ、Annex J.4 のテストベクタも再現する。PTK の値は示さない | 手で書いた値の誤りを防ぐ。ノンスを示さないので PTK は計算できない |
+| 管理フレームの Ack | データの区間でだけ描く | 図が込み入る。最初のユニキャストの管理フレームで断る |
+| 扱わないもの | QoS（EDCA の細部）、パワーセーブと DTIM、フラグメンテーション、A-MPDU と Block Ack、802.11r/k/v、802.1X/EAP（Enterprise）、WPS、2.4 GHz の時間、IBSS の RSNA、MLO | 主題がぼやける。EDCA、WPA3・SAE・PMF、KRACK、Wi-Fi Direct、802.11s は概要で触れる |
 
 ## 9. リスクと対策
 

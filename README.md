@@ -25,6 +25,7 @@ Inside the LAN / LAN の中
 
 - Switching: how a switch learns MAC addresses / スイッチ: MAC アドレスを学習する
 - VLAN: one switch, separate networks / VLAN: 1 台のスイッチを別々のネットワークに分ける
+- Wi-Fi: joining a wireless network / Wi-Fi: 無線 LAN につながる
 - IPv6 on the LAN: SLAAC and Neighbor Discovery / IPv6 で LAN につながる: SLAAC と近隣探索
 
 How a web page reaches you / Web のページが届くまで
