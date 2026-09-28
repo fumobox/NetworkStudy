@@ -1,14 +1,16 @@
 import { Suspense } from 'react'
-import { Outlet } from 'react-router'
+import { Outlet, useLocation } from 'react-router'
 import { useMessages } from '@/lib/i18n'
 import { Footer } from './Footer'
 import { Header } from './Header'
+import { LoadErrorBoundary } from './LoadErrorBoundary'
 import { Sidebar } from './Sidebar'
 
 const MAIN_ID = 'main'
 
 export function AppLayout() {
   const m = useMessages()
+  const { pathname } = useLocation()
 
   return (
     <div className="flex min-h-svh flex-col bg-background text-foreground">
@@ -25,9 +27,12 @@ export function AppLayout() {
         </aside>
         <main id={MAIN_ID} tabIndex={-1} className="min-w-0 flex-1">
           {/* 遅延読み込みのページ（テーマ）を開くあいだの表示 */}
-          <Suspense fallback={<p className="text-sm text-muted-foreground">{m.theme.loading}</p>}>
-            <Outlet />
-          </Suspense>
+          {/* 読み込みに失敗したときの表示。別のページに移ったらリセットする */}
+          <LoadErrorBoundary key={pathname}>
+            <Suspense fallback={<p className="text-sm text-muted-foreground">{m.theme.loading}</p>}>
+              <Outlet />
+            </Suspense>
+          </LoadErrorBoundary>
         </main>
       </div>
       <Footer />

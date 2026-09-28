@@ -30,6 +30,10 @@ export const en = {
   },
   layout: {
     skipToContent: 'Skip to content',
+    loadErrorTitle: 'This page could not be loaded',
+    loadErrorDescription:
+      'The site may have been updated since you opened it, or the connection was interrupted. Reloading usually fixes it.',
+    reload: 'Reload the page',
   },
   footer: {
     license: 'MIT License',
