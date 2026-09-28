@@ -1,0 +1,115 @@
+## In front of your servers
+
+A busy site rarely runs on one server. The browser connects to a **reverse proxy**, which forwards each request to one of several **backends** and passes the response back. RFC 9110 calls this kind of intermediary a **gateway**: to the browser it looks like the origin server, but it translates requests and forwards them inward. That is why the error codes it produces are called 502 Bad *Gateway* and 504 *Gateway* Timeout. Spreading the requests over the backends is **load balancing**, and one product usually does both jobs, for example nginx, HAProxy, Envoy or a cloud load balancer.
+
+The browser only ever sees the proxy. Backends can be added, removed or restarted without the browser noticing.
+
+## TLS ends at the proxy
+
+Usually the proxy holds the site’s certificate and private key and completes the TLS handshake itself (**TLS termination**). Behind it, requests travel as plain HTTP, often HTTP/1.1, on a network the operator trusts. The backend therefore receives `http`, not `https` (RFC 9112 §3.3), and its TCP peer is the proxy, not the browser. An app that “forces https” by redirecting every `http` request would loop forever unless the proxy tells it what the browser used. The proxy can also re-encrypt the traffic to the backends.
+
+## Telling the backend who asked
+
+The proxy adds fields that describe the original request:
+
+- `Forwarded`: the standard field (RFC 7239), for example `for=203.0.113.50;proto=https`. It can also carry the host that was asked for (`host=`) and the proxy itself (`by=`).
+- `X-Forwarded-For`: widely used but not standardized, for example `203.0.113.50`.
+- `X-Forwarded-Proto`: widely used but not standardized, for example `https`.
+
+In `Forwarded`, an IPv6 address is put in brackets and must be quoted, as must any address with a port, for example `for="[2001:db8:cafe::17]:4711"`. Each proxy on the way appends its own element, so the list grows from left to right.
+
+These fields are easy to fake. A client can send its own `X-Forwarded-For: 192.0.2.99`, and the proxy will append the real address after it. So trust only the entries that your own proxies added. Count from the right, or have the outermost proxy replace the field. The backend should accept these fields only from the proxy’s address. RFC 7239 also points out the privacy cost of sending client addresses and recommends obfuscated identifiers by default.
+
+## Host, :authority and Via
+
+In HTTP/2 the site’s name is in the `:authority` pseudo-header. When the proxy speaks HTTP/1.1 to the backend, it builds `Host` from it (RFC 9113 §8.3.1). A gateway must add `Via` to the requests it forwards (RFC 9110 §7.6.3). The field records the protocol version of the message the proxy received and a name for the proxy, for example `Via: 2.0 proxy1` on a request that arrived over HTTP/2 and `Via: 1.1 proxy1` on a response that came from an HTTP/1.1 backend (on responses, Via is optional). Many reverse proxies leave Via out by default.
+
+## Hop-by-hop fields and connection reuse
+
+Some fields describe only one connection, not the message: `Connection`, `Keep-Alive`, `TE`, `Transfer-Encoding`, `Upgrade`, and any field listed in `Connection`. A proxy removes them before forwarding (RFC 9110 §7.6.1), and HTTP/2 does not allow them (RFC 9113 §8.2.2), except `TE: trailers` in requests.
+
+HTTP/1.1 connections stay open by default (RFC 9112 §9.3), so the proxy keeps a pool of connections to each backend and reuses them. This saves a TCP (and maybe TLS) handshake for every request. In practice an HTTP/1.1 connection carries one request at a time (pipelining is allowed but rarely used), and responses are matched to requests only by their order (§9.2, §9.3.2). So a connection whose response is still pending cannot be reused.
+
+## Choosing a backend
+
+HTTP does not say how to choose. Common methods include **round robin** (in turn, the default in nginx and HAProxy), least connections, and a hash of the client address or URL. Weights can send more traffic to bigger machines.
+
+A **sticky session** sends a browser back to the same backend every time, usually with a cookie that the proxy sets, for example HAProxy’s `cookie SERVERID insert indirect`. It helps when an app keeps sessions in memory. It also makes the load uneven, and when that backend fails its sessions are lost. Keeping sessions in a shared store avoids both problems.
+
+## Health checks
+
+Health checks are not part of HTTP either. Each product has its own settings:
+
+- **Active** checks probe each backend regularly, for example with `GET /healthz`. A backend is taken out after a number of failures in a row, and put back after a number of successes.
+- **Passive** checks count failures on real traffic. Open-source nginx, for example, only has passive checks; active checks are part of NGINX Plus.
+
+An active check can pass while real requests are slow: `/healthz` is usually cheap.
+
+## When a backend fails
+
+| What happened | Status | Proxy-Status error (RFC 9209) |
+|---|---|---|
+| The connection was refused, or closed before a complete response | 502 Bad Gateway | `connection_refused`, `connection_terminated` |
+| No backend is available (for example, all failed their health checks) | 503 Service Unavailable, maybe with `Retry-After` | `destination_unavailable` |
+| The backend did not answer in time | 504 Gateway Timeout | `connection_timeout`, `http_response_timeout` |
+
+The `Proxy-Status` field (RFC 9209) tells which proxy produced the error and why, for example `proxy1; error=connection_terminated`.
+
+A proxy may resend a failed request to another backend only if the method is **idempotent**: GET, HEAD, PUT or DELETE can be repeated safely, but a POST may already have taken effect (RFC 9110 §9.2.2). Likewise, a 504 does not mean the request failed, only that nobody knows. For example, the order may have been created anyway.
+
+## Layer 4 and layer 7
+
+| | Layer 7 (HTTP) | Layer 4 (TCP) |
+|---|---|---|
+| Balances | Each request | Each TCP connection |
+| Where TLS ends | At the proxy | At the backend (passthrough) |
+| Can read paths, headers and cookies | Yes | No |
+| Can add Forwarded or Via, and cache | Yes | No |
+| Certificates needed on | The proxy | Every backend |
+
+A layer-4 load balancer is simpler and faster, but when it opens its own connection to the backend, as here, the backend sees only the load balancer’s address. To keep the client address, the load balancer can send a **PROXY protocol** header first. It is a single line such as `PROXY TCP4 203.0.113.50 192.0.2.10 51514 443`, from a HAProxy specification rather than an RFC. The backend must be configured to expect it and should accept it only from the load balancer. Otherwise a client could send a fake one. Another method is **DSR** (direct server return), where replies go from the backend straight to the client.
+
+## The proxy as a shared cache
+
+A reverse proxy can also cache responses for all its users (a **shared cache**, RFC 9111), which the HTTP caching theme left out:
+
+- `s-maxage` applies only to shared caches and overrides `max-age` there. With `max-age=0, s-maxage=60`, the proxy may reuse the response for 60 seconds while browsers must revalidate at once.
+- `private` means that a shared cache must not store the response.
+- A response to a request with `Authorization` may be reused by a shared cache only if it has `public`, `must-revalidate` or `s-maxage` (§3.5).
+- `Age` estimates how long ago the origin server generated or validated the response (on this page, the time in the proxy’s cache), and `Cache-Status` (RFC 9211) tells what the cache did, for example `proxy1; hit; ttl=40` or `proxy1; fwd=uri-miss; stored`.
+
+A shared cache must be careful with responses that depend on the request: `Vary` names the request fields that change the response (RFC 9111 §4.1). If an attacker can change the response through a request field that is neither in the cache key nor in `Vary`, the cache stores that response and serves it to everyone (cache poisoning).
+
+## What to look for in the walkthrough
+
+- The keys stopping at the proxy: the browser’s side is encrypted, the backend’s side is not.
+- The fields the proxy adds (`Host`, `Forwarded`, `X-Forwarded-*`, `Via`) and removes (`Removed`), and the backend’s “What the app sees” table.
+- The backend pool, the next backend in the rotation, and the connection table with its reused connections.
+- In the “What if…” options:
+  - a backend that crashes (502, no retry for the POST, and the health check);
+  - a slow backend (504);
+  - sticky sessions;
+  - a layer-4 load balancer with the PROXY protocol;
+  - the shared cache.
+
+## About this page
+
+- One browser and two backends of equal weight, chosen by round robin.
+- Health checks run every 5 seconds, and a backend is marked down after 2 failures in a row. The response timeout is 30 seconds. All of these are example values.
+- The proxy sends the client’s IP address in `Forwarded` and `X-Forwarded-For`, and passes the `Host` unchanged. Some products replace it by default.
+- TCP handshakes are drawn only in the layer-4 option. TCP ACKs for data and HTTP/2 SETTINGS are not drawn, and the TLS handshake is shown as 3 messages (see the TLS 1.3 theme).
+- The proxy adds Via in both directions.
+- `Date` is left out, and `Age` counts only the time in the proxy’s cache. The browser’s own cache is not drawn.
+- The backends use documentation addresses (RFC 5737). In practice they usually have private addresses.
+- The PROXY protocol is shown in its text form, version 1. Version 2 is binary.
+
+## References
+
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — §3.7 (intermediaries), §7.6 (message forwarding, Via), §9.2.2 (idempotent methods), §15.6 (5xx)
+- [RFC 9112: HTTP/1.1](https://www.rfc-editor.org/rfc/rfc9112) — §3.3, §9.2, §9.3
+- [RFC 9113: HTTP/2](https://www.rfc-editor.org/rfc/rfc9113) — §8.2, §8.3.1
+- [RFC 7239: Forwarded HTTP Extension](https://www.rfc-editor.org/rfc/rfc7239)
+- [RFC 9209: The Proxy-Status HTTP Response Header Field](https://www.rfc-editor.org/rfc/rfc9209)
+- [RFC 9111: HTTP Caching](https://www.rfc-editor.org/rfc/rfc9111) — §3, §3.5, §4.1, §5.1, §5.2.2.7, §5.2.2.10
+- [RFC 9211: The Cache-Status HTTP Response Header Field](https://www.rfc-editor.org/rfc/rfc9211)
+- [The PROXY protocol, Versions 1 & 2](https://www.haproxy.org/download/3.0/doc/proxy-protocol.txt) (HAProxy Technologies)
