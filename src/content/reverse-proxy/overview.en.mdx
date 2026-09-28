@@ -34,7 +34,7 @@ HTTP/1.1 connections stay open by default (RFC 9112 §9.3), so the proxy keeps a
 
 HTTP does not say how to choose. Common methods include **round robin** (in turn, the default in nginx and HAProxy), least connections, and a hash of the client address or URL. Weights can send more traffic to bigger machines.
 
-A **sticky session** sends a browser back to the same backend every time, usually with a cookie that the proxy sets, for example HAProxy’s `cookie SERVERID insert`. It helps when an app keeps sessions in memory. It also makes the load uneven, and when that backend fails its sessions are lost. Keeping sessions in a shared store avoids both problems.
+A **sticky session** sends a browser back to the same backend every time, usually with a cookie that the proxy sets, for example HAProxy’s `cookie SERVERID insert indirect`. It helps when an app keeps sessions in memory. It also makes the load uneven, and when that backend fails its sessions are lost. Keeping sessions in a shared store avoids both problems.
 
 ## Health checks
 
