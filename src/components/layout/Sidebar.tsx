@@ -23,13 +23,17 @@ export function Sidebar({ onNavigate }: SidebarProps) {
       <h2 className="px-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
         {m.nav.themes}
       </h2>
-      {groupByCategory(THEME_META).map((group) => {
+      {groupByCategory(THEME_META).map((group, index) => {
         const headingId = `${baseId}-${group.category}`
         return (
-          <div key={group.category} className="space-y-1 pt-2">
+          // 分類の間に区切り線を引く（最初の分類の上には引かない）
+          <div
+            key={group.category}
+            className={cn('space-y-1', index === 0 ? 'pt-2' : 'mt-3 border-t pt-4')}
+          >
             <h3
               id={headingId}
-              className="flex items-center gap-2 px-2 text-xs font-medium text-muted-foreground"
+              className="flex items-center gap-2 px-2 text-xs font-semibold text-foreground"
             >
               <span
                 aria-hidden

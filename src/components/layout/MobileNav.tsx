@@ -17,9 +17,9 @@ export function MobileNav() {
           <Menu aria-hidden />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" closeLabel={m.nav.close} className="w-72 p-4 pt-12">
+      <SheetContent side="left" closeLabel={m.nav.close} className="w-72 overflow-y-auto p-4 pt-12">
         <SheetTitle className="sr-only">{m.nav.menu}</SheetTitle>
-        {/* リンクを押したら閉じる（今いるページのリンクでも閉じ、戻ったときに開き直さない） */}
+        {/* テーマの一覧は画面より長いので、メニューの中でスクロールする。リンクを押したら閉じる（今いるページのリンクでも閉じ、戻ったときに開き直さない） */}
         <Sidebar
           onNavigate={() => {
             setOpen(false)
