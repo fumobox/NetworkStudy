@@ -93,8 +93,8 @@ export const reverseProxyQuiz: Quiz = {
       ],
       answerId: 'idempotent',
       explanation: {
-        en: 'The proxy cannot know how far B got. Repeating a GET is harmless, but repeating a POST could create a second order, so clients and proxies should not retry non-idempotent requests automatically (RFC 9110 §9.2.2). The proxy answers 502 instead.',
-        ja: 'B がどこまで処理したか、プロキシにはわからない。GET を繰り返しても害はないが、POST を繰り返すと注文が 2 つできかねない。そのため、べき等でない要求を自動で再試行すべきではない（RFC 9110 §9.2.2）。代わりにプロキシは 502 を返す。',
+        en: 'The proxy cannot know how far B got. Repeating a GET is harmless, but repeating a POST could create a second order, so a proxy must not retry a non-idempotent request automatically (RFC 9110 §9.2.2). The proxy answers 502 instead.',
+        ja: 'B がどこまで処理したか、プロキシにはわからない。GET を繰り返しても害はないが、POST を繰り返すと注文が 2 つできかねない。そのため、プロキシはべき等でない要求を自動で再試行してはならない（RFC 9110 §9.2.2）。代わりにプロキシは 502 を返す。',
       },
     },
     {
