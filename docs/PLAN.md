@@ -57,6 +57,7 @@
 | — | WebSocket | シーケンス図 | Phase 9 で追加 |
 | — | NAT 越え（STUN・TURN・ICE） | シーケンス図 | Phase 10 で追加 |
 | — | Wi-Fi（無線 LAN への参加、4 ウェイハンドシェイク、CSMA/CA） | シーケンス図 | Phase 11 で追加 |
+| — | リバースプロキシとロードバランサー | シーケンス図 | Phase 12 で追加 |
 
 ## 3. 技術スタック
 
@@ -669,6 +670,36 @@ Issue は #216〜#218 に分けて起票した。
 | PMK | PBKDF2 の値をテストで WebCrypto と照らし合わせ、Annex J.4 のテストベクタも再現する。PTK の値は示さない | 手で書いた値の誤りを防ぐ。ノンスを示さないので PTK は計算できない |
 | 管理フレームの Ack | データの区間でだけ描く | 図が込み入る。最初のユニキャストの管理フレームで断る |
 | 扱わないもの | QoS（EDCA の細部）、パワーセーブと DTIM、フラグメンテーション、A-MPDU と Block Ack、802.11r/k/v、802.1X/EAP（Enterprise）、WPS、2.4 GHz の時間、IBSS の RSNA、MLO | 主題がぼやける。EDCA、WPA3・SAE・PMF、KRACK、Wi-Fi Direct、802.11s は概要で触れる |
+
+### Phase 12: リバースプロキシとロードバランサー
+
+**完了条件**: 「Web 開発で出会う HTTP」（`http`）の WebSocket の次に、リバースプロキシとロードバランサーのテーマがあり、根拠の RFC と PROXY protocol の仕様、クイズ、en／ja の概要がある。
+
+**完了**（#224〜#226）: テーマは 30 → 31（リバースプロキシとロードバランサー）。転送のヘッダー（Forwarded、X-Forwarded-For、Via、区間ごとのフィールド、Proxy-Status、Cache-Status）の値を作る `headers.ts`、振り分けとヘルスチェックの `balancer.ts`、共有キャッシュの判断の `sharedCache.ts`、PROXY protocol の版 1 の `proxyProtocol.ts` の純関数を足した。レビューで、RFC 8446 が RFC 9846 に置き換えられたことがわかった（ほかのテーマの更新は #228）。
+
+| # | タスク | ラベル |
+|---|---|---|
+| 12-1 | リバースプロキシとロードバランサーのシナリオ（ヘルスチェック、TLS の終端、Host・Forwarded・X-Forwarded-*・Via、区間ごとのフィールド、ラウンドロビン、接続の使い回し。もしも: バックエンドが落ちる、遅い、スティッキーセッション、L4 と PROXY protocol、共有キャッシュ）とテスト | content |
+| 12-2 | リバースプロキシとロードバランサーのページ（概要、クイズ、登録） | content |
+| 12-3 | PLAN、CLAUDE.md、README、用語集の仕上げ | content |
+
+Issue は #224〜#226 に分けて起票した。
+
+#### Phase 12 の判断
+
+| 項目 | 判断 | 理由 |
+|---|---|---|
+| 分類と位置 | `http` の WebSocket の次 | HTTP/2・TLS・キャッシュの知識をまとめて使う。HTTP のキャッシュのテーマが扱わなかった共有キャッシュを補う |
+| レーン | ブラウザー、プロキシ／LB（`router`）、バックエンド A・B（`server`）の 4 本 | ActorKind は色にしか使わないのでエンジンを変えない（Phase 11 の AP と同じ）。バックエンドと見分けられる |
+| プロトコル | ブラウザーとの間は TLS の中の HTTP/2（`encrypted`）、バックエンドとの間は平文の HTTP/1.1 | :authority から Host、Via の 2.0 と 1.1、区間ごとのフィールドの除去を 1 つの流れで見せる。鍵の印がプロキシで止まることで TLS の終端を示す |
+| 転送のヘッダー | Forwarded（RFC 7239）と X-Forwarded-For / -Proto の両方。値は純関数で作り、RFC の例でテストする | 標準と事実上の標準を並べる。手で書いた値と規則がずれない |
+| 標準でないもの | 振り分け、ヘルスチェック、スティッキー Cookie、待ち時間、PROXY protocol は「例えば nginx や HAProxy では」と書き、数値は例の値とする | RFC 9110 は負荷分散があることに触れるだけ。製品の既定の数値は書かない |
+| エラーの状態コード | RFC 9209 の Proxy-Status の error と推奨する状態コードから 502 / 504 を決める（`ERROR_STATUS`） | 標準の対応があり、根拠を示せる。503 は説明と概要の表で扱う |
+| オプション | `situation`（normal / backendDown / slowBackend / sticky / l4 / sharedCache）の 1 つの選択 | L4 とキャッシュ・Cookie の組み合わせは成り立たない（Phase 11 と同じ） |
+| POST の再試行 | 途中で切れた POST は再試行せず 502 を返す | RFC 9110 §9.2.2 でプロキシは MUST NOT。GET なら再試行できると書く |
+| TCP | L4 の場合だけ 3 ウェイハンドシェイクを描く | L4 では接続が振り分けの単位になる |
+| Content-Length | HTTP/1.1 の本文のある要求と応答に付ける。本文は「…」で縮め、示した本文のバイト数とする | 持続する接続では、メッセージの終わりを知るのに要る（RFC 9112 §6.3） |
+| 扱わないもの | 重み付け・最小接続数・ハッシュ、Vary の詳細、stale-while-revalidate、要求の集約、バックエンドへの TLS、PROXY protocol の版 2、DSR の図、HTTP/3、WebSocket の中継 | 主題がぼやける。一部は概要で触れる |
 
 ## 9. リスクと対策
 
