@@ -47,6 +47,10 @@ HTTP for web developers / Web 開発で出会う HTTP
 - HTTP/1.1 vs HTTP/2: many requests on one connection / HTTP/1.1 と HTTP/2: 1 つの接続でたくさんの要求
 - QUIC and HTTP/3: handshake, 0-RTT, and loss / QUIC と HTTP/3: ハンドシェイク、0-RTT、ロス
 
+Network security / ネットワークのセキュリティ
+
+- Stateful firewall: letting replies in, keeping strangers out / ステートフルファイアウォール: 返事は通し、見知らぬ相手は止める
+
 Available in English and Japanese. / 英語・日本語に対応しています。
 
 ## Site / サイト

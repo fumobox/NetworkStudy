@@ -2,6 +2,7 @@ import { arpQuiz } from './arp/quiz'
 import { corsQuiz } from './cors/quiz'
 import { dhcpQuiz } from './dhcp/quiz'
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
+import { firewallQuiz } from './firewall/quiz'
 import { httpCachingQuiz } from './http-caching/quiz'
 import { http2Quiz } from './http2/quiz'
 import { httpsOverviewQuiz } from './https-overview/quiz'
@@ -25,6 +26,7 @@ import {
   CORS_META,
   DHCP_META,
   DNS_RESOLUTION_META,
+  FIREWALL_META,
   HTTP_CACHING_META,
   HTTP2_META,
   HTTPS_OVERVIEW_META,
@@ -80,4 +82,5 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: CORS_META, quiz: corsQuiz },
   { meta: HTTP2_META, quiz: http2Quiz },
   { meta: QUIC_META, quiz: quicQuiz },
+  { meta: FIREWALL_META, quiz: firewallQuiz },
 ]

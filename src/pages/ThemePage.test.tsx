@@ -241,6 +241,7 @@ describe('テーマへの導線', () => {
       'Web のページが届くまで',
       'TCP をもっと詳しく',
       'Web 開発で出会う HTTP',
+      'ネットワークのセキュリティ',
     ])
     const web = within(list).getByRole('region', { name: 'Web のページが届くまで' })
     expect(

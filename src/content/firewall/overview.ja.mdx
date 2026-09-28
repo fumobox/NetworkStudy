@@ -1,0 +1,43 @@
+## 誰が頼んだかを覚えておく
+
+単純なパケットフィルターは、パケットを 1 つずつ、アドレス、ポート、プロトコルだけで判断する。すると返事が問題になる。Web の要求への返事は、443 番から、PC が選んだ一時的なポートへ来る。内向きの接続を止めるフィルターは、返事を通すために、そうしたポートをすべて開けなければならない。
+
+**ステートフルファイアウォール**は、代わりに**状態表**を持つ（接続の追跡）。パケットが外へ出るとき、プロトコル、アドレスとポート（5-tuple）で接続を記録する。届いたパケットは、まずこの表で引いて分類する。
+
+- **NEW**: 当てはまるエントリーがない。何かを始めるパケット。
+- **ESTABLISHED**: 両方の向きのパケットを見たエントリーに属する。最初の返事から、もう ESTABLISHED。
+- **RELATED**: 接続の一部ではないが、接続についてのもの。原因になったパケットのヘッダーを含む ICMP のエラーなど。
+- **INVALID**: 接続にとって意味をなさない。
+
+ルールは、この分類で判断する。よくあるポリシーは 3 つだけ。ESTABLISHED と RELATED は通し、外向きの NEW も通し、内向きの NEW は通さない（「内向きは既定で拒否」）。家庭のルーターはこのフィルターと NAT を組み合わせる。IPv6 のルーターは、NAT なしで同じことをする（RFC 6092）。
+
+## UDP: 接続のない接続
+
+UDP にはハンドシェイクも FIN もないが、ファイアウォールは UDP の流れも同じように扱う。最初の外向きのパケットがエントリーを作り、それに当てはまる返事を通す。エントリーがいつ消えるかは、**アイドルタイマー**だけが決める。RFC 4787 と RFC 6092 は 2 分以上（既定は 5 分）を求めるが、DNS のような既知のポートへの流れでは、もっと短くてよい。一方、確立した TCP のエントリーは、接続が黙っていても何時間も残す。
+
+## drop か reject か
+
+外からの NEW のパケットをどうするかは、選べる。
+
+- **drop**: 黙って捨てる。送り手には何も返らず、あきらめるまで再送する。ポートスキャナーは、そのポートを「filtered」と報告する。
+- **reject**: 守っているホストの代わりに、閉じたポートと同じように答える。TCP なら RST, ACK（送り手はすぐに「接続の拒否」を受け取り、スキャナーは「closed」と報告する）、UDP なら ICMP の Destination Unreachable。
+
+drop は明かすことが少なく、手間もかからない。reject なら、間違えただけの正当なクライアントがすぐに失敗できる。RFC 6092 に従うゲートウェイは、両側が同時に接続を開こうとしている場合に備えて、頼んでいない SYN に 6 秒以上待ってから、RST ではなく ICMP のエラー（administratively prohibited）で答える。
+
+## ICMP をすべて捨てない
+
+port unreachable や fragmentation needed のような ICMP のエラーは、ホストが問題に気づく手段。ICMP をすべて捨てるファイアウォールは、こうしたエラーを隠し、パス MTU 探索を壊す（パス MTU 探索のテーマを参照）。追跡している接続に RELATED なエラーは通すべき。
+
+## ステップ実行で見てほしいところ
+
+- SYN で**状態表**にエントリーができること、各パケットの**判定**（NEW、ESTABLISHED、RELATED と、当てはまったルール）。
+- UDP のエントリーが **UNREPLIED** から **REPLIED** になり、**UDP のタイムアウト**で消えること。
+- 「もしも…」のオプションで、ルール 3 を drop ではなく **reject** にする場合（TCP は RST、UDP は ICMP）と、RELATED として通る **ICMP の Port Unreachable**。
+
+## 参考
+
+- [RFC 6092: Recommended Simple Security Capabilities in Customer Premises Equipment (CPE) for Providing Residential IPv6 Internet Service](https://www.rfc-editor.org/rfc/rfc6092) — §3.2.3「UDP Filters」、§3.3.1「TCP Filters」
+- [RFC 4787: Network Address Translation (NAT) Behavioral Requirements for Unicast UDP](https://www.rfc-editor.org/rfc/rfc4787) — §4.3「Mapping Refresh」
+- [RFC 5382: NAT Behavioral Requirements for TCP](https://www.rfc-editor.org/rfc/rfc5382)
+- [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.10.7.1「CLOSED STATE」
+- [nftables wiki: Matching connection tracking stateful metainformation](https://wiki.nftables.org/wiki-nftables/index.php/Matching_connection_tracking_stateful_metainformation)

@@ -1,0 +1,43 @@
+## Remembering who asked
+
+A plain packet filter looks at each packet on its own: addresses, ports, protocol. That makes replies a problem. A reply to your web request comes from port 443 to some random port on your PC, and a filter that blocks inbound connections would have to open every such port to let replies in.
+
+A **stateful firewall** keeps a **state table** instead (connection tracking). When a packet goes out, it records the connection by protocol, addresses and ports (the 5-tuple). Every packet that arrives is looked up first, and is classified:
+
+- **NEW**: no entry matches. It starts something.
+- **ESTABLISHED**: it belongs to an entry that has seen packets in both directions. The very first reply is already ESTABLISHED.
+- **RELATED**: it is not part of a connection, but is about one, like an ICMP error that carries the header of the packet that caused it.
+- **INVALID**: it makes no sense for its connection.
+
+The rules then decide on the classification. A typical policy has only three: accept ESTABLISHED and RELATED, accept NEW going out, and refuse NEW coming in (“default deny inbound”). Home routers combine this filter with NAT; IPv6 routers do the same without NAT (RFC 6092).
+
+## UDP: a connection without a connection
+
+UDP has no handshake and no FIN, but the firewall treats a UDP flow the same way: the first outgoing packet creates an entry, and replies that match it are accepted. Only an **idle timer** decides when the entry goes away. RFC 4787 and RFC 6092 ask for at least 2 minutes (5 minutes by default), but allow shorter times for flows to well-known ports such as DNS. An established TCP entry, by contrast, is kept for hours even when the connection is quiet.
+
+## Drop or reject
+
+What happens to a NEW packet from outside is a choice:
+
+- **drop**: discard it silently. The sender hears nothing and retransmits until it gives up. A port scanner reports the port as “filtered”.
+- **reject**: answer on the protected host’s behalf, as a closed port would. For TCP that is an RST, ACK (the sender gets “connection refused” at once, and a scanner reports “closed”); for UDP an ICMP Destination Unreachable.
+
+Dropping reveals less and costs nothing; rejecting lets a legitimate client that made a mistake fail quickly. Gateways following RFC 6092 wait at least 6 seconds before answering an unsolicited SYN, in case both sides are opening the connection at the same time, and then answer with an ICMP error (administratively prohibited) rather than an RST.
+
+## Don’t drop all ICMP
+
+ICMP errors such as port unreachable and fragmentation needed are how hosts learn that something went wrong. A firewall that drops every ICMP message hides those errors and breaks path MTU discovery (see the path MTU discovery theme). Errors that are RELATED to a tracked connection should be let through.
+
+## What to look for in the walkthrough
+
+- The **state table** getting an entry for the SYN, and the **decision** for each packet: NEW, ESTABLISHED or RELATED, and the rule that matched.
+- The UDP entry going from **UNREPLIED** to **REPLIED**, and disappearing after the **UDP timeout**.
+- In “What if…”, rule 3 set to **reject** (RST for TCP, ICMP for UDP) instead of drop, and an **ICMP Port Unreachable** that is let in as RELATED.
+
+## References
+
+- [RFC 6092: Recommended Simple Security Capabilities in Customer Premises Equipment (CPE) for Providing Residential IPv6 Internet Service](https://www.rfc-editor.org/rfc/rfc6092) — §3.2.3 “UDP Filters”, §3.3.1 “TCP Filters”
+- [RFC 4787: Network Address Translation (NAT) Behavioral Requirements for Unicast UDP](https://www.rfc-editor.org/rfc/rfc4787) — §4.3 “Mapping Refresh”
+- [RFC 5382: NAT Behavioral Requirements for TCP](https://www.rfc-editor.org/rfc/rfc5382)
+- [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.10.7.1 “CLOSED STATE”
+- [nftables wiki: Matching connection tracking stateful metainformation](https://wiki.nftables.org/wiki-nftables/index.php/Matching_connection_tracking_stateful_metainformation)

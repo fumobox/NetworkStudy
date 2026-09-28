@@ -105,7 +105,7 @@ export const en = {
   home: {
     orderTitle: 'Where to start',
     orderLead:
-      'Start with the basics, see how your PC gets on the network and what happens inside the LAN, then follow a web page on its way to your browser. Then look at TCP in more depth, and finish with the HTTP features you meet as a web developer.',
+      'Start with the basics, see how your PC gets on the network and what happens inside the LAN, then follow a web page on its way to your browser. Then look at TCP in more depth, look at the HTTP features you meet as a web developer, and finish with network security.',
     howToTitle: 'How to use this site',
     howTo: [
       'Read the short overview at the top of each theme.',
@@ -141,6 +141,10 @@ export const en = {
     http: {
       title: 'HTTP for web developers',
       lead: 'Things you meet as soon as you build for the web: how the browser caches responses and checks whether they are still valid, why the browser may not let a page read a response from another origin, and how HTTP/2 and HTTP/3 (QUIC) make one connection fast.',
+    },
+    security: {
+      title: 'Network security',
+      lead: 'How a firewall remembers the connections you opened, lets their replies in, and keeps out everything else.',
     },
   },
   theme: {
