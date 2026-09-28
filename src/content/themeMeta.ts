@@ -18,7 +18,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
  * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、lan: LAN の中（スイッチ、VLAN、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
- * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）、security: ネットワークのセキュリティ（ファイアウォール）
+ * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）、security: ネットワークのセキュリティ（ファイアウォール、DNSSEC）
  */
 export const THEME_CATEGORIES = ['basics', 'ip', 'lan', 'web', 'tcp', 'http', 'security'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
@@ -182,6 +182,22 @@ export const FIREWALL_META = {
   },
   difficulty: 'intermediate',
   minutes: 12,
+} as const satisfies ThemeMeta
+
+export const DNSSEC_META = {
+  id: 'dnssec',
+  kind: 'sequence',
+  category: 'security',
+  title: {
+    en: 'DNSSEC: a chain of trust for DNS answers',
+    ja: 'DNSSEC: DNS の答えをたどる信頼の連鎖',
+  },
+  summary: {
+    en: 'How a validating resolver proves that a DNS answer is genuine, from the root trust anchor through DS and DNSKEY records to the RRSIG on the answer, and why a forged answer or an expired signature ends in SERVFAIL.',
+    ja: '検証するリゾルバーが、ルートのトラストアンカーから DS と DNSKEY をたどって答えの RRSIG を確かめ、DNS の答えが本物だと証明するしくみと、偽造された答えや期限切れの署名が SERVFAIL になる理由。',
+  },
+  difficulty: 'intermediate',
+  minutes: 15,
 } as const satisfies ThemeMeta
 
 export const ARP_META = {
@@ -392,7 +408,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ → VLAN → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）→ ネットワークのセキュリティ（ファイアウォール）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → NAT → 経路の検索）→ LAN の中（スイッチ → VLAN → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -420,6 +436,7 @@ export const THEME_META = [
   HTTP2_META,
   QUIC_META,
   FIREWALL_META,
+  DNSSEC_META,
 ] as const satisfies readonly ThemeMeta[]
 
 export type ThemeId = (typeof THEME_META)[number]['id']
