@@ -176,6 +176,15 @@ describe('firewallScenario', () => {
       ])
     })
 
+    it('reject と Port Unreachable: 遅れた応答はなく、頼んでいない SYN には RST で答える', () => {
+      expect(flow(build({ policy: 'reject', dnsReply: 'unreachable' })).slice(8)).toEqual([
+        'resolver→fw Port Unreachable (3/3) delivered',
+        'fw→pc Port Unreachable (3/3) delivered',
+        'stranger→fw SYN → 203.0.113.10:22 rejected',
+        'fw→stranger RST, ACK → 192.0.2.66:40000 delivered',
+      ])
+    })
+
     it('頼んでいないパケットは PC まで届かない', () => {
       for (const policy of ['drop', 'reject'] as const) {
         for (const dnsReply of ['answer', 'unreachable'] as const) {

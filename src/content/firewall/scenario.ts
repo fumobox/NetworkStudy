@@ -8,6 +8,7 @@
  *   §3.3.1（TCP のフィルター。REC-34: 頼んでいない SYN には、6 秒以上待ってから ICMPv6 の administratively prohibited を返す）
  * - RFC 4787 §4.3（REQ-5: UDP の対応づけは 2 分以上。既知のポートなら短くてよい。既定は 5 分以上を推奨）、§5（フィルタリングの動き）
  * - RFC 5382 §4.3（REQ-4: NAT は頼んでいない SYN に 6 秒以上答えない）、§5（REQ-5: 確立した接続は 2 時間 4 分以上、途中の接続は 4 分以上残す）
+ * - RFC 7857 §2（RST を受け取っても、NAT はセッションを消す前に 4 分待つ。RST は偽造されうる）
  * - RFC 9293 §3.5（3 ウェイハンドシェイク）、§3.10.7.1（接続のないポートへの SYN には <SEQ=0><ACK=SEG.SEQ+SEG.LEN><CTL=RST,ACK> を返す）、
  *   §3.10.7.3（SYN-SENT で RST を受け取ると、接続は拒否される）
  * - RFC 6298 §2.1、§5.5（RTO は 1 秒から、満了のたびに倍）
@@ -157,10 +158,11 @@ const set = (actorId: ActorId, key: StateKey, value: string | StateTable): StepE
 })
 const send = (message: Message): StepEvent => ({ kind: 'message', message })
 
-type EntryState = 'SYN-SENT' | 'SYN-RECEIVED' | 'ESTABLISHED' | 'UNREPLIED' | 'REPLIED'
+type TcpEntryState = 'SYN-SENT' | 'SYN-RECEIVED' | 'ESTABLISHED'
+type UdpEntryState = 'UNREPLIED' | 'REPLIED'
 
-const TCP_ENTRY = (state: EntryState) => ['TCP', PC_TCP, SERVER_TCP, state]
-const UDP_ENTRY = (state: EntryState) => ['UDP', PC_UDP, RESOLVER_UDP, state]
+const TCP_ENTRY = (state: TcpEntryState) => ['TCP', PC_TCP, SERVER_TCP, state]
+const UDP_ENTRY = (state: UdpEntryState) => ['UDP', PC_UDP, RESOLVER_UDP, state]
 const conntrack = (...rows: (readonly string[])[]): StateTable => ({
   columns: CONNTRACK_COLUMNS,
   rows,
@@ -188,6 +190,10 @@ const FIELD_TEXT = {
     en: 'Source and destination address and port. Together with the protocol, these five values (the 5-tuple) identify a connection',
     ja: '送信元と宛先のアドレスとポート。プロトコルと合わせたこの 5 つの値（5-tuple）で、接続を見分ける',
   },
+  icmpAddresses: {
+    en: 'Source and destination address. ICMP has no ports; the ports of the flow are inside the original datagram',
+    ja: '送信元と宛先のアドレス。ICMP にはポートがない。流れのポートは、元のデータグラムの中にある',
+  },
 } satisfies Record<string, LocalizedText>
 
 interface PacketSpec {
@@ -204,9 +210,16 @@ interface PacketSpec {
   readonly retransmitOf?: string
 }
 
+const udp: PacketField = { name: 'Protocol', value: '17 (UDP)' }
+const icmp: PacketField = { name: 'Protocol', value: '1 (ICMP)' }
+
 function packet(spec: PacketSpec): Message {
   const fields: PacketField[] = [
-    { name: 'Src', value: spec.src, description: FIELD_TEXT.addresses },
+    {
+      name: 'Src',
+      value: spec.src,
+      description: spec.extra.includes(icmp) ? FIELD_TEXT.icmpAddresses : FIELD_TEXT.addresses,
+    },
     { name: 'Dst', value: spec.dst },
     ...spec.extra,
   ]
@@ -233,7 +246,6 @@ function packet(spec: PacketSpec): Message {
 }
 
 const flags = (value: string): PacketField => ({ name: 'Flags', value })
-const udp: PacketField = { name: 'Protocol', value: '17 (UDP)' }
 
 const TCP_SECTION: LocalizedText = { en: 'TCP', ja: 'TCP' }
 const UDP_SECTION: LocalizedText = { en: 'UDP', ja: 'UDP' }
@@ -338,8 +350,8 @@ function tcpSteps(policy: FirewallOptions['policy']): Step[] {
         ja: 'ハンドシェイクが完了し、エントリーは ESTABLISHED',
       },
       description: {
-        en: 'The PC’s ACK completes the handshake. From now on every packet in either direction matches the entry. An established TCP entry is kept for a long time even when the connection is idle (RFC 5382 asks a NAT for at least 2 hours 4 minutes). FIN moves it to closing states that expire in minutes, and RST removes it.',
-        ja: 'PC の ACK でハンドシェイクが完了する。これからは、どちらの向きのパケットもこのエントリーに当てはまる。確立した TCP のエントリーは、接続が黙っていても長く残す（RFC 5382 は NAT に 2 時間 4 分以上を求める）。FIN で閉じる途中の状態になると数分で消え、RST ならすぐに消える。',
+        en: 'The PC’s ACK completes the handshake. From now on every packet in either direction matches the entry. An established TCP entry is kept for a long time even when the connection is idle (RFC 5382 asks a NAT for at least 2 hours 4 minutes). FIN moves it to closing states that expire in minutes. After a RST the entry is kept only briefly (Linux keeps it for 10 seconds; RFC 7857 asks a NAT to wait 4 minutes, because a RST could be forged).',
+        ja: 'PC の ACK でハンドシェイクが完了する。これからは、どちらの向きのパケットもこのエントリーに当てはまる。確立した TCP のエントリーは、接続が黙っていても長く残す（RFC 5382 は NAT に 2 時間 4 分以上を求める）。FIN で閉じる途中の状態になると数分で消える。RST の後は短い間だけ残す（Linux は 10 秒。RFC 7857 は、RST が偽物かもしれないので、NAT に 4 分待つよう求める）。',
       },
       events: [
         send(
@@ -465,10 +477,11 @@ function udpSteps(options: FirewallOptions): Step[] {
     })
   } else {
     const icmpFields: PacketField[] = [
+      icmp,
       { name: 'ICMP type / code', value: '3 / 3 (port unreachable)' },
       {
         name: 'Original datagram',
-        value: `IP header + UDP 49153 → 53`,
+        value: 'IP header + UDP 49153 → 53',
         highlight: true,
         description: {
           en: 'The start of the packet that caused the error, including its UDP ports. This is how the firewall links the error to the entry',
@@ -563,6 +576,7 @@ function udpSteps(options: FirewallOptions): Step[] {
             src: ADDRESSES.fwOutside,
             dst: ADDRESSES.resolver,
             extra: [
+              icmp,
               { name: 'ICMP type / code', value: '3 / 3 (port unreachable)', highlight: true },
               { name: 'Original datagram', value: 'IP header + UDP 53 → 49153' },
             ],
