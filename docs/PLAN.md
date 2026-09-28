@@ -625,24 +625,24 @@ Issue は #210〜#212 に分けて起票した。
 
 | 項目 | 判断 | 理由 |
 |---|---|---|
-| 分類と位置 | `ip` の NAT の次 | NAT のテーマの続き。WebRTC の文脈は概要で触れる |
+| 分類と位置 | `ip` の NAT の次 | NAT のテーマの続き。ビデオ通話の例で見せ、WebRTC の API には触れない |
 | テーマの数 | 1 つ（STUN、TURN、ICE をまとめる） | 直接つながるか中継に回るかの分かれ目を、同じ図で見比べられる |
 | レーン | PC A、NAT A、STUN・TURN サーバー（1 台）、NAT B、PC B の 5 本 | 図の幅に収まる。TURN のサーバーは STUN のサーバーでもある（coturn など）。シグナリングのサーバーは描かず、SDP は文章で見せる |
 | NAT の模型 | 対応づけ（EIM / APDM）とフィルタリング（APDF）を計算し、NAT の表と、パケットが届くか捨てられるかを決める | 手で書いた値と規則がずれない |
-| NAT A のフィルタリング | どの場合も APDF | どちらかが APDF でなければ、ICE は peer reflexive の候補で直接の経路を見つけうる。中継に回る例を作るため（このページの判断） |
+| NAT A のフィルタリング | どの場合も APDF | NAT B が APDM のとき、NAT A が APDF でなければ（アドレスだけのフィルタリングなら）、ICE は peer reflexive の候補で直接の経路を見つけうる。中継に回る例を作るため（このページの判断） |
 | TURN の認証 | SHA-256（MESSAGE-INTEGRITY-SHA256、PASSWORD-ALGORITHM）。401 の後に新しいトランザクション ID で送り直す | RFC 8489 は MD5 を古い実装との互換のためだけに残す。RFC 8656 §20 の例と同じ |
 | ICE のチェックの完全性 | MESSAGE-INTEGRITY（HMAC-SHA1） | RFC 8445 は RFC 5389 を前提にしている |
 | バイト列と優先度 | 純関数で作り、RFC 5769 のテストベクター（XOR のアドレス、FINGERPRINT、PRIORITY）と RFC 8839 の例でテストする。候補ペアの優先度は BigInt | 2^53 を超える |
-| オプション | `network`（independent / symmetric / udpBlocked）× `permissionExpires` | 6 通り（直接のときは許可の切り替えが効かないので、実質 5 通り） |
+| オプション | `network`（independent / symmetric / udpBlocked）× `permissionExpires` | 6 通り（`independent` のときは許可の切り替えが効かないので、実質 5 通り） |
 | 更新の時刻 | 4 分後に ChannelBind（許可とチャネル）と Refresh（割り当て） | 許可は 300 秒、割り当てとチャネルは 600 秒。データを送っても更新されない |
 | 用語 | SDP の answer は「アンサー」、STUN の response は「応答」 | 用語集で書き分ける |
-| 扱わないもの | IPv6、ICE-TCP、TURN の TCP の割り当て、Trickle ICE の流れ、mDNS のホスト候補、ICE の再起動、ice-lite、役割の衝突（487）、438、ALTERNATE-SERVER、DTLS-SRTP の詳細 | 主題がぼやける。一部は概要で触れる |
+| 扱わないもの | IPv6、ICE-TCP、TURN の TCP の割り当て（RFC 6062。PC A とサーバーの間の TLS は扱う）、Trickle ICE の流れ、mDNS のホスト候補、ICE の再起動、ice-lite、役割の衝突（487）、438、ALTERNATE-SERVER、DTLS-SRTP の詳細 | 主題がぼやける。IPv6、ICE-TCP、Trickle ICE は概要で触れる |
 
 ## 9. リスクと対策
 
 | リスク | 対策 |
 |---|---|
-| 技術的な内容の誤り（学習サイトでは致命的） | シナリオに RFC の参照コメントを必須にする（TCP: RFC 9293、DNS: RFC 1034/1035、TLS 1.3: RFC 8446、証明書: RFC 5280、ARP: RFC 826、DHCP: RFC 2131/2132、ICMP: RFC 792/1122/1812、NAT: RFC 3022/4787/5382、経路制御: RFC 1812/4632、HTTP のキャッシュ: RFC 9111/9110、CORS: Fetch Standard（WHATWG）・RFC 6454、HTTP/1.1・HTTP/2: RFC 9112/9113/7541、QUIC・HTTP/3: RFC 9000/9001/9002/9114、スイッチ・VLAN: IEEE Std 802.1Q-2022・RFC 4188、IPv6: RFC 4291/5952/4861/4862/2464、TCP のフロー制御: RFC 9293/1122/7323、SACK: RFC 2018/5681/6675/6582/8985、パス MTU 探索: RFC 1191/791/792/1812/6691/2516/2923/4821/8899/8201、ファイアウォール: RFC 6092/4787/5382/7857/9293/792/1122/1812、DNSSEC: RFC 4033/4034/4035/6840/5155/3225/6891/9904、メールの送信ドメイン認証: RFC 5321/5322/7208/6376/9989/9990/8601/7960/8617/3463、WebSocket: RFC 6455・WebSockets Standard（WHATWG）・RFC 9110、NAT 越え: RFC 8489/8656/8445/4787/8839/5769/7675）。seq/ack やメッセージ順はテストで固定し、テーマごとにレビューの Issue を立てる |
+| 技術的な内容の誤り（学習サイトでは致命的） | シナリオに RFC の参照コメントを必須にする（TCP: RFC 9293、DNS: RFC 1034/1035、TLS 1.3: RFC 8446、証明書: RFC 5280、ARP: RFC 826、DHCP: RFC 2131/2132、ICMP: RFC 792/1122/1812、NAT: RFC 3022/4787/5382、経路制御: RFC 1812/4632、HTTP のキャッシュ: RFC 9111/9110、CORS: Fetch Standard（WHATWG）・RFC 6454、HTTP/1.1・HTTP/2: RFC 9112/9113/7541、QUIC・HTTP/3: RFC 9000/9001/9002/9114、スイッチ・VLAN: IEEE Std 802.1Q-2022・RFC 4188、IPv6: RFC 4291/5952/4861/4862/2464、TCP のフロー制御: RFC 9293/1122/7323、SACK: RFC 2018/5681/6675/6582/8985、パス MTU 探索: RFC 1191/791/792/1812/6691/2516/2923/4821/8899/8201、ファイアウォール: RFC 6092/4787/5382/7857/9293/792/1122/1812、DNSSEC: RFC 4033/4034/4035/6840/5155/3225/6891/9904、メールの送信ドメイン認証: RFC 5321/5322/7208/6376/9989/9990/8601/7960/8617/3463、WebSocket: RFC 6455・WebSockets Standard（WHATWG）・RFC 9110、NAT 越え: RFC 8489/8656/8445/4787/8839/5769/7675/8838）。seq/ack やメッセージ順はテストで固定し、テーマごとにレビューの Issue を立てる |
 | エンジンの過剰な汎用化 | 対象をシーケンス型に限る。3 テーマ目で型を見直す前提にする |
 | DNS はアクターが多く、画面の横幅が足りない | SVG の viewBox と横スクロールで対応し、モバイルでは短いラベルにする |
 | TLS 1.3 の暗号化区間の見せ方 | 暗号化されていることを図で示し、中身は教育目的で見せる旨をインスペクタに注記する |
