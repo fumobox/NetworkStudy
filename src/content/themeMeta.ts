@@ -435,6 +435,22 @@ export const VLAN_META = {
   minutes: 12,
 } as const satisfies ThemeMeta
 
+export const WIFI_META = {
+  id: 'wifi',
+  kind: 'sequence',
+  category: 'lan',
+  title: {
+    en: 'Wi-Fi: joining a wireless network',
+    ja: 'Wi-Fi: 無線 LAN につながる',
+  },
+  summary: {
+    en: 'How a laptop finds a Wi-Fi network, authenticates and associates with the access point, agrees on keys in the WPA2 4-way handshake without sending the passphrase, and shares the air with CSMA/CA: ToDS / FromDS addresses, backoff, Acks, hidden nodes and RTS/CTS.',
+    ja: 'ノート PC が Wi-Fi のネットワークを見つけ、アクセスポイントと認証・アソシエーションし、パスフレーズを送らずに WPA2 の 4 ウェイハンドシェイクで鍵を決め、CSMA/CA で電波を分け合うまで。ToDS / FromDS とアドレス、バックオフ、Ack、隠れ端末と RTS/CTS。',
+  },
+  difficulty: 'intermediate',
+  minutes: 18,
+} as const satisfies ThemeMeta
+
 export const IPV6_ND_META = {
   id: 'ipv6-nd',
   kind: 'sequence',
@@ -453,7 +469,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -468,6 +484,7 @@ export const THEME_META = [
   ROUTE_LOOKUP_META,
   SWITCHING_META,
   VLAN_META,
+  WIFI_META,
   IPV6_ND_META,
   DNS_RESOLUTION_META,
   TCP_HANDSHAKE_META,
