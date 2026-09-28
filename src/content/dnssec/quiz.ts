@@ -126,8 +126,8 @@ export const dnssecQuiz: Quiz = {
       ],
       answerId: 'confidentiality',
       explanation: {
-        en: 'DNSSEC signs data; it does not encrypt anything. Integrity and origin, and the non-existence of names (with NSEC or NSEC3), are proven. To hide DNS traffic, use DNS over TLS or HTTPS.',
-        ja: 'DNSSEC はデータに署名するが、何も暗号化しない。完全性と出どころ、名前が存在しないこと（NSEC や NSEC3 で）は証明する。DNS の通信を隠すには、DNS over TLS や HTTPS を使う。',
+        en: 'DNSSEC signs data; it does not encrypt anything. Integrity and origin, and the non-existence of names (with NSEC or NSEC3), are proven. To hide DNS traffic between your PC and the resolver, use DNS over TLS or HTTPS.',
+        ja: 'DNSSEC はデータに署名するが、何も暗号化しない。完全性と出どころ、名前が存在しないこと（NSEC や NSEC3 で）は証明する。PC とリゾルバーの間の DNS の通信を隠すには、DNS over TLS や HTTPS を使う。',
       },
     },
   ],

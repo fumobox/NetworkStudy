@@ -193,8 +193,8 @@ export const DNSSEC_META = {
     ja: 'DNSSEC: DNS の答えをたどる信頼の連鎖',
   },
   summary: {
-    en: 'How a validating resolver proves that a DNS answer is genuine, from the root trust anchor through DS and DNSKEY records to the RRSIG on the answer, and why a forged or expired signature ends in SERVFAIL.',
-    ja: '検証するリゾルバーが、ルートのトラストアンカーから DS と DNSKEY をたどって答えの RRSIG を確かめ、DNS の答えが本物だと証明するしくみと、偽造や期限切れの署名が SERVFAIL になる理由。',
+    en: 'How a validating resolver proves that a DNS answer is genuine, from the root trust anchor through DS and DNSKEY records to the RRSIG on the answer, and why a forged answer or an expired signature ends in SERVFAIL.',
+    ja: '検証するリゾルバーが、ルートのトラストアンカーから DS と DNSKEY をたどって答えの RRSIG を確かめ、DNS の答えが本物だと証明するしくみと、偽造された答えや期限切れの署名が SERVFAIL になる理由。',
   },
   difficulty: 'intermediate',
   minutes: 15,

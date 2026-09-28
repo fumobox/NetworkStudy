@@ -1,6 +1,6 @@
 ## Why DNS needs signatures
 
-Ordinary DNS has no way to prove that an answer is genuine. A resolver accepts the first response whose ID and ports match its query, so an attacker who guesses them, or who sits on the path, can hand out a forged address, and the resolver will cache it for everyone (see RFC 5452).
+Ordinary DNS has no way to prove that an answer is genuine. A resolver accepts the first response whose ID, ports and question match its query and that appears to come from the server it asked, so an attacker who guesses them, or who sits on the path, can hand out a forged address, and the resolver will cache it for everyone (see RFC 5452).
 
 **DNSSEC** adds signatures to DNS data. It does not change how names are looked up (the root, .com and example.com still answer with referrals and records, as in the DNS theme), but every record set now comes with a signature that a **validating resolver** can check.
 
@@ -8,21 +8,21 @@ Ordinary DNS has no way to prove that an answer is genuine. A resolver accepts t
 
 Each signed zone publishes its public keys as **DNSKEY** records, and signs each record set (**RRset**) with an **RRSIG** record. An RRSIG names the key that made it (the key tag and the zone) and is valid only between its inception and expiration times, so zones must be re-signed regularly.
 
-A signature only helps if you trust the key, and that is where the parent comes in. The parent zone publishes a **DS** record for the child: a hash of the child’s key, signed with the parent’s own key. By convention a zone has two keys: a **key-signing key (KSK)** that signs only the DNSKEY set and is the one the DS points to, and a **zone-signing key (ZSK)** that signs everything else.
+A signature only helps if you trust the key, and that is where the parent comes in. The parent zone publishes a **DS** record for the child: a hash of the child’s key, signed with the parent’s own key. Many zones split this into two roles: a **key-signing key (KSK)** that signs only the DNSKEY set and is the one the DS points to, and a **zone-signing key (ZSK)** that signs everything else.
 
 Starting from one key it trusts without proof, the root’s KSK configured as a **trust anchor**, the resolver can follow the links down: root key → DS for com. → com.’s key → DS for example.com. → example.com’s key → the RRSIG on the answer. This is the **chain of trust**.
 
 ## Secure, insecure, bogus
 
-The result of validation is one of:
+Here the result of validation is one of three (RFC 4035 also defines Indeterminate, for data with no trust anchor above it):
 
 - **Secure**: every link was proven. The resolver sets the **AD** bit in its answer (if the query asked with AD or DO).
-- **Insecure**: the parent proved that the child has no DS (with a signed NSEC or NSEC3 record), so the zone is simply not signed. The answer is ordinary DNS, without AD. Many names are still in unsigned zones.
-- **Bogus**: a signature is missing, wrong or expired where one was expected. The resolver answers **SERVFAIL** instead of handing out the data, unless the query set **CD** (checking disabled), in which case the client takes responsibility for validating it itself.
+- **Insecure**: the parent proved that there is no signed delegation for the child (with signed NSEC or NSEC3 records), so the zone is simply not signed. The answer is ordinary DNS, without AD. Many names are still in unsigned zones.
+- **Bogus**: validation failed where it should have succeeded, for example a signature is missing, wrong or expired. The resolver answers **SERVFAIL** instead of handing out the data, unless the query set **CD** (checking disabled): then the resolver returns the data without AD, and the client takes responsibility for validating it itself.
 
 ## What DNSSEC does not do
 
-DNSSEC proves where data came from and that it was not changed, and it can prove that a name does not exist. It does **not** encrypt anything: anyone on the path can still read the questions and answers (DNS over TLS or HTTPS can hide them). It also does not protect the last hop between your PC and the resolver, unless your PC validates itself or that hop is protected.
+DNSSEC proves where data came from and that it was not changed, and it can prove that a name does not exist. It does **not** encrypt anything: anyone on the path can still read the questions and answers (DNS over TLS or HTTPS can hide them on the hop between your PC and the resolver). It also does not protect the last hop between your PC and the resolver, including the AD bit: your PC must validate itself, or that hop must be secured another way.
 
 The keys, key tags and digests on this page are made up; IANA publishes the real root trust anchor.
 
@@ -39,4 +39,6 @@ The keys, key tags and digests on this page are made up; IANA publishes the real
 - [RFC 4035: Protocol Modifications for the DNS Security Extensions](https://www.rfc-editor.org/rfc/rfc4035) — §5 “Authenticating DNS Responses”
 - [RFC 6840: Clarifications and Implementation Notes for DNS Security (DNSSEC)](https://www.rfc-editor.org/rfc/rfc6840)
 - [RFC 5155: DNS Security (DNSSEC) Hashed Authenticated Denial of Existence](https://www.rfc-editor.org/rfc/rfc5155)
+- [RFC 5452: Measures for Making DNS More Resilient against Forged Answers](https://www.rfc-editor.org/rfc/rfc5452)
+- [RFC 7958: DNSSEC Trust Anchor Publication for the Root Zone](https://www.rfc-editor.org/rfc/rfc7958)
 - [IANA: Root zone trust anchors](https://www.iana.org/dnssec/files)
