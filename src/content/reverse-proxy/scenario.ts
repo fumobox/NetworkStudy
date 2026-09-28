@@ -5,27 +5,27 @@
  * - RFC 9110 §3.7（仲介者。リバースプロキシは「ゲートウェイ」で、要求を内側のサーバーに転送し、負荷分散にも使われる）、
  *   §7.2（Host）、§7.4（信頼できるゲートウェイからの接続なら、https の要求を平文で受けてよい）、
  *   §7.6.1（Connection と区間ごとのフィールドを外す）、§7.6.3（ゲートウェイは内側への要求に Via を付けなければならない）、
- *   §9.2.2（べき等でない要求を自動で再試行すべきでない）、§10.2.3（Retry-After）、§15.3.1 / §15.3.2（200、201）、
+ *   §9.2.2（プロキシはべき等でない要求を自動で再試行してはならない。クライアントは SHOULD NOT）、§10.2.3（Retry-After）、§15.3.1 / §15.3.2（200、201）、
  *   §15.6.3〜§15.6.5（502: 内側のサーバーから正しい応答を得られない、503: 一時的に応じられない、504: 時間内に応答がない）
  * - RFC 9112 §3.2（Host）、§3.3（再構成する URI のスキームは、接続が保護されていなければ http）、§9.2（応答は要求の順に対応づく）、
  *   §9.3（持続的な接続が既定）
  * - RFC 9113 §8.2（フィールド名は小文字）、§8.2.2（接続に固有のフィールドを HTTP/2 に入れない）、
  *   §8.3.1（:authority から Host を作る。HTTP/2 の版は "2.0"）
- * - RFC 7239 §4〜§7（Forwarded。IPv6 やポート付きの値は引用符で囲む）、§8.1〜§8.3（値は偽れる。既定では難読化した識別子を
- *   使うべきだが、アドレスが必要なら IP アドレスを送ってよい）。§1 は X-Forwarded-For / -Proto を標準でないと書く
+ * - RFC 7239 §4〜§7（Forwarded。IPv6 やポート付きの値は引用符で囲む）、§5.2・§8.3（既定では難読化した識別子を使うべきだが、
+ *   アドレスが必要なら IP アドレスを送ってよい）、§8.1（値は偽れる）。§1 は X-Forwarded-For / -Proto を標準でないと書く
  * - RFC 9209 §2（Proxy-Status）、§2.3.4（destination_unavailable → 503）、§2.3.8（connection_terminated → 502）、
  *   §2.3.26（http_response_timeout → 504）
  * - RFC 9111 §3、§3.5、§4.2.1、§5.1、§5.2.2.7、§5.2.2.10（共有キャッシュ、Authorization、s-maxage、Age、private）
  * - RFC 9211 §2（Cache-Status: hit、fwd=uri-miss、ttl、stored）、RFC 9651（Structured Field の Token と String）
- * - RFC 6265 §4.1（Set-Cookie の Path・Secure・HttpOnly）、RFC 8446（TLS 1.3）、RFC 7301（ALPN）、RFC 6066 §3（SNI）
- * - RFC 9293 §3.5（3 ウェイハンドシェイク）、§3.10.7.1（待ち受けのないポートへの SYN には RST, ACK）
+ * - RFC 6265 §4.1（Set-Cookie の Path・Secure・HttpOnly）、RFC 9846（TLS 1.3。RFC 8446 を置き換えた）、RFC 7301（ALPN）、RFC 6066 §3（SNI）
+ * - RFC 9293 §3.5（3 ウェイハンドシェイク）、§3.10.7.1（待ち受けのないポートへの SYN には RST, ACK）、RFC 1122 §4.2.2.13（閉じたあとに届いたデータには RST）
  * - RFC 5737（説明用のアドレス）、RFC 2606（example.com）
  * - HAProxy Technologies, "The PROXY protocol Versions 1 & 2"（2020/03/05 版）§2.1（RFC ではない）
  * - 標準でないもの: バックエンドの選び方、ヘルスチェック、スティッキーセッションの Cookie、プロキシの待ち時間と再試行の方針は
  *   製品の設定で決まる。本文では「例えば nginx や HAProxy では」と書き、数値は例の値とする
  *
  * 学習用の単純化: ブラウザーは 1 台、バックエンドは同じ重みの 2 台で、ラウンドロビンで選ぶ。ヘルスチェックは 5 秒ごと、
- * 続けて 2 回失敗したら外す（例の値）。Forwarded と X-Forwarded-For にはクライアントの IP アドレスをそのまま入れる。
+ * 続けて 2 回失敗したら外す（例の値。受動的な失敗と能動的な失敗を同じ回数で数えるが、製品によって数え方は違う）。Forwarded と X-Forwarded-For にはクライアントの IP アドレスをそのまま入れる。
  * ブラウザーは Forwarded も X-Forwarded-For も送らない。Host は :authority のまま渡す（製品によっては既定で書き換える）。
  * Via は両方向に付ける。TCP のハンドシェイクと ACK、HPACK、SETTINGS は L4 の場合を除いて描かず、TLS のハンドシェイクは
  * 3 つにまとめる。Date は省き、Age はプロキシのキャッシュにあった時間だけとする。ブラウザー自身のキャッシュは描かない。
@@ -46,7 +46,15 @@ import type {
   StepEvent,
 } from '@/engine/types'
 import type { LocalizedText } from '@/lib/i18n/locale'
-import { nextHealth, pickRoundRobin, type HealthState, type PoolEntry } from './balancer'
+import {
+  ERROR_STATUS,
+  nextHealth,
+  pickRoundRobin,
+  pickSticky,
+  type HealthState,
+  type PoolEntry,
+  type ProxyError,
+} from './balancer'
 import {
   appendForwarded,
   appendXForwardedFor,
@@ -101,6 +109,8 @@ export const BACKENDS = {
   backendA: { letter: 'A', ip: '198.51.100.11', port: 8080, localPort: 40001 },
   backendB: { letter: 'B', ip: '198.51.100.12', port: 8080, localPort: 40002 },
 } as const
+/** L4 のときにバックエンドが TLS を待ち受けるポート */
+const TLS_PORT = 443
 /** Via と Proxy-Status・Cache-Status でのプロキシの名前 */
 export const PROXY_NAME = 'proxy1'
 export const HEALTH_INTERVAL_MS = 5_000
@@ -266,6 +276,14 @@ const FIELD_TEXT = {
     en: 'How the proxy’s cache handled this response (RFC 9211)',
     ja: 'プロキシのキャッシュがこの応答をどう扱ったか（RFC 9211）',
   },
+  private: {
+    en: 'private: only the browser’s own cache may store this response (RFC 9111 §5.2.2.7)',
+    ja: 'private: この応答を保存してよいのはブラウザー自身のキャッシュだけ（RFC 9111 §5.2.2.7）',
+  },
+  contentLength: {
+    en: 'The size of the body in bytes. On a persistent HTTP/1.1 connection, this is how the receiver knows where the message ends (RFC 9112 §6.3)',
+    ja: '本文のバイト数。持続する HTTP/1.1 の接続では、受け手はこれでメッセージの終わりを知る（RFC 9112 §6.3）',
+  },
   sMaxage: {
     en: 's-maxage applies only to shared caches such as this proxy; the browser’s own cache uses max-age=0',
     ja: 's-maxage はこのプロキシのような共有キャッシュにだけ効く。ブラウザー自身のキャッシュは max-age=0 を使う',
@@ -291,6 +309,7 @@ const POST_ORDER: Exchange = {
   body: '{"item":42}',
 }
 const ORDER_LOCATION = '/api/orders/1001'
+const byteLength = (body: string) => String(new TextEncoder().encode(body).length)
 
 function h2Request(id: MessageId, exchange: Exchange): Message {
   return {
@@ -348,6 +367,11 @@ function h1Forward(id: MessageId, to: BackendId, exchange: Exchange): Message {
         ? []
         : [
             { name: 'Content-Type', value: 'application/json' } satisfies PacketField,
+            {
+              name: 'Content-Length',
+              value: byteLength(exchange.body),
+              description: FIELD_TEXT.contentLength,
+            } satisfies PacketField,
             { name: 'Body', value: exchange.body } satisfies PacketField,
           ]),
     ],
@@ -358,6 +382,8 @@ interface BackendResponse {
   readonly status: '200 OK' | '201 Created'
   readonly body: string
   readonly cacheControl?: string
+  /** Cache-Control のフィールドの説明 */
+  readonly cacheControlNote?: LocalizedText
   readonly location?: string
 }
 
@@ -365,6 +391,7 @@ interface BackendResponse {
 function responseHeaders(response: BackendResponse): HeaderField[] {
   return [
     { name: 'Content-Type', value: 'application/json' },
+    { name: 'Content-Length', value: byteLength(response.body) },
     ...(response.location === undefined ? [] : [{ name: 'Location', value: response.location }]),
     ...(response.cacheControl === undefined
       ? []
@@ -389,8 +416,8 @@ function h1Response(
     fields: [
       { name: 'Status line', value: `HTTP/1.1 ${response.status}` },
       ...responseHeaders(response).map((field) =>
-        field.name === 'Cache-Control'
-          ? { ...field, highlight: true, description: FIELD_TEXT.sMaxage }
+        field.name === 'Cache-Control' && response.cacheControlNote !== undefined
+          ? { ...field, highlight: true, description: response.cacheControlNote }
           : field,
       ),
       { name: 'Body', value: response.body },
@@ -404,6 +431,7 @@ function h2Relay(
   stream: number,
   response: BackendResponse,
   extra: readonly PacketField[] = [],
+  options: { readonly fromCache?: boolean } = {},
 ): Message {
   const { forwarded, removed } = stripHopByHop(responseHeaders(response))
   return {
@@ -420,19 +448,31 @@ function h2Relay(
       ...forwarded.map((field) => ({ name: field.name.toLowerCase(), value: field.value })),
       { name: 'via', value: VIA_OUTBOUND, description: FIELD_TEXT.viaOut },
       ...extra,
-      { name: 'Removed', value: removed.join(', '), description: FIELD_TEXT.removed },
+      // キャッシュから返すときは、保存するときに外してある（RFC 9111 §3.1）ので、この交換では何も外さない
+      ...(options.fromCache === true
+        ? []
+        : [{ name: 'Removed', value: removed.join(', '), description: FIELD_TEXT.removed }]),
       { name: 'Body', value: response.body },
     ],
   }
 }
 
 /** プロキシが自分で作るエラーの応答（バックエンドの応答ではないので Cache-Status は付けない） */
-function h2Error(
-  id: MessageId,
-  stream: number,
-  status: '502 Bad Gateway' | '504 Gateway Timeout',
-  proxyStatus: string,
-): Message {
+const REASON_PHRASES = {
+  502: 'Bad Gateway',
+  503: 'Service Unavailable',
+  504: 'Gateway Timeout',
+} as const
+
+/** Proxy-Status の error から、RFC 9209 が推奨する状態コードの状態行（例: 502 Bad Gateway）を作る */
+export function errorStatus(error: ProxyError): string {
+  const code = ERROR_STATUS[error]
+  return `${String(code)} ${REASON_PHRASES[code]}`
+}
+
+function h2Error(id: MessageId, stream: number, error: ProxyError, nextHop?: string): Message {
+  const status = errorStatus(error)
+  const proxyStatus = formatProxyStatus(PROXY_NAME, error, nextHop)
   return {
     id,
     from: PROXY,
@@ -544,6 +584,16 @@ class ProxyModel {
     return pick.backend === BACKEND_A ? BACKEND_A : BACKEND_B
   }
 
+  /** Cookie が指すバックエンドを、使えればそのまま選ぶ（ラウンドロビンの位置は進めない） */
+  pickByCookie(pinned: BackendId): { readonly backend: BackendId; readonly byCookie: boolean } {
+    const pick = pickSticky(this.entries(), pinned, this.cursor)
+    if (pick === null) {
+      throw new Error('no backend is up')
+    }
+    this.cursor = pick.cursor
+    return { backend: pick.backend === BACKEND_A ? BACKEND_A : BACKEND_B, byCookie: pick.byCookie }
+  }
+
   rotation(note?: string): StepEvent {
     const next = pickRoundRobin(this.entries(), this.cursor)
     const letter = next === null ? '-' : next.backend === BACKEND_A ? 'A' : 'B'
@@ -575,13 +625,13 @@ class ProxyModel {
     return this.upstream()
   }
 
-  upstream(requestsVisible = true): StepEvent {
+  upstream(): StepEvent {
     return set(PROXY, UPSTREAM, {
       columns: UPSTREAM_COLUMNS,
       rows: this.connections.map((c) => [
         c.conn,
         BACKENDS[c.backend].letter,
-        requestsVisible ? String(c.requests) : 'not visible',
+        String(c.requests),
         c.state,
       ]),
     })
@@ -712,8 +762,8 @@ function opening(model: ProxyModel, options: { readonly sticky: boolean }): Step
           value: `${cookie}; Path=/; Secure; HttpOnly`,
           highlight: true,
           description: {
-            en: 'Added by the proxy, not the app (for example HAProxy’s “cookie SERVERID insert”)',
-            ja: 'アプリではなくプロキシが足す（例えば HAProxy の「cookie SERVERID insert」）',
+            en: 'Added by the proxy, not the app (for example HAProxy’s “cookie SERVERID insert indirect secure httponly”)',
+            ja: 'アプリではなくプロキシが足す（例えば HAProxy の「cookie SERVERID insert indirect secure httponly」）',
           },
         },
       ]
@@ -742,8 +792,8 @@ function opening(model: ProxyModel, options: { readonly sticky: boolean }): Step
         id: 'response-1',
         title: { en: 'The backend answers', ja: 'バックエンドが答える' },
         description: {
-          en: 'The backend answers over the same HTTP/1.1 connection, which stays open for more requests (Connection: keep-alive).',
-          ja: 'バックエンドは同じ HTTP/1.1 の接続で答える。接続は次の要求のために開いたまま（Connection: keep-alive）。',
+          en: 'The backend answers over the same HTTP/1.1 connection, which stays open for more requests: HTTP/1.1 connections are persistent by default, and this server also sends Connection: keep-alive.',
+          ja: 'バックエンドは同じ HTTP/1.1 の接続で答える。接続は次の要求のために開いたまま。HTTP/1.1 の接続は既定で持続し、このサーバーは Connection: keep-alive も送る。',
         },
         events: [
           send(h1Response('response-1', first, ITEMS(BACKENDS[first].letter))),
@@ -907,15 +957,8 @@ function backendDownSteps(model: ProxyModel): Step[] {
           ja: 'プロキシは 502 Bad Gateway で答える。バックエンドから正しい応答を得られなかったという意味。Proxy-Status のフィールド（RFC 9209）は、どのプロキシがなぜ失敗したかを示す。connection_terminated で、RFC 9209 が推奨する状態コードは 502。',
         },
         events: [
-          send(
-            h2Error(
-              'bad-gateway',
-              3,
-              '502 Bad Gateway',
-              formatProxyStatus(PROXY_NAME, 'connection_terminated', backendAddress(second)),
-            ),
-          ),
-          set(BROWSER, RESPONSE, '502 Bad Gateway'),
+          send(h2Error('bad-gateway', 3, 'connection_terminated', backendAddress(second))),
+          set(BROWSER, RESPONSE, errorStatus('connection_terminated')),
         ],
       },
     ]),
@@ -945,7 +988,7 @@ function backendDownSteps(model: ProxyModel): Step[] {
         title: { en: 'B is taken out of the pool', ja: 'B を一覧から外す' },
         description: {
           en: `A is fine. B has now failed ${String(THRESHOLDS.fall)} times in a row, the threshold in this example, so the proxy marks it down and stops sending it requests. B comes back only after passing ${String(THRESHOLDS.rise)} checks in a row.`,
-          ja: `A は問題ない。B は例のしきい値の ${String(THRESHOLDS.fall)} 回続けて失敗したので、プロキシは down として、要求を送らなくなる。B が戻るのは、続けて ${String(THRESHOLDS.rise)} 回確認に通ってから。`,
+          ja: `A は問題ない。B は続けて ${String(THRESHOLDS.fall)} 回失敗し、この例のしきい値に達したので、プロキシは down として、要求を送らなくなる。B が戻るのは、続けて ${String(THRESHOLDS.rise)} 回確認に通ってから。`,
         },
         events: [
           send(healthOk('health-a-2-ok', BACKEND_A)),
@@ -1062,15 +1105,8 @@ function slowBackendSteps(model: ProxyModel): Step[] {
           ja: 'プロキシは 504 Gateway Timeout で答える。バックエンドが時間内に応答しなかったという意味。Proxy-Status の error は http_response_timeout で、RFC 9209 が推奨するのは 504。502 は、バックエンドの応答がない、または正しくない場合で、504 は遅すぎた場合。',
         },
         events: [
-          send(
-            h2Error(
-              'gateway-timeout',
-              3,
-              '504 Gateway Timeout',
-              formatProxyStatus(PROXY_NAME, 'http_response_timeout'),
-            ),
-          ),
-          set(BROWSER, RESPONSE, '504 Gateway Timeout'),
+          send(h2Error('gateway-timeout', 3, 'http_response_timeout')),
+          set(BROWSER, RESPONSE, errorStatus('http_response_timeout')),
         ],
       },
       {
@@ -1100,7 +1136,10 @@ function slowBackendSteps(model: ProxyModel): Step[] {
 
 function stickySteps(model: ProxyModel): Step[] {
   const steps = opening(model, { sticky: true })
-  const cookie = 'SERVERID=a'
+  // opening の最初の要求を受けたバックエンド（A）が Cookie に入っている
+  const { backend: pinned, byCookie } = model.pickByCookie(BACKEND_A)
+  const letter = BACKENDS[pinned].letter
+  const cookie = `SERVERID=${letter.toLowerCase()}`
   steps.push(
     ...inSection(SECTIONS.request2, [
       {
@@ -1116,16 +1155,16 @@ function stickySteps(model: ProxyModel): Step[] {
         id: 'forward-2',
         title: {
           en: 'The cookie wins over the rotation',
-          ja: 'ローテーションより Cookie が優先する',
+          ja: '順番より Cookie が優先する',
         },
         description: {
           en: 'Round-robin would pick B, but the cookie says A, so the proxy sends the request to A. In HAProxy’s “insert indirect” mode, the proxy removes its own cookie before forwarding, so the app never sees it.',
           ja: 'ラウンドロビンなら B の番だが、Cookie は A を指すので、プロキシは A に送る。HAProxy の「insert indirect」では、プロキシは転送する前に自分の Cookie を外すので、アプリはそれを見ない。',
         },
         events: [
-          send(h1Forward('forward-2', BACKEND_A, POST_ORDER)),
-          model.use(BACKEND_A),
-          set(PROXY, ROTATION, 'B (A by cookie)'),
+          send(h1Forward('forward-2', pinned, POST_ORDER)),
+          model.use(pinned),
+          model.rotation(byCookie ? `${letter} by cookie` : undefined),
         ],
       },
       {
@@ -1136,11 +1175,11 @@ function stickySteps(model: ProxyModel): Step[] {
           ja: 'A が注文を作る。アプリがセッションをメモリーに持つときに役立つ。ブラウザーは常に同じプロセスに届くから。代わりに、負荷が偏ることがあり、A が落ちればそのセッションは失われる（そのときプロキシは別のバックエンドを選ぶ）。よくある別の方法は、セッションを共有のストアに置き、どのバックエンドでもどの要求にも応じられるようにすること。',
         },
         events: [
-          send(h1Response('response-2', BACKEND_A, CREATED('A'))),
-          model.handle(BACKEND_A),
-          send(h2Relay('relay-2', 3, CREATED('A'))),
-          model.setState(BACKEND_A, 'idle'),
-          set(BACKEND_A, PROCESS, 'order 1001 created'),
+          send(h1Response('response-2', pinned, CREATED(letter))),
+          model.handle(pinned),
+          send(h2Relay('relay-2', 3, CREATED(letter))),
+          model.setState(pinned, 'idle'),
+          set(pinned, PROCESS, 'order 1001 created'),
           set(BROWSER, RESPONSE, '201 Created'),
         ],
       },
@@ -1152,7 +1191,11 @@ function stickySteps(model: ProxyModel): Step[] {
 function sharedCacheSteps(model: ProxyModel): Step[] {
   const steps = openingPrelude(model)
   const first = model.pick()
-  const items: BackendResponse = { ...ITEMS('A'), cacheControl: ITEMS_CACHE_CONTROL }
+  const items: BackendResponse = {
+    ...ITEMS('A'),
+    cacheControl: ITEMS_CACHE_CONTROL,
+    cacheControlNote: FIELD_TEXT.sMaxage,
+  }
   const itemsCc = parseCacheControl(ITEMS_CACHE_CONTROL)
   const lifetime = freshnessLifetime(itemsCc, true) ?? 0
   const age = REVISIT_MS / 1000
@@ -1160,6 +1203,7 @@ function sharedCacheSteps(model: ProxyModel): Step[] {
     status: '200 OK',
     body: '{"user":"alice"}',
     cacheControl: ME_CACHE_CONTROL,
+    cacheControlNote: FIELD_TEXT.private,
   }
   const meStorable = mayStore({
     shared: true,
@@ -1250,22 +1294,28 @@ function sharedCacheSteps(model: ProxyModel): Step[] {
         },
         description: {
           en: `The stored response is ${String(age)} seconds old, less than s-maxage=${String(lifetime)}, so the proxy answers from its cache without contacting any backend. Age: ${String(age)} tells how long it has been stored, and Cache-Status says hit with ${String(remainingTtl(lifetime, age))} seconds of freshness left. The rotation does not move.`,
-          ja: `保存した応答は ${String(age)} 秒前のもので、s-maxage=${String(lifetime)} より新しいので、プロキシはどのバックエンドにも聞かずにキャッシュから答える。Age: ${String(age)} は保存してからの時間、Cache-Status は hit と、新しさがあと ${String(remainingTtl(lifetime, age))} 秒残ることを示す。ローテーションは進まない。`,
+          ja: `保存した応答は ${String(age)} 秒前のもので、s-maxage=${String(lifetime)} より新しいので、プロキシはどのバックエンドにも聞かずにキャッシュから答える。Age: ${String(age)} は保存してからの時間、Cache-Status は hit と、新しさがあと ${String(remainingTtl(lifetime, age))} 秒残ることを示す。次に選ぶバックエンドは変わらない。`,
         },
         events: [
           send(
-            h2Relay('hit', 3, items, [
-              { name: 'age', value: String(age), highlight: true },
-              {
-                name: 'cache-status',
-                value: formatCacheStatus(PROXY_NAME, {
-                  hit: true,
-                  ttl: remainingTtl(lifetime, age),
-                }),
-                highlight: true,
-                description: FIELD_TEXT.cacheStatus,
-              },
-            ]),
+            h2Relay(
+              'hit',
+              3,
+              items,
+              [
+                { name: 'age', value: String(age), highlight: true },
+                {
+                  name: 'cache-status',
+                  value: formatCacheStatus(PROXY_NAME, {
+                    hit: true,
+                    ttl: remainingTtl(lifetime, age),
+                  }),
+                  highlight: true,
+                  description: FIELD_TEXT.cacheStatus,
+                },
+              ],
+              { fromCache: true },
+            ),
           ),
           set(BROWSER, RESPONSE, '200 OK'),
         ],
@@ -1407,7 +1457,7 @@ function l4Steps(model: ProxyModel): Step[] {
         events: [
           send(
             tcp('back-syn', PROXY, backend, 'SYN', [
-              { name: 'Dst', value: `${BACKENDS[backend].ip}:443` },
+              { name: 'Dst', value: `${BACKENDS[backend].ip}:${String(TLS_PORT)}` },
             ]),
           ),
           send(
@@ -1415,6 +1465,16 @@ function l4Steps(model: ProxyModel): Step[] {
           ),
           send(tcp('back-ack', PROXY, backend, 'ACK', [{ name: 'Flags', value: 'ACK' }])),
           conn(),
+          // L4 では TLS をそのまま流すので、バックエンドのポートは 443（ヘルスチェックは描かないが、通っているものとする）
+          set(PROXY, POOL, {
+            columns: POOL_COLUMNS,
+            rows: ([BACKEND_A, BACKEND_B] as const).map((id) => [
+              BACKENDS[id].letter,
+              `${BACKENDS[id].ip}:${String(TLS_PORT)}`,
+              'up',
+              '0',
+            ]),
+          }),
           model.rotation(),
         ],
       },

@@ -1,7 +1,7 @@
 /**
  * バックエンドの選び方とヘルスチェック。HTTP の標準ではなく、製品の設定で決まる（RFC 9110 §3.7 は、ゲートウェイが
  * 負荷分散に使われることに触れるだけ）。ここでは例えば nginx や HAProxy の既定と同じラウンドロビンと、
- * 続けて fall 回失敗したら外し、rise 回成功したら戻す考え方を使う。
+ * HAProxy の fall / rise と同じ考え方（続けて fall 回失敗したら外し、続けて rise 回成功したら戻す）を使う。
  * 失敗の種類と状態コードの対応は RFC 9209 §2.3（Proxy-Status の error の種類と、推奨する状態コード）
  */
 
@@ -12,14 +12,14 @@ export interface PoolEntry {
   readonly health: Health
 }
 
-export interface Pick {
+export interface BackendPick {
   readonly backend: string
   /** 次に選び始める位置 */
   readonly cursor: number
 }
 
 /** cursor の位置から順に、down でない最初のバックエンドを選ぶ。すべて down なら null（503 を返す） */
-export function pickRoundRobin(pool: readonly PoolEntry[], cursor: number): Pick | null {
+export function pickRoundRobin(pool: readonly PoolEntry[], cursor: number): BackendPick | null {
   for (let i = 0; i < pool.length; i++) {
     const index = (cursor + i) % pool.length
     const entry = pool[index]
@@ -35,7 +35,7 @@ export function pickSticky(
   pool: readonly PoolEntry[],
   pinned: string | undefined,
   cursor: number,
-): (Pick & { readonly byCookie: boolean }) | null {
+): (BackendPick & { readonly byCookie: boolean }) | null {
   const entry = pool.find((candidate) => candidate.id === pinned)
   if (entry !== undefined && entry.health !== 'down') {
     return { backend: entry.id, cursor, byCookie: true }

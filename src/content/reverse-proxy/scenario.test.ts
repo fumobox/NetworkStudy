@@ -202,6 +202,14 @@ describe('reverseProxyScenario', () => {
       ).toBe(false)
       const { proxy } = final(steps)
       expect(proxy?.values.tls).toBe('passthrough (ciphertext only)')
+      expect(proxy?.values.pool).toEqual({
+        columns: ['Backend', 'Address', 'Health', 'Fails'],
+        rows: [
+          ['A', '198.51.100.11:443', 'up', '0'],
+          ['B', '198.51.100.12:443', 'up', '0'],
+        ],
+      })
+      expect(field(byId(steps, 'back-syn'), 'Dst')).toBe('198.51.100.11:443')
     })
 
     it('共有キャッシュ: s-maxage で保存し、20 秒後はバックエンドに聞かずに返す。private は保存しない', () => {
@@ -225,6 +233,17 @@ describe('reverseProxyScenario', () => {
         rows: [['/api/items', 'max-age=0, s-maxage=60', '20', 'fresh']],
       })
       expect(final(steps).backendA?.values.handled).toBe('1')
+    })
+
+    it('Cache-Control の説明は応答ごと。キャッシュから返すときは Removed を付けない', () => {
+      const steps = build('sharedCache')
+      const description = (id: string) =>
+        byId(steps, id)?.fields.find((f) => f.name === 'Cache-Control')?.description?.en
+      expect(description('response-1')).toContain('s-maxage')
+      expect(description('response-3')).toContain('private')
+      expect(description('response-3')).not.toContain('s-maxage')
+      expect(field(byId(steps, 'hit'), 'Removed')).toBeUndefined()
+      expect(field(byId(steps, 'relay-1'), 'Removed')).toBe('Connection, Keep-Alive')
     })
   })
 
@@ -265,6 +284,14 @@ describe('reverseProxyScenario', () => {
       expect(field(relay, 'Removed')).toBe('Connection, Keep-Alive')
       expect(relay?.fields.some((f) => f.name.toLowerCase() === 'connection')).toBe(false)
       expect(field(relay, 'content-type')).toBe('application/json')
+    })
+
+    it('HTTP/1.1 の本文には Content-Length を付ける（バイト数）', () => {
+      const steps = build()
+      expect(field(byId(steps, 'forward-2'), 'Content-Length')).toBe('11')
+      expect(field(byId(steps, 'response-1'), 'Content-Length')).toBe(
+        String(new TextEncoder().encode('{"items":[…],"served_by":"A"}').length),
+      )
     })
 
     it('ブラウザーとプロキシの間は暗号化され、プロキシとバックエンドの間は平文', () => {
