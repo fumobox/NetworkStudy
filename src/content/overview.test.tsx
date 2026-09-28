@@ -24,6 +24,8 @@ describe('テーマの概要（MDX）', () => {
       expect(container.querySelector('h1')).toBeNull()
       // 日本語で全角の記号の直後に ** を閉じると太字にならず、記号がそのまま表示される
       expect(container.textContent).not.toMatch(/\*\*|__/)
+      // 閉じそこねた ** が次の ** と組になると、記号は残らずに太字が入れ子になる
+      expect(container.querySelector('strong strong')).toBeNull()
     },
   )
 })
