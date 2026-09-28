@@ -1,9 +1,11 @@
-import { Component, type ErrorInfo, type ReactNode } from 'react'
+import { Component, type ReactNode } from 'react'
 import { Button } from '@/components/ui/button'
 import { useMessages } from '@/lib/i18n'
 
 interface LoadErrorBoundaryProps {
   readonly children: ReactNode
+  /** 変わったらエラーの表示をやめて、子をまた出す（ページを移ったとき） */
+  readonly resetKey: string
   /** テストで差し替えるため */
   readonly onReload?: () => void
 }
@@ -14,8 +16,9 @@ interface LoadErrorBoundaryState {
 
 /**
  * ページの読み込み（遅延読み込みのチャンクなど）に失敗したとき、空白の代わりに読み込み直しを促す。
- * 古いチャンクはまず lib/staleChunk.ts が自動で読み込み直すので、ここに来るのはそれでも回復しないとき。
- * 呼び出し側は key にパスを渡し、別のページに移ったらリセットする
+ * デプロイで古いチャンクが消えたときは、まず vite:preloadError で自動的に読み込み直すので、ここに来るのはそれでも回復しないとき。
+ * 描画の不具合でも同じ表示になる。key ではなく resetKey でリセットするのは、言語の切り替え（パスのロケールだけが変わる）で
+ * ページの状態を失わないため。エラーの記録は React の既定（onCaughtError が console.error に出す）に任せる
  */
 export class LoadErrorBoundary extends Component<LoadErrorBoundaryProps, LoadErrorBoundaryState> {
   override state: LoadErrorBoundaryState = { failed: false }
@@ -24,8 +27,10 @@ export class LoadErrorBoundary extends Component<LoadErrorBoundaryProps, LoadErr
     return { failed: true }
   }
 
-  override componentDidCatch(error: unknown, info: ErrorInfo) {
-    console.error(error, info.componentStack)
+  override componentDidUpdate(previous: LoadErrorBoundaryProps) {
+    if (this.state.failed && previous.resetKey !== this.props.resetKey) {
+      this.setState({ failed: false })
+    }
   }
 
   override render() {

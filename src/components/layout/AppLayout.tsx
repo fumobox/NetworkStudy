@@ -27,8 +27,8 @@ export function AppLayout() {
         </aside>
         <main id={MAIN_ID} tabIndex={-1} className="min-w-0 flex-1">
           {/* 遅延読み込みのページ（テーマ）を開くあいだの表示 */}
-          {/* 読み込みに失敗したときの表示。別のページに移ったらリセットする */}
-          <LoadErrorBoundary key={pathname}>
+          {/* 読み込みに失敗したときの表示。別のページに移ったらリセットする（言語の切り替えでページの状態は失わない） */}
+          <LoadErrorBoundary resetKey={pathname}>
             <Suspense fallback={<p className="text-sm text-muted-foreground">{m.theme.loading}</p>}>
               <Outlet />
             </Suspense>
