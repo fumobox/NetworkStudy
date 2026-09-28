@@ -5,7 +5,7 @@ A plain packet filter looks at each packet on its own: addresses, ports, protoco
 A **stateful firewall** keeps a **state table** instead (connection tracking). When a packet goes out, it records the connection by protocol, addresses and ports (the 5-tuple). Every packet that arrives is looked up first, and is classified:
 
 - **NEW**: no entry matches. It starts something.
-- **ESTABLISHED**: it belongs to an entry, in either direction. The very first reply is already ESTABLISHED.
+- **ESTABLISHED**: it belongs to an entry that has seen packets in both directions. The very first reply is already ESTABLISHED.
 - **RELATED**: it is not part of a connection, but is about one, like an ICMP error that carries the header of the packet that caused it.
 - **INVALID**: it makes no sense for its connection.
 
@@ -22,7 +22,7 @@ What happens to a NEW packet from outside is a choice:
 - **drop**: discard it silently. The sender hears nothing and retransmits until it gives up. A port scanner reports the port as “filtered”.
 - **reject**: answer on the protected host’s behalf, as a closed port would. For TCP that is an RST, ACK (the sender gets “connection refused” at once, and a scanner reports “closed”); for UDP an ICMP Destination Unreachable.
 
-Dropping reveals less and costs nothing; rejecting lets a legitimate client that made a mistake fail quickly. Gateways following RFC 6092 wait at least 6 seconds before answering an unsolicited SYN, in case both sides are opening the connection at the same time.
+Dropping reveals less and costs nothing; rejecting lets a legitimate client that made a mistake fail quickly. Gateways following RFC 6092 wait at least 6 seconds before answering an unsolicited SYN, in case both sides are opening the connection at the same time, and then answer with an ICMP error (administratively prohibited) rather than an RST.
 
 ## Don’t drop all ICMP
 

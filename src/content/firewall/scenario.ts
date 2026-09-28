@@ -22,7 +22,7 @@
  * TCP はハンドシェイクだけを描き、シーケンス番号とウィンドウの追跡は描かない。INVALID は文章だけ。TTL とチェックサムは描かない。
  * エントリーの状態の名前は、TCP は RFC 9293 の状態（SYN-SENT など）、UDP は UNREPLIED / REPLIED（Linux の conntrack と同じ考え方）。
  * UDP のタイムアウトは 30 秒（宛先が既知のポート 53 なので、RFC 4787 REQ-5a、RFC 6092 REC-15 で短くしてよい。Linux の既定も 30 秒）。
- * reject は、すぐに答える設定（nftables の reject）として描く
+ * reject は、すぐに答える設定として描く（TCP は nftables の reject with tcp reset。単なる reject は TCP にも ICMP の port unreachable を返す）
  */
 import { z } from 'zod'
 import type {

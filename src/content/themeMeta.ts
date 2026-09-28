@@ -18,7 +18,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
  * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、NAT、経路制御）、lan: LAN の中（スイッチ、VLAN、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
- * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）
+ * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC）、security: ネットワークのセキュリティ（ファイアウォール）
  */
 export const THEME_CATEGORIES = ['basics', 'ip', 'lan', 'web', 'tcp', 'http', 'security'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
