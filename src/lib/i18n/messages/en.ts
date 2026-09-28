@@ -144,7 +144,7 @@ export const en = {
     },
     security: {
       title: 'Network security',
-      lead: 'How a firewall remembers the connections you opened, lets their replies in, and keeps out everything else.',
+      lead: 'How a firewall remembers the connections you opened and keeps out everything else, and how DNSSEC lets a resolver prove that a DNS answer is genuine.',
     },
   },
   theme: {

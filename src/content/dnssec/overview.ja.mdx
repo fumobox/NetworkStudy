@@ -1,0 +1,42 @@
+## DNS に署名が要るわけ
+
+ふつうの DNS には、答えが本物だと証明する手段がない。リゾルバーは、ID とポートが問い合わせと合う最初の応答を受け入れるので、それを推測できる攻撃者や、経路の途中にいる攻撃者は、偽のアドレスを渡せる。リゾルバーはそれをキャッシュし、みんなに配ってしまう（RFC 5452 を参照）。
+
+**DNSSEC** は、DNS のデータに署名を加える。名前の調べ方は変わらない（DNS のテーマと同じく、ルート、.com、example.com が委任とレコードで答える）が、どのレコードの集まりにも、**検証するリゾルバー**が確かめられる署名が付く。
+
+## 鍵と署名と信頼の連鎖
+
+署名されたゾーンは、公開鍵を **DNSKEY** レコードとして公開し、レコードの集まり（**RRset**）それぞれに **RRSIG** レコードで署名する。RRSIG は、どの鍵で作ったか（key tag とゾーン）を示し、開始と期限の間だけ有効なので、ゾーンは定期的に再署名しなければならない。
+
+署名が役に立つのは、その鍵を信じられるときだけ。そこで親が登場する。親のゾーンは子の **DS** レコードを公開する。子の鍵のハッシュで、親の鍵で署名されている。慣習として、ゾーンは鍵を 2 つ持つ。DNSKEY だけに署名し、DS が指す**鍵署名鍵（KSK）**と、それ以外に署名する**ゾーン署名鍵（ZSK）**。
+
+証明なしに信じる鍵 1 つ（**トラストアンカー**として設定したルートの KSK）から始めれば、リゾルバーはつながりを下へたどれる。ルートの鍵 → com. の DS → com. の鍵 → example.com. の DS → example.com の鍵 → 答えの RRSIG。これが**信頼の連鎖**。
+
+## Secure、Insecure、Bogus
+
+検証の結果は次のどれか。
+
+- **Secure**（検証できた）: すべてのつながりが証明された。リゾルバーは答えに **AD** ビットを立てる（問い合わせに AD か DO があれば）。
+- **Insecure**（署名がない）: 子に DS がないことを、親が（署名つきの NSEC か NSEC3 のレコードで）証明した。ゾーンに署名がないだけで、答えは AD なしのふつうの DNS。多くの名前は、今も署名のないゾーンにある。
+- **Bogus**（偽物）: 署名があるはずのところで、署名がない、合わない、期限が切れている。リゾルバーはデータを渡さず **SERVFAIL** を返す。ただし問い合わせに **CD**（検証しない）があれば、クライアントが自分で検証する責任を引き受けたものとして、データを返す。
+
+## DNSSEC がしないこと
+
+DNSSEC は、データの出どころと、書き換えられていないことを証明し、名前が存在しないことも証明できる。しかし何も**暗号化しない**。経路の途中の誰でも、問い合わせと答えを読める（DNS over TLS や HTTPS なら隠せる）。PC とリゾルバーの間の最後の区間も守らない。PC が自分で検証するか、その区間を守る必要がある。
+
+このページの鍵、key tag、ダイジェストは架空のもの。本物のルートのトラストアンカーは IANA が公開している。
+
+## ステップ実行で見てほしいところ
+
+- **信頼の連鎖**の表が埋まっていくこと。親からの DS、そのゾーンの DNSKEY、状態。
+- **最後の署名の検証**と、最後の答えの **AD** ビット。
+- 「もしも…」のオプションで、**署名のない**ゾーン（Insecure）、途中で**書き換えられた**答えや**期限切れ**の署名（Bogus、SERVFAIL）、PC が **CD** を立てる場合。
+
+## 参考
+
+- [RFC 4033: DNS Security Introduction and Requirements](https://www.rfc-editor.org/rfc/rfc4033) — §4「Services Not Provided by DNS Security」
+- [RFC 4034: Resource Records for the DNS Security Extensions](https://www.rfc-editor.org/rfc/rfc4034)
+- [RFC 4035: Protocol Modifications for the DNS Security Extensions](https://www.rfc-editor.org/rfc/rfc4035) — §5「Authenticating DNS Responses」
+- [RFC 6840: Clarifications and Implementation Notes for DNS Security (DNSSEC)](https://www.rfc-editor.org/rfc/rfc6840)
+- [RFC 5155: DNS Security (DNSSEC) Hashed Authenticated Denial of Existence](https://www.rfc-editor.org/rfc/rfc5155)
+- [IANA: Root zone trust anchors](https://www.iana.org/dnssec/files)

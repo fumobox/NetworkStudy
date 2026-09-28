@@ -2,6 +2,7 @@ import { arpTheme } from './arp'
 import { corsTheme } from './cors'
 import { dhcpTheme } from './dhcp'
 import { dnsResolutionTheme } from './dns-resolution'
+import { dnssecTheme } from './dnssec'
 import { firewallTheme } from './firewall'
 import { httpCachingTheme } from './http-caching'
 import { http2Theme } from './http2'
@@ -52,6 +53,7 @@ export const THEMES: readonly ThemeModule[] = [
   http2Theme,
   quicTheme,
   firewallTheme,
+  dnssecTheme,
 ]
 
 export function findTheme(id: string | undefined): ThemeModule | undefined {
