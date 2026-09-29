@@ -1,5 +1,6 @@
 import { arpTheme } from './arp'
 import { corsTheme } from './cors'
+import { csrfTheme } from './csrf'
 import { dhcpTheme } from './dhcp'
 import { dnsResolutionTheme } from './dns-resolution'
 import { dnssecTheme } from './dnssec'
@@ -64,6 +65,7 @@ export const THEMES: readonly ThemeModule[] = [
   firewallTheme,
   dnssecTheme,
   mailAuthTheme,
+  csrfTheme,
 ]
 
 export function findTheme(id: string | undefined): ThemeModule | undefined {

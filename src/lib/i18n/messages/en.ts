@@ -148,7 +148,7 @@ export const en = {
     },
     security: {
       title: 'Network security',
-      lead: 'How a firewall remembers the connections you opened and keeps out everything else, how DNSSEC lets a resolver prove that a DNS answer is genuine, and how mail servers tell forged mail from real mail with SPF, DKIM and DMARC.',
+      lead: 'How a firewall remembers the connections you opened and keeps out everything else, how DNSSEC lets a resolver prove that a DNS answer is genuine, how mail servers tell forged mail from real mail with SPF, DKIM and DMARC, and how SameSite cookies and CSRF tokens stop requests that other sites start from acting in your name.',
     },
   },
   theme: {

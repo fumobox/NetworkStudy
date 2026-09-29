@@ -1,5 +1,6 @@
 import { arpQuiz } from './arp/quiz'
 import { corsQuiz } from './cors/quiz'
+import { csrfQuiz } from './csrf/quiz'
 import { dhcpQuiz } from './dhcp/quiz'
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
 import { dnssecQuiz } from './dnssec/quiz'
@@ -28,6 +29,7 @@ import { tcpSackQuiz } from './tcp-sack/quiz'
 import {
   ARP_META,
   CORS_META,
+  CSRF_META,
   DHCP_META,
   DNS_RESOLUTION_META,
   DNSSEC_META,
@@ -101,4 +103,5 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: FIREWALL_META, quiz: firewallQuiz },
   { meta: DNSSEC_META, quiz: dnssecQuiz },
   { meta: MAIL_AUTH_META, quiz: mailAuthQuiz },
+  { meta: CSRF_META, quiz: csrfQuiz },
 ]
