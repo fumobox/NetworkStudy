@@ -40,10 +40,14 @@ describe('解析の細かい規則', () => {
     const first = feed(INITIAL_STREAM_STATE, 'data: a\r')
     const second = feed(first.state, '\n\r\n')
     expect([...first.events, ...second.events].map((e) => e.data)).toEqual(['a'])
+    // あいだに空の chunk が来ても、CRLF は 1 つの行の終わりのまま
+    const empty = feed(first.state, '')
+    const third = feed(empty.state, '\n')
+    expect([...first.events, ...empty.events, ...third.events]).toEqual([])
   })
 
   it('先頭の BOM を除く', () => {
-    expect(data('﻿data: x\n\n')).toEqual(['x'])
+    expect(data('\uFEFFdata: x\n\n')).toEqual(['x'])
   })
 
   it('event で種類を決め、なければ message', () => {

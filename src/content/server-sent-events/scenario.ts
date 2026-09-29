@@ -12,11 +12,11 @@
  *   - 「The `Last-Event-ID` header」（#the-last-event-id-header）。reconnection time の初期値は実装が決める
  *   - 「Parsing an event stream」（#parsing-an-event-stream）、「Interpreting an event stream」（#event-stream-interpretation）:
  *     解析の手順は eventStream.ts。仕様の例は eventStream.test.ts で再現する
- *   - 「Authoring notes」（#authoring-notes）: 15 秒ごとのコメント、サーバーごとの接続数の制限
+ *   - 「Authoring notes」（#authoring-notes）: 15 秒ごとのコメント、サーバーごとの接続数の制限と、その対策（接続ごとに別のドメイン名、ページごとの切り替え、共有ワーカー）
  *   - 「Introduction」（#server-sent-events-intro、非規範）: 204 No Content で再接続を止める
  * - Fetch Standard（WHATWG）「HTTP-network-or-cache fetch」: cache mode "no-store" では Pragma: no-cache と Cache-Control: no-cache を足す
  * - RFC 9110 §6.1（完全なメッセージ）、§8.3・§8.3.1（Content-Type）、§15.3.1（200）、§15.3.5（204 は内容を持たない）
- * - RFC 9112 §6.3（本文の長さ）、§7.1（chunked。サイズは 16 進、最後のチャンクは 0）、§9.3（持続的な接続）、
+ * - RFC 9112 §6.3（本文の長さ）、§8（最後のチャンクが届かない chunked の本文は不完全）、§7.1（chunked。サイズは 16 進、最後のチャンクは 0）、§9.3（持続的な接続）、
  *   §9.4（同時の接続の数は決めない。以前の RFC 2616 §8.1.4 は 2 本）
  * - RFC 9113 §5.1.1（クライアントのストリームは奇数）、§6.5.2（SETTINGS_MAX_CONCURRENT_STREAMS。100 以上を推奨）、
  *   §8.1（chunked は使えない）、§8.2・§8.2.2（小文字のフィールド名、Transfer-Encoding を入れない）
@@ -82,7 +82,9 @@ export const HEARTBEAT_MS = 15_000
 export const MAX_STREAMS = 100
 
 /** サーバーが配信するイベント（アプリケーションのデータ） */
-type LoggedEvent = EventSpec & { readonly id: string }
+interface LoggedEvent extends EventSpec {
+  readonly id: string
+}
 const E1: LoggedEvent = { id: '1', event: 'price', data: 'EXMPL 101.5' }
 const E2: LoggedEvent = { id: '2', event: 'news', data: 'Q3 results\nat 15:00' }
 const E3: LoggedEvent = { id: '3', data: 'Market closes in 10 min' }
@@ -206,7 +208,7 @@ const FIELD_TEXT = {
   },
 } satisfies Record<string, LocalizedText>
 
-const escape = (text: string) => text.replace(/\n/g, '\\n')
+const showLineFeeds = (text: string) => text.replace(/\n/g, '\\n')
 
 // ---------- ブラウザー側の状態（解析の関数で作る） ----------
 
@@ -238,7 +240,7 @@ class BrowserModel {
     const result = feed(this.parser, chunk)
     this.parser = result.state
     for (const event of result.events) {
-      this.rows.push([event.type, escape(event.data), event.lastEventId])
+      this.rows.push([event.type, showLineFeeds(event.data), event.lastEventId])
     }
     return [
       this.table(),
@@ -251,6 +253,17 @@ class BrowserModel {
           : `${String(this.parser.reconnectionTime)} ms`,
       ),
     ]
+  }
+
+  /** 新しい応答は新しいストリーム（BOM や途中の行は持ち越さない。最後のイベント ID と待ち時間は残す） */
+  newStream(): StepEvent[] {
+    this.parser = {
+      ...INITIAL_STREAM_STATE,
+      lastEventId: this.parser.lastEventId,
+      lastEventIdBuffer: this.parser.lastEventIdBuffer,
+      reconnectionTime: this.parser.reconnectionTime,
+    }
+    return []
   }
 
   setReady(state: ReadyState): StepEvent {
@@ -283,8 +296,8 @@ const logTable = (count: number): StateTable => ({
   columns: LOG_COLUMNS,
   rows: EVENT_LOG.slice(0, count).map((entry) => [
     entry.id,
-    entry.event ?? 'message',
-    escape(entry.data),
+    entry.event ?? '-',
+    showLineFeeds(entry.data),
   ]),
 })
 
@@ -360,7 +373,7 @@ function chunkMessage(id: MessageId, label: string, text: string, highlight = fa
         value: `${chunkSizeHex(text)} (${String(new TextEncoder().encode(text).length)} bytes)`,
         description: FIELD_TEXT.chunkSize,
       },
-      { name: 'Lines', value: escape(text), highlight, description: FIELD_TEXT.lines },
+      { name: 'Lines', value: showLineFeeds(text), highlight, description: FIELD_TEXT.lines },
     ],
   }
 }
@@ -396,8 +409,8 @@ function opening(browser: BrowserModel): Step[] {
         id: 'response',
         title: { en: 'A response that does not end', ja: '終わらない応答' },
         description: {
-          en: 'The server answers 200 with Content-Type: text/event-stream and no Content-Length. It sends the body in chunks and keeps the response open, so it can send an event whenever it has one. The browser checks the status and the type, sets readyState to OPEN and fires open.',
-          ja: 'サーバーは Content-Type: text/event-stream の 200 で答え、Content-Length は付けない。本文をチャンクで送り、応答を開いたままにするので、イベントがあればいつでも送れる。ブラウザーは状態コードと種類を確かめ、readyState を OPEN にして open を発火する。',
+          en: 'The server answers 200 with Content-Type: text/event-stream and no Content-Length. It sends the body in chunks and keeps the response open, so it can send an event whenever it has one. The browser checks the status and the Content-Type, sets readyState to OPEN and fires open.',
+          ja: 'サーバーは Content-Type: text/event-stream の 200 で答え、Content-Length は付けない。本文をチャンクで送り、応答を開いたままにするので、イベントがあればいつでも送れる。ブラウザーは状態コードと Content-Type を確かめ、readyState を OPEN にして open を発火する。',
         },
         events: [
           send(streamResponse('response')),
@@ -474,8 +487,8 @@ function normalSteps(): Step[] {
         id: 'close',
         title: { en: 'The page closes the stream', ja: 'ページがストリームを閉じる' },
         description: {
-          en: 'The page calls source.close(). readyState becomes CLOSED and the browser will not reconnect. An unfinished HTTP/1.1 response cannot be followed by another request on the same connection, so the browser closes the TCP connection. close() is the only way for the page to stop the reconnections.',
-          ja: 'ページが source.close() を呼ぶ。readyState は CLOSED になり、ブラウザーはもう接続し直さない。終わっていない HTTP/1.1 の応答のあとに、同じ接続で次の要求は送れないので、ブラウザーは TCP の接続を閉じる。ページが再接続を止められるのは close() だけ。',
+          en: 'The page calls source.close(). readyState becomes CLOSED and the browser will not reconnect. The connection cannot be reused while its response is unfinished, so the browser closes it. close() is the only way for the page to stop the reconnections.',
+          ja: 'ページが source.close() を呼ぶ。readyState は CLOSED になり、ブラウザーはもう接続し直さない。応答が終わっていない接続は使い回せないので、ブラウザーはその接続を閉じる。ページが再接続を止められるのは close() だけ。',
         },
         events: [
           send({
@@ -523,8 +536,8 @@ function reconnectSteps(situation: 'reconnect' | 'stop204'): Step[] {
             id: 'drop',
             title: { en: 'The connection drops', ja: '接続が切れる' },
             description: {
-              en: 'The connection closes in the middle of the stream, without the last chunk, so the response is incomplete (RFC 9110 §6.1). The browser reestablishes the connection: readyState becomes CONNECTING and error fires. The page does nothing; the browser reconnects on its own.',
-              ja: 'ストリームの途中で、最後のチャンクなしに接続が閉じたので、応答は不完全（RFC 9110 §6.1）。ブラウザーは接続を張り直す。readyState は CONNECTING になり、error が発火する。ページは何もしない。ブラウザーが自分で接続し直す。',
+              en: 'The connection closes in the middle of the stream, without the last chunk, so the response is incomplete (RFC 9112 §8). The browser reestablishes the connection: readyState becomes CONNECTING and error fires. The page does nothing; the browser reconnects on its own.',
+              ja: 'ストリームの途中で、最後のチャンクなしに接続が閉じたので、応答は不完全（RFC 9112 §8）。ブラウザーは接続を張り直す。readyState は CONNECTING になり、error が発火する。ページは何もしない。ブラウザーが自分で接続し直す。',
             },
             events: [
               send({
@@ -613,6 +626,7 @@ function reconnectSteps(situation: 'reconnect' | 'stop204'): Step[] {
         },
         events: [
           send(streamResponse('resumed')),
+          ...browser.newStream(),
           browser.setReady('OPEN'),
           ...browser.fire('open'),
           browser.connection('#2', 'GET /events (tab 1)', 'streaming'),
@@ -661,7 +675,7 @@ function wrongTypeSteps(): Step[] {
       title: { en: 'An HTML page instead of a stream', ja: 'ストリームではなく HTML のページ' },
       description: {
         en: 'The route is misconfigured, and the server answers with the application’s HTML page. The status is 200, but the Content-Type is not text/event-stream, so the browser fails the connection: readyState becomes CLOSED, error fires, and it does not try again.',
-        ja: '経路の設定を誤り、サーバーはアプリケーションの HTML のページで答える。状態コードは 200 だが、Content-Type が text/event-stream ではないので、ブラウザーは接続を失敗にする。readyState は CLOSED になり、error が発火し、試し直さない。',
+        ja: 'サーバーのルーティング（URL の割り当て）の設定を誤り、サーバーはアプリケーションの HTML のページで答える。状態コードは 200 だが、Content-Type が text/event-stream ではないので、ブラウザーは接続を失敗にする。readyState は CLOSED になり、error が発火し、試し直さない。',
       },
       events: [
         send({
@@ -689,7 +703,12 @@ function wrongTypeSteps(): Step[] {
         en: 'In both cases the page gets an error event. In onerror it can tell them apart by readyState: 0 (CONNECTING) means the browser is retrying on its own, and 2 (CLOSED) means it has given up, so the page has to create a new EventSource if it wants one.',
         ja: 'どちらの場合も、ページには error のイベントが届く。onerror では readyState で見分けられる。0（CONNECTING）ならブラウザーが自分で試し直していて、2（CLOSED）ならあきらめたので、続けたければページが新しい EventSource を作る。',
       },
-      events: [set(SERVER, STREAMS, '0')],
+      events: [
+        set(BROWSER, CONNECTIONS, {
+          columns: CONNECTION_COLUMNS,
+          rows: [['#1', 'GET /events (tab 1)', 'idle']],
+        }),
+      ],
     },
   ])
 }
@@ -813,8 +832,8 @@ function http1LimitSteps(): Step[] {
       id: 'cart-ok',
       title: { en: 'The answer, and the remedies', ja: '答えと、対策' },
       description: {
-        en: 'The API answers normally. The HTML Standard suggests remedies: share one EventSource between the pages with a shared worker, let each page turn its stream on and off, or use HTTP/2, which carries many streams on one connection (see the next option).',
-        ja: 'API は普通に答える。HTML Standard は対策も挙げている。共有ワーカーで 1 つの EventSource をページの間で分け合う、ページごとにストリームを入れたり切ったりできるようにする、そして 1 本の接続で多くのストリームを運ぶ HTTP/2 を使う（次の選択肢を参照）。',
+        en: 'The API answers normally. The HTML Standard suggests remedies: a separate domain name per connection, letting each page turn its stream on and off, or sharing one EventSource between the pages with a shared worker. HTTP/2 also avoids the problem, because it carries many streams on one connection (see the next option).',
+        ja: 'API は普通に答える。HTML Standard は対策を挙げている。接続ごとに別のドメイン名を使う、ページごとにストリームを入れたり切ったりできるようにする、共有ワーカーで 1 つの EventSource をページの間で分け合う。HTTP/2 でもこの問題は起きない。1 本の接続で多くのストリームを運ぶから（次の選択肢を参照）。',
       },
       events: [
         send({
@@ -910,8 +929,8 @@ function http2Steps(): Step[] {
       id: 's1-ok',
       title: { en: 'A stream that stays open', ja: '開いたままのストリーム' },
       description: {
-        en: 'The response headers carry no END_STREAM, so the stream stays open, and events arrive in DATA frames. HTTP/2 has no chunked transfer coding and no Transfer-Encoding header (RFC 9113 §8.1, §8.2.2).',
-        ja: '応答のヘッダーに END_STREAM がないので、ストリームは開いたままで、イベントは DATA のフレームで届く。HTTP/2 には chunked の転送コーディングも Transfer-Encoding のヘッダーもない（RFC 9113 §8.1、§8.2.2）。',
+        en: 'The response headers carry no END_STREAM, so the response goes on and the stream does not close (from the browser’s side it is half-closed (local), since its request has ended), and events arrive in DATA frames. HTTP/2 has no chunked transfer coding and no Transfer-Encoding header (RFC 9113 §8.1, §8.2.2).',
+        ja: '応答のヘッダーに END_STREAM がないので、応答は続き、ストリームは閉じない（ブラウザーの側から見ると、要求は終わっているので half-closed (local)）。イベントは DATA のフレームで届く。HTTP/2 には chunked の転送コーディングも Transfer-Encoding のヘッダーもない（RFC 9113 §8.1、§8.2.2）。',
       },
       events: [
         send(ok('s1-ok', 1)),
@@ -923,13 +942,13 @@ function http2Steps(): Step[] {
           status: 'delivered',
           fields: [
             { name: 'Stream ID', value: '1' },
-            { name: 'Lines', value: escape(CHUNK_1), description: FIELD_TEXT.lines },
+            { name: 'Lines', value: showLineFeeds(CHUNK_1), description: FIELD_TEXT.lines },
           ],
         }),
         browser.setReady('OPEN'),
         ...browser.fire('open'),
         ...browser.receive(CHUNK_1),
-        browser.connection('#1 s1', 'GET /events (tab 1)', 'open'),
+        browser.connection('#1 s1', 'GET /events (tab 1)', 'streaming'),
         set(SERVER, STREAMS, '1'),
       ],
     },
@@ -955,7 +974,11 @@ function http2Steps(): Step[] {
       events: [
         ...tabStreams.flatMap(({ tab, stream }) => [
           send(ok(`s${String(stream)}-ok`, stream)),
-          browser.connection(`#1 s${String(stream)}`, `GET /events (tab ${String(tab)})`, 'open'),
+          browser.connection(
+            `#1 s${String(stream)}`,
+            `GET /events (tab ${String(tab)})`,
+            'streaming',
+          ),
         ]),
         set(SERVER, STREAMS, '6'),
       ],
@@ -979,8 +1002,8 @@ function http2Steps(): Step[] {
         ja: '別のストリームのフレームが混ざって流れる',
       },
       description: {
-        en: 'The API response on stream 13 ends with END_STREAM, while the next event arrives on stream 1, which stays open. Frames of different streams share the connection (see the HTTP/2 theme).',
-        ja: 'ストリーム 13 の API の応答は END_STREAM で終わり、そのあいだにも次のイベントが、開いたままのストリーム 1 で届く。別のストリームのフレームが 1 本の接続を分け合う（HTTP/2 のテーマを参照）。',
+        en: 'The API response on stream 13 ends with END_STREAM, while the next event arrives on stream 1, which does not close. Frames of different streams share the connection (see the HTTP/2 theme).',
+        ja: 'ストリーム 13 の API の応答は END_STREAM で終わり、そのあいだにも次のイベントが、閉じないストリーム 1 で届く。別のストリームのフレームが 1 本の接続を分け合う（HTTP/2 のテーマを参照）。',
       },
       events: [
         send({
@@ -1004,7 +1027,7 @@ function http2Steps(): Step[] {
           status: 'delivered',
           fields: [
             { name: 'Stream ID', value: '1' },
-            { name: 'Lines', value: escape(CHUNK_2), description: FIELD_TEXT.lines },
+            { name: 'Lines', value: showLineFeeds(CHUNK_2), description: FIELD_TEXT.lines },
           ],
         }),
         ...browser.receive(CHUNK_2),

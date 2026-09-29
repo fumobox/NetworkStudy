@@ -95,6 +95,17 @@ describe('sseScenario', () => {
         'server→browser 204 No Content rejected',
       ])
       expect(final(steps).actorStates.browser?.values.readyState).toBe('CLOSED')
+      // 最後のチャンクのあとも、ブラウザーは CONNECTING になって error を発火し、同じ接続 #1 を使い回す
+      const end = steps.findIndex((s) => s.id === 'end')
+      const atEnd = deriveState(sseScenario.actors, steps, end).actorStates.browser?.values
+      expect(atEnd?.readyState).toBe('CONNECTING')
+      const events = atEnd?.events
+      expect(typeof events === 'object' ? events.rows.at(-1) : undefined).toEqual([
+        'error',
+        '-',
+        '-',
+      ])
+      expect(field(byId(steps, 'reconnect'), 'On connection')).toBe('#1')
     })
 
     it('Content-Type の誤り: 200 でも失敗にして、試し直さない', () => {

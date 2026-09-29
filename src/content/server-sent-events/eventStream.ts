@@ -119,16 +119,19 @@ export function feed(
   let text = chunk
   let started = state.started
   if (!started && text.length > 0) {
-    if (text.startsWith('﻿')) {
+    if (text.startsWith('\uFEFF')) {
       text = text.slice(1)
     }
     started = true
   }
-  let afterCR = state.afterCR
-  if (afterCR && text.startsWith('\n')) {
+  if (text.length === 0) {
+    // 空の chunk では何も変えない（CR の直後の LF を待っている状態も持ち越す）
+    return { state: { ...state, started }, events: [] }
+  }
+  if (state.afterCR && text.startsWith('\n')) {
     text = text.slice(1)
   }
-  afterCR = false
+  let afterCR = false
   let line = state.partial
   for (let i = 0; i < text.length; i++) {
     const c = text[i] ?? ''
