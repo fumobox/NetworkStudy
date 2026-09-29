@@ -38,6 +38,11 @@ describe('PathPage', () => {
     renderAt('/en/paths/web-developer')
     expect(await screen.findByRole('heading', { level: 1, name: WEB.title.en })).toBeInTheDocument()
     expect(screen.getByText(WEB.summary.en)).toBeInTheDocument()
+    // 静的ページ（scripts/static-pages/pages.ts）と同じ説明
+    expect(document.querySelector('meta[name="description"]')).toHaveAttribute(
+      'content',
+      WEB.summary.en,
+    )
     expect(document.title).toBe(
       MESSAGES.en.common.pageTitle({
         page: MESSAGES.en.paths.pageTitle({ path: WEB.title.en }),
@@ -87,6 +92,10 @@ describe('PathPage', () => {
     await screen.findByRole('heading', { level: 1 })
     expect(screen.queryByRole('link', { name: MESSAGES.en.paths.start })).toBeNull()
     expect(screen.queryByRole('link', { name: /^Continue with/ })).toBeNull()
+    const n = String(WEB.themeIds.length)
+    expect(screen.getByRole('region', { name: MESSAGES.en.paths.progressTitle })).toHaveTextContent(
+      `Quizzes completed in ${n} of ${n} themes`,
+    )
   })
 
   it('知らない道筋は 404', async () => {

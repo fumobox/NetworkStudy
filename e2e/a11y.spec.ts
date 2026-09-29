@@ -113,5 +113,24 @@ for (const colorScheme of ['light', 'dark'] as const) {
         await expectNoViolations(page)
       })
     }
+
+    for (const path of LEARNING_PATHS) {
+      test(`axe: クイズに回答した後の道筋のページ（${path.id}）`, async ({ page }) => {
+        const [first] = path.themeIds
+        if (first === undefined) throw new Error('empty path')
+        await page.goto(`en/themes/${first}`)
+        const questions = page
+          .getByRole('region', { name: MESSAGES.en.quiz.title })
+          .getByRole('group')
+        await expect(questions.first()).toBeVisible()
+        await answerWithBothResults(questions, await questions.count())
+        // 進捗の節と「続きから」のボタンが出た状態を確かめる
+        await page.goto(`en/paths/${path.id}`)
+        await expect(
+          page.getByRole('region', { name: MESSAGES.en.paths.progressTitle }),
+        ).toBeVisible()
+        await expectNoViolations(page)
+      })
+    }
   })
 }
