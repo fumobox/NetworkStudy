@@ -23,6 +23,36 @@ Windows の `tracert` は ICMP の Echo をプローブにし、Linux の `trace
 - ICMP のエラーの送信元アドレス。サーバーではなく、エラーを送ったルーターのアドレスになる。
 - 「もしも…」のオプションで、サーバーに届かない場合（Destination Unreachable）、答えが返らない場合（ping では応答のロス、traceroute では 2 ホップ目の `*`）、Port Unreachable で終わる UDP のプローブ。
 
+## 手元で試す
+
+```sh
+ping -c 3 example.com
+traceroute -n -q 1 example.com
+```
+
+出力の一部（macOS 26、2026-09-29）。家のルーターと、インターネットのプロバイダーの最初のいくつかのホップは、例のアドレスに置き換えた。
+
+```
+PING example.com (104.20.23.154): 56 data bytes
+64 bytes from 104.20.23.154: icmp_seq=0 ttl=58 time=35.899 ms
+round-trip min/avg/max/stddev = 30.821/33.124/37.181/2.878 ms
+```
+
+```
+traceroute to example.com (104.20.23.154), 12 hops max, 40 byte packets
+ 1  192.168.1.1  8.609 ms
+ 2  198.51.100.17  11.281 ms
+ 3  198.51.100.149  28.434 ms
+ 4  203.0.113.178  39.474 ms
+ 5  *
+ 6  103.22.201.21  61.408 ms
+ 7  104.20.23.154  38.096 ms
+```
+
+- `time` は、Echo Request と Echo Reply の往復時間。`ttl=58` は応答に残っていた TTL。サーバーはおそらく 64 から始めたので、6 台のルーターを通ってきた。
+- traceroute の 1 行が 1 つの TTL で、その TTL のプローブに Time Exceeded を返したルーター。`*` は、時間内に答えがなかったこと。ルーターは ICMP のエラーを制限したり止めたりすることがあり、その次のホップはまた答える。
+- macOS と Linux の traceroute は、既定で UDP のプローブを送る（ステップ実行の UDP の場合と同じ）。`traceroute -I` は代わりに ICMP の Echo を使い、Windows の `tracert` はいつもそうする。Wireshark の表示フィルターは `icmp`。
+
 ## このページについて
 
 家庭のルーターの NAT は省いたので、PC のプライベートアドレスが経路の最後まで出てくる（NAT のテーマを参照）。traceroute はここではホップごとに 1 回だけ送るが、実際のコマンドは 3 回送って 3 つの時間を表示する。往復時間は描かない（このサイトは遅延を扱わない）。ICMP を制限したり止めたりしているホストやルーターも多いので、答えがないからといって問題があるとは限らない。

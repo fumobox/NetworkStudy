@@ -15,6 +15,26 @@ For a server on the Internet, the PC never learns the server’s MAC address. Th
 - The other PC receives the broadcast but ignores it and does not remember the sender. Only the target adds the PC to its cache.
 - In the “What if…” options: a destination on the same LAN, an entry that is already cached, and a target that is turned off.
 
+## Try it yourself
+
+Your computer’s ARP cache lists the neighbors it has talked to recently:
+
+```sh
+arp -a -n
+```
+
+Trimmed output (macOS 26, 2026-09-29). Addresses on your own network and MAC addresses are replaced here with the values used in this theme.
+
+```
+? (192.168.1.1) at 00:00:5e:00:53:01 on en0 ifscope [ethernet]
+? (192.168.1.20) at 00:00:5e:00:53:14 on en0 ifscope [ethernet]
+? (192.168.1.30) at (incomplete) on en0 [ethernet]
+```
+
+- Each line is one entry of the cache: an IP address on your network and the MAC address that answered for it. The default gateway is almost always there.
+- `(incomplete)` means a request was sent and no reply has come back, as in the “no reply” option of the walkthrough.
+- On Linux, `ip neigh` shows the same cache, with states such as REACHABLE and STALE. In Wireshark, the display filter `arp` shows requests and replies. Deleting entries needs administrator rights and briefly disturbs your connections, so this page does not suggest it.
+
 ## About this page
 
 The switch that connects the devices is not drawn (it delivers the broadcast to every port). How long entries stay in the cache and how many times to retry depend on the OS. Gratuitous ARP, proxy ARP, and IPv6’s replacement for ARP (Neighbor Discovery) are not covered. The MAC addresses are the documentation values of RFC 9542 (formerly RFC 7042).

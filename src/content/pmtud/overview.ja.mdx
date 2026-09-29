@@ -27,6 +27,27 @@ DF が立っていなければ、ルーターは代わりにパケットを**フ
 - ルーターが捨てる **DF** の立ったパケット、ICMP の **Next-Hop MTU**、PC のパス MTU と MSS が下がること。
 - 「もしも…」のオプションで、ファイアウォールが ICMP を遮る場合（**ブラックホール**）と、**DF を立てず**に送る場合（ルーターが分割する）。
 
+## 手元で試す
+
+`ping -D` は Don’t Fragment のビットを立て、`-s` はデータの大きさを決める。1472 バイトのデータに、ICMP のヘッダー 8 バイトと IPv4 のヘッダー 20 バイトを足すと、1500 バイトのパケットになる。
+
+```sh
+ping -c 1 -D -s 1472 example.com
+ping -c 1 -D -s 1473 example.com
+```
+
+出力の一部（macOS 26、2026-09-29）:
+
+```
+$ ping -c 1 -D -s 1472 example.com
+1 packets transmitted, 1 packets received, 0.0% packet loss
+$ ping -c 1 -D -s 1473 example.com
+1 packets transmitted, 0 packets received, 100.0% packet loss
+```
+
+- 1500 バイトのパケットは通る。1501 バイトのものは、このコンピューター自身のリンク（MTU 1500）にさえ収まらず、DF が立っているので断片化もできないため、応答は返ってこない。PPPoE の回線（1492）のように小さいリンクのある経路なら、上限はもっと低く、ルーターが ICMP の「断片化が必要」で答えることがある。
+- Linux では、同じ試しは `ping -M do -s 1472 example.com`。`tracepath example.com` は、パス MTU をホップごとに表示する。Wireshark では、表示フィルター `icmp.type == 3 && icmp.code == 4` で「断片化が必要」のメッセージが見える。
+
 ## 参考
 
 - [RFC 1191: Path MTU Discovery](https://www.rfc-editor.org/rfc/rfc1191)

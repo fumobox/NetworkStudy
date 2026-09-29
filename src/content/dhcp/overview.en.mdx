@@ -18,6 +18,30 @@ An address is only **leased**: the PC may use it for a limited time. At **T1** (
 - Which options each message carries, and the client’s state (INIT → SELECTING → REQUESTING → BOUND).
 - In the “What if…” options: renewing at T1, restarting with a remembered address, a refusal (DHCPNAK), and a lost DISCOVER.
 
+## Try it yourself
+
+macOS keeps the last DHCP reply it received for each interface:
+
+```sh
+ipconfig getpacket en0
+```
+
+Trimmed output (macOS 26, 2026-09-29). Addresses on your own network and MAC addresses are replaced here with the values used in this theme.
+
+```
+op = BOOTREPLY
+yiaddr = 192.168.1.10
+dhcp_message_type (uint8): ACK 0x5
+server_identifier (ip): 192.168.1.1
+lease_time (uint32): 0x15180
+subnet_mask (ip): 255.255.255.0
+router (ip_mult): {192.168.1.1}
+domain_name_server (ip_mult): {192.168.1.1}
+```
+
+- This is the DHCPACK at the end of the walkthrough. `yiaddr` is the address you were given, and the options are the ones the server added: the server identifier (option 54), the lease time (option 51, here 0x15180 = 86400 seconds, one day), the subnet mask (1), the router (3) and the DNS servers (6).
+- `en0` is usually Wi-Fi on a Mac; `networksetup -listallhardwareports` shows which interface is which. On Linux, where to look depends on the DHCP client (for example `nmcli device show` with NetworkManager). In Wireshark, the display filter is `dhcp`.
+
 ## About this page
 
 There is one server; real networks can have several, and each may make an offer. In offices, a **relay agent** on the router forwards DHCP messages to a server on another network (the giaddr field); this is not shown. DHCPDECLINE, DHCPRELEASE, and DHCPINFORM are not covered. The lease of one hour is an example; home routers often use a day. At home, the router is usually also the DHCP server.

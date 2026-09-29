@@ -18,6 +18,30 @@
 - メッセージごとのオプションと、クライアントの状態（INIT → SELECTING → REQUESTING → BOUND）。
 - 「もしも…」のオプションで、T1 での更新、前のアドレスを覚えている再起動、断られる場合（DHCPNAK）、DISCOVER のロス。
 
+## 手元で試す
+
+macOS は、インターフェースごとに最後に受け取った DHCP の応答を覚えている。
+
+```sh
+ipconfig getpacket en0
+```
+
+出力の一部（macOS 26、2026-09-29）。自分のネットワークのアドレスと MAC アドレスは、このテーマで使う値に置き換えた。
+
+```
+op = BOOTREPLY
+yiaddr = 192.168.1.10
+dhcp_message_type (uint8): ACK 0x5
+server_identifier (ip): 192.168.1.1
+lease_time (uint32): 0x15180
+subnet_mask (ip): 255.255.255.0
+router (ip_mult): {192.168.1.1}
+domain_name_server (ip_mult): {192.168.1.1}
+```
+
+- これは、ステップ実行の最後の DHCPACK。`yiaddr` がもらったアドレスで、オプションはサーバーが付けたもの。サーバーの識別子（オプション 54）、リース時間（オプション 51。ここでは 0x15180 = 86400 秒、1 日）、サブネットマスク（1）、ルーター（3）、DNS サーバー（6）。
+- Mac では `en0` はたいてい Wi-Fi。どのインターフェースが何かは `networksetup -listallhardwareports` でわかる。Linux では、見る場所は DHCP のクライアントによる（たとえば NetworkManager なら `nmcli device show`）。Wireshark の表示フィルターは `dhcp`。
+
 ## このページについて
 
 サーバーは 1 台にしている。実際のネットワークでは複数あり、それぞれが提示することがある。会社などでは、ルーターの**リレーエージェント**が DHCP のメッセージを別のネットワークのサーバーに転送する（giaddr のフィールド）が、ここでは描いていない。DHCPDECLINE、DHCPRELEASE、DHCPINFORM は扱わない。1 時間のリースは例で、家庭のルーターでは 1 日などが多い。家庭では、ルーターが DHCP サーバーを兼ねていることが多い。
