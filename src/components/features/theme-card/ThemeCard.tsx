@@ -1,4 +1,6 @@
 import { Link } from 'react-router'
+import type { LearningPathId } from '@/content/learningPaths'
+import { themeSearch } from '@/content/learningPathNav'
 import type { ThemeMeta } from '@/content/themeMeta'
 import { CATEGORY_TONE } from '@/content/themeTone'
 import { localePath, useLocale, useMessages, useText } from '@/lib/i18n'
@@ -12,13 +14,19 @@ interface ThemeCardProps {
   order?: number
   /** クイズの進捗。null なら未挑戦 */
   progress?: { readonly correct: number; readonly total: number } | null
+  /** 見出しの階層。ホームは分類の見出し（h3）の下なので h4、道筋のページは h2 の下なので h3 */
+  headingLevel?: 3 | 4
+  /** 道筋のページから開くとき、テーマのページで道筋の中の位置を示すため ?path= を付ける */
+  pathId?: LearningPathId
 }
 
-export function ThemeCard({ theme, order, progress }: ThemeCardProps) {
+export function ThemeCard({ theme, order, progress, headingLevel = 4, pathId }: ThemeCardProps) {
   const m = useMessages()
   const t = useText()
   const locale = useLocale()
   const tone = TONE_CLASSES[CATEGORY_TONE[theme.category]]
+  const Heading = headingLevel === 3 ? 'h3' : 'h4'
+  const pathname = localePath(locale, `/themes/${theme.id}`)
 
   return (
     <article
@@ -39,16 +47,15 @@ export function ThemeCard({ theme, order, progress }: ThemeCardProps) {
         </span>
       )}
       <div className="min-w-0">
-        {/* ホームでは分類の見出し（h3）の下に置く */}
-        <h4 className="font-heading font-semibold">
+        <Heading className="font-heading font-semibold">
           {/* カード全体をクリックできるようにする（リンクの名前はタイトルだけにする） */}
           <Link
-            to={localePath(locale, `/themes/${theme.id}`)}
+            to={pathId === undefined ? pathname : { pathname, search: themeSearch(pathId) }}
             className="after:absolute after:inset-0 after:content-['']"
           >
             {t(theme.title)}
           </Link>
-        </h4>
+        </Heading>
         <p className="mt-1 text-sm text-muted-foreground">{t(theme.summary)}</p>
         <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
           <DifficultyBadge difficulty={theme.difficulty} />

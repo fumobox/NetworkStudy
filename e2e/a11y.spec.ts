@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_META, type ThemeMeta } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { MESSAGES } from '@/lib/i18n/messages'
@@ -27,6 +28,10 @@ interface PageCase {
 
 const pages: readonly PageCase[] = LOCALES.flatMap((locale) => [
   { path: `${locale}/`, heading: MESSAGES[locale].common.siteName },
+  ...LEARNING_PATHS.map((path) => ({
+    path: `${locale}/paths/${path.id}`,
+    heading: path.title[locale],
+  })),
   ...THEME_METAS.flatMap((meta) => {
     const heading = meta.title[locale]
     const base = `${locale}/themes/${meta.id}`

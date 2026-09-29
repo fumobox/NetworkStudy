@@ -1,5 +1,7 @@
+import { PathCard } from '@/components/features/learning-path/PathCard'
 import { ThemeCard } from '@/components/features/theme-card/ThemeCard'
 import { readQuizScores, summarizeQuizProgress } from '@/components/features/quiz/progress'
+import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_QUIZZES } from '@/content/quizzes'
 import { groupByCategory } from '@/content/themeMeta'
 import { CATEGORY_TONE } from '@/content/themeTone'
@@ -36,6 +38,23 @@ export function HomePage() {
             <p className="text-sm text-muted-foreground">{m.home.overall(overall)}</p>
           </section>
         )}
+
+        {/* 「どこから始めるか」の外に置く（e2e はその中のリンクがすべてのテーマであることを確かめる） */}
+        <section aria-labelledby="home-paths" className="space-y-4">
+          <div className="space-y-1">
+            <h2 id="home-paths" className="font-heading text-xl font-semibold">
+              {m.paths.title}
+            </h2>
+            <p className="text-sm text-muted-foreground">{m.paths.lead}</p>
+          </div>
+          <ul role="list" className="grid gap-4 md:grid-cols-2">
+            {LEARNING_PATHS.map((path) => (
+              <li key={path.id}>
+                <PathCard path={path} progress={summarizeQuizProgress(path.themeIds, scores)} />
+              </li>
+            ))}
+          </ul>
+        </section>
 
         <section aria-labelledby="home-order" className="space-y-4">
           <div className="space-y-1">

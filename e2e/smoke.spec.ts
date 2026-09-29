@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_META, themeMetaOfKind } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { LOCALE_NAMES, MESSAGES } from '@/lib/i18n/messages'
@@ -26,6 +27,33 @@ for (const locale of LOCALES) {
       )
     }
   })
+
+  test(`ホームに学習の道筋のカードがある（${locale}）`, async ({ page }) => {
+    await page.goto(`${locale}/`)
+    const cards = page.getByRole('region', { name: m.paths.title }).getByRole('link')
+    await expect(cards).toHaveText(LEARNING_PATHS.map((path) => path.title[locale]))
+    for (const [index, path] of LEARNING_PATHS.entries()) {
+      await expect(cards.nth(index)).toHaveAttribute(
+        'href',
+        `/NetworkStudy/${locale}/paths/${path.id}`,
+      )
+    }
+  })
+
+  for (const path of LEARNING_PATHS) {
+    test(`道筋 ${path.id} のページに、順番どおりのテーマがある（${locale}）`, async ({ page }) => {
+      await page.goto(`${locale}/paths/${path.id}`)
+      await expect(page.getByRole('heading', { level: 1, name: path.title[locale] })).toBeVisible()
+      const links = page.getByRole('region', { name: m.paths.themesTitle }).getByRole('link')
+      await expect(links).toHaveText(
+        path.themeIds.map((id) => THEME_META.find((meta) => meta.id === id)?.title[locale] ?? id),
+      )
+      await expect(links.first()).toHaveAttribute(
+        'href',
+        `/NetworkStudy/${locale}/themes/${path.themeIds[0] ?? ''}?path=${path.id}`,
+      )
+    })
+  }
 
   for (const meta of themeMetaOfKind('sequence')) {
     test(`${meta.id} を最終ステップまで進める（${locale}）`, async ({ page }) => {
@@ -98,6 +126,15 @@ test('未知のパスは 404 のページを表示する', async ({ page }) => {
   await expect(page.getByRole('heading', { name: MESSAGES.en.notFound.title })).toBeVisible()
 })
 
+test('知らない道筋は 404 のページを表示し、ロケールのない道筋のパスはロケール付きへ移る', async ({
+  page,
+}) => {
+  await page.goto('en/paths/no-such-path')
+  await expect(page.getByRole('heading', { name: MESSAGES.en.notFound.title })).toBeVisible()
+  await page.goto('paths/web-developer')
+  await expect(page).toHaveURL(/\/NetworkStudy\/(en|ja)\/paths\/web-developer$/)
+})
+
 test('サブネット計算: 入力すると結果と URL が変わる', async ({ page }) => {
   await page.goto('en/themes/subnet-calculator')
   const address = page.getByRole('textbox', { name: 'IPv4 address' })
@@ -149,6 +186,17 @@ test.describe('スマホの幅（390px）', () => {
     await expect(page.getByRole('dialog')).toBeHidden()
     await expect(page.getByRole('main')).toBeFocused()
   })
+
+  for (const path of LEARNING_PATHS) {
+    test(`道筋 ${path.id} のページは横にはみ出さない`, async ({ page }) => {
+      await page.goto(`ja/paths/${path.id}`)
+      await expect(page.getByRole('heading', { level: 1, name: path.title.ja })).toBeVisible()
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+      expect(overflow).toBe(0)
+    })
+  }
 
   for (const meta of THEME_META) {
     test(`${meta.id} は横にはみ出さない`, async ({ page }) => {

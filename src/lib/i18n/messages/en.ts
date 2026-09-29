@@ -128,6 +128,18 @@ export const en = {
     progress: (p: { correct: number; total: number }) =>
       `Quiz: ${String(p.correct)} of ${String(p.total)} correct`,
   },
+  paths: {
+    title: 'Learning paths',
+    lead: 'Not sure where to start? Pick the path that matches your work. Each one puts the themes in the order to read them.',
+    pageTitle: (p: { path: string }) => `Learning path: ${p.path}`,
+    themesTitle: 'Themes in this path',
+    themeCount: (p: { count: number }) => `${String(p.count)} themes`,
+    progressTitle: 'Your progress on this path',
+    progress: (p: { finished: number; themes: number }) =>
+      `Quizzes completed in ${String(p.finished)} of ${String(p.themes)} themes`,
+    start: 'Start with the first theme',
+    continue: (p: { title: string }) => `Continue with: ${p.title}`,
+  },
   categories: {
     basics: {
       title: 'Network basics',
