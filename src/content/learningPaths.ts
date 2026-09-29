@@ -49,8 +49,8 @@ const LEARNING_PATH_DEFS: Readonly<Record<LearningPathId, LearningPathDef>> = {
   infrastructure: {
     title: { en: 'Infrastructure and operations', ja: 'インフラ運用向け' },
     summary: {
-      en: 'How hosts get on the network and how packets find their way: addresses and subnets, ARP and DHCP, ping and traceroute, routing and NAT, switches, VLANs and container networks, then DNS, TCP, path MTU problems, firewalls, HTTPS and HTTP caching, and the reverse proxy in front of your services.',
-      ja: 'ホストがネットワークにつながり、パケットが行き先にたどり着くまで。アドレスとサブネット、ARP と DHCP、ping と traceroute、経路制御と NAT、スイッチと VLAN、コンテナーのネットワークを押さえてから、DNS、TCP、パス MTU の問題、ファイアウォール、HTTPS と HTTP のキャッシュ、サービスの前に立つリバースプロキシへ進む。',
+      en: 'How hosts get on the network and how packets find their way: addresses and subnets, ARP and DHCP, ping and traceroute, routing and NAT, switches, VLANs and container networks, then DNS, TCP, path MTU problems, overlays (VXLAN), firewalls, HTTPS and HTTP caching, and the reverse proxy in front of your services.',
+      ja: 'ホストがネットワークにつながり、パケットが行き先にたどり着くまで。アドレスとサブネット、ARP と DHCP、ping と traceroute、経路制御と NAT、スイッチと VLAN、コンテナーのネットワークを押さえてから、DNS、TCP、パス MTU の問題、オーバーレイ（VXLAN）、ファイアウォール、HTTPS と HTTP のキャッシュ、サービスの前に立つリバースプロキシへ進む。',
     },
     themeIds: [
       'osi-model',
@@ -66,6 +66,7 @@ const LEARNING_PATH_DEFS: Readonly<Record<LearningPathId, LearningPathDef>> = {
       'dns-resolution',
       'tcp-handshake',
       'pmtud',
+      'vxlan',
       'firewall',
       'https-overview',
       'http-caching',

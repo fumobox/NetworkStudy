@@ -16,7 +16,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
 
 /**
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
- * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、パス MTU 探索、NAT、NAT 越え、経路制御）、lan: LAN の中（スイッチ、VLAN、コンテナーのネットワーク、Wi-Fi、IPv6 の近隣探索）、
+ * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、パス MTU 探索、NAT、NAT 越え、経路制御）、lan: LAN の中（スイッチ、VLAN、コンテナーのネットワーク、VXLAN、Wi-Fi、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
  * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket、Server-Sent Events、リバースプロキシとロードバランサー）、security: ネットワークのセキュリティ（ファイアウォール、DNSSEC、メールの送信ドメイン認証、HSTS、Cookie と CSRF）
  */
@@ -512,6 +512,22 @@ export const CONTAINER_NETWORKING_META = {
   minutes: 15,
 } as const satisfies ThemeMeta
 
+export const VXLAN_META = {
+  id: 'vxlan',
+  kind: 'sequence',
+  category: 'lan',
+  title: {
+    en: 'VXLAN: stretching a LAN over an IP network',
+    ja: 'VXLAN: IP ネットワークの上に LAN を延ばす',
+  },
+  summary: {
+    en: 'How a VTEP wraps an Ethernet frame in UDP (port 4789) with a 24-bit VNI, floods the first ARP to the other VTEPs and learns which host each MAC address is behind, keeps tenants apart on one network, why the 50 bytes of overhead cause MTU trouble, and how the outer source port spreads flows over equal-cost paths.',
+    ja: 'VTEP が Ethernet のフレームを 24 ビットの VNI とともに UDP（ポート 4789）で包むしくみ、最初の ARP をほかの VTEP に流して、どの MAC アドレスがどのホストの先にいるかを学習するしくみ、1 つのネットワークの上でテナントを分けるしくみ、50 バイトのオーバーヘッドが MTU の問題を起こす理由、外側の送信元ポートで流れを等コストの経路に散らすしくみ。',
+  },
+  difficulty: 'intermediate',
+  minutes: 18,
+} as const satisfies ThemeMeta
+
 export const WIFI_META = {
   id: 'wifi',
   kind: 'sequence',
@@ -546,7 +562,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → コンテナーのネットワーク → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → コンテナーのネットワーク → VXLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -562,6 +578,7 @@ export const THEME_META = [
   SWITCHING_META,
   VLAN_META,
   CONTAINER_NETWORKING_META,
+  VXLAN_META,
   WIFI_META,
   IPV6_ND_META,
   DNS_RESOLUTION_META,
