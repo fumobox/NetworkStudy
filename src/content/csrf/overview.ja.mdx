@@ -65,7 +65,7 @@ OWASP の CSRF Prevention Cheat Sheet は、トークンか Fetch Metadata を�
 
 ## CSRF と CORS
 
-CORS が決めるのは、ページが別のオリジンの応答を**読んで**よいかどうか。要求が**送られる**ことは止めない。HTML のフォームは `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain` しか使えないので、フォームの要求には CORS のプリフライトがいらない。`text/plain` と `credentials: "include"` を付けた `fetch()` の POST でも、Cookie 付きで銀行に届く。ページが答えを読めないだけ。プリフライトを要する JSON の API は偽りにくいが、それは副作用で、対策ではない。[CORS のテーマ](/themes/cors) も参照。
+CORS が決めるのは、ページが別のオリジンの応答を**読んで**よいかどうか。要求が**送られる**ことは止めない。フォームの送信はナビゲーションで CORS の要求ではないので、プリフライトはない。フォームの 3 つの形式 `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain` は、CORS がプリフライトなしで許す Content-Type と同じ。フォームは昔から送れたから。`text/plain` と `credentials: "include"` を付けた `fetch()` の POST でも、Cookie 付きで銀行に届く。ページが答えを読めないだけ。プリフライトを要する JSON の API は偽りにくいが、それは副作用で、対策ではない。[CORS のテーマ](/themes/cors) も参照。
 
 ## ウォークスルーで見るところ
 

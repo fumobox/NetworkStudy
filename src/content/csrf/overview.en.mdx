@@ -65,7 +65,7 @@ The OWASP CSRF Prevention Cheat Sheet recommends tokens or Fetch Metadata as the
 
 ## CSRF and CORS
 
-CORS decides whether a page may **read** a response from another origin. It does not stop the request from being **sent**. An HTML form can only use `application/x-www-form-urlencoded`, `multipart/form-data` or `text/plain`, so its requests never need a CORS preflight. Even a `fetch()` POST with `text/plain` and `credentials: "include"` reaches the bank with the cookie. The page just cannot read the answer. A JSON API that requires a preflight is harder to forge, but that is a side effect, not a defense. See the [CORS theme](/themes/cors).
+CORS decides whether a page may **read** a response from another origin. It does not stop the request from being **sent**. A form submission is a navigation, not a CORS request, so it never gets a preflight. Its three encodings, `application/x-www-form-urlencoded`, `multipart/form-data` and `text/plain`, are exactly the Content-Types that CORS allows without a preflight, because forms could always send them. Even a `fetch()` POST with `text/plain` and `credentials: "include"` reaches the bank with the cookie. The page just cannot read the answer. A JSON API that requires a preflight is harder to forge, but that is a side effect, not a defense. See the [CORS theme](/themes/cors).
 
 ## What to look for in the walkthrough
 
