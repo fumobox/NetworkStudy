@@ -140,7 +140,9 @@ describe('scoreQuiz', () => {
     expect(scoreQuiz(quiz, { q1: 'syn', q2: 'iss' })).toEqual({ correct: 1, answered: 2, total: 2 })
     expect(scoreQuiz(quiz, {})).toEqual({ correct: 0, answered: 0, total: 2 })
   })
+})
 
+describe('QuizPanel の解き直し', () => {
   it('間違えた問題だけを解き直せる。正解した回答は残り、最初の問題にフォーカスが移る', async () => {
     const user = userEvent.setup()
     renderQuiz()
@@ -162,6 +164,24 @@ describe('scoreQuiz', () => {
     expect(JSON.parse(localStorage.getItem(quizStorageKey(quiz.id)) ?? '{}')).toEqual({
       answers: { q2: 'iss1' },
     })
+  })
+
+  it('解き直すボタンは、間違えた数を示す（英語は複数形も）', async () => {
+    const user = userEvent.setup()
+    renderQuiz()
+    await user.click(
+      within(screen.getByRole('group', { name: /Which flag/ })).getByRole('button', {
+        name: 'FIN',
+      }),
+    )
+    await user.click(
+      within(screen.getByRole('group', { name: /Ack of the SYN, ACK/ })).getByRole('button', {
+        name: 'Client ISS',
+      }),
+    )
+    expect(
+      screen.getByRole('button', { name: 'Retry the 2 questions you missed' }),
+    ).toBeInTheDocument()
   })
 
   it('解き直すボタンは、間違えた数を日本語でも示す', async () => {

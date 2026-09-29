@@ -124,7 +124,7 @@ export const en = {
     notStarted: 'Quiz not taken yet',
     overallTitle: 'Your progress',
     overall: (p: { finished: number; themes: number; correct: number; questions: number }) =>
-      `Quizzes finished: ${String(p.finished)} of ${String(p.themes)} themes. Correct answers: ${String(p.correct)} of ${String(p.questions)}.`,
+      `Quizzes completed in ${String(p.finished)} of ${String(p.themes)} themes. Correct answers: ${String(p.correct)} of ${String(p.questions)}.`,
     progress: (p: { correct: number; total: number }) =>
       `Quiz: ${String(p.correct)} of ${String(p.total)} correct`,
   },

@@ -35,12 +35,15 @@ export function HomePage() {
           <p className="text-lg text-muted-foreground">{m.common.tagline}</p>
         </section>
 
-        <section aria-labelledby="home-progress" className="space-y-1">
-          <h2 id="home-progress" className="font-heading text-xl font-semibold">
-            {m.home.overallTitle}
-          </h2>
-          <p className="text-sm text-muted-foreground">{m.home.overall(overall)}</p>
-        </section>
+        {/* 初めての訪問では「0 / N」を出さない。1 問でも答えたら出す */}
+        {all.some((score) => score.answered > 0) && (
+          <section aria-labelledby="home-progress" className="space-y-1">
+            <h2 id="home-progress" className="font-heading text-xl font-semibold">
+              {m.home.overallTitle}
+            </h2>
+            <p className="text-sm text-muted-foreground">{m.home.overall(overall)}</p>
+          </section>
+        )}
 
         <section aria-labelledby="home-order" className="space-y-4">
           <div className="space-y-1">

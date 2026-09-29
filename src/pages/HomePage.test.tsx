@@ -17,13 +17,27 @@ function renderHome(locale: 'en' | 'ja' = 'en') {
 }
 
 describe('HomePage の全体の進捗', () => {
-  it('まだ何も解いていなければ 0', () => {
+  it('まだ何も解いていなければ、進み具合の節は出さない', () => {
+    renderHome()
+    expect(screen.queryByRole('heading', { level: 2, name: 'Your progress' })).toBeNull()
+  })
+
+  it('全問に答えていれば、不正解があっても解き終えたテーマに数える', () => {
+    const [first] = THEME_QUIZZES
+    if (first === undefined) throw new Error('no quizzes')
+    const answers = Object.fromEntries(
+      first.quiz.questions.map((q) => [
+        q.id,
+        q.choices.find((c) => c.id !== q.answerId)?.id ?? q.answerId,
+      ]),
+    )
+    localStorage.setItem(quizStorageKey(first.quiz.id), JSON.stringify({ answers }))
     renderHome()
     expect(screen.getByRole('heading', { level: 2, name: 'Your progress' })).toBeInTheDocument()
     expect(
       screen.getByText(
         MESSAGES.en.home.overall({
-          finished: 0,
+          finished: 1,
           themes: THEME_QUIZZES.length,
           correct: 0,
           questions: totalQuestions,

@@ -102,7 +102,7 @@ function QuestionView({ id, question, index, total, selectedId, onAnswer }: Ques
       id={id}
       role="group"
       aria-labelledby={promptId}
-      // 解き直すときにフォーカスを受ける（Tab の順には入らない）
+      // 解き直すときにフォーカスを受ける（Tab の順には入らない。問題の余白をクリックしてもフォーカスが移るが、枠は出ない）
       tabIndex={-1}
       className="space-y-3 rounded-lg border p-4 wrap-anywhere focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
