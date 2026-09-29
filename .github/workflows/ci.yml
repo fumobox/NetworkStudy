@@ -16,7 +16,8 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    # Lighthouse CI は sitemap.xml の全ページ（テーマと学習の道筋 × en / ja）を 1 つずつ測るので、ページが増えると長くなる
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
