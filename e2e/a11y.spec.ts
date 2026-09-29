@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, test, type Locator, type Page } from '@playwright/test'
+import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_META, type ThemeMeta } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { MESSAGES } from '@/lib/i18n/messages'
@@ -27,6 +28,10 @@ interface PageCase {
 
 const pages: readonly PageCase[] = LOCALES.flatMap((locale) => [
   { path: `${locale}/`, heading: MESSAGES[locale].common.siteName },
+  ...LEARNING_PATHS.map((path) => ({
+    path: `${locale}/paths/${path.id}`,
+    heading: path.title[locale],
+  })),
   ...THEME_METAS.flatMap((meta) => {
     const heading = meta.title[locale]
     const base = `${locale}/themes/${meta.id}`
@@ -105,6 +110,25 @@ for (const colorScheme of ['light', 'dark'] as const) {
         const total = await questions.count()
         expect(total).toBeGreaterThan(1)
         await answerWithBothResults(questions, total)
+        await expectNoViolations(page)
+      })
+    }
+
+    for (const path of LEARNING_PATHS) {
+      test(`axe: クイズに回答した後の道筋のページ（${path.id}）`, async ({ page }) => {
+        const [first] = path.themeIds
+        if (first === undefined) throw new Error('empty path')
+        await page.goto(`en/themes/${first}`)
+        const questions = page
+          .getByRole('region', { name: MESSAGES.en.quiz.title })
+          .getByRole('group')
+        await expect(questions.first()).toBeVisible()
+        await answerWithBothResults(questions, await questions.count())
+        // 進捗の節と「続きから」のボタンが出た状態を確かめる
+        await page.goto(`en/paths/${path.id}`)
+        await expect(
+          page.getByRole('region', { name: MESSAGES.en.paths.progressTitle }),
+        ).toBeVisible()
         await expectNoViolations(page)
       })
     }

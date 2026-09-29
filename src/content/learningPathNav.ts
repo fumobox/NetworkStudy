@@ -5,7 +5,7 @@ import {
   type LearningPath,
   type LearningPathId,
 } from './learningPaths'
-import type { ThemeId } from './themeMeta'
+import { THEME_META, type ThemeId } from './themeMeta'
 
 // テーマのページで、道筋の中の位置と前後のテーマを求める（#243）。
 // learningPaths.ts は scripts と e2e からも読むので import なしに保ち、zod を使う処理はこちらに置く
@@ -19,6 +19,14 @@ const pathParamSchema = z.enum(LEARNING_PATH_IDS)
 export function readPathParam(params: URLSearchParams): LearningPathId | null {
   const parsed = pathParamSchema.safeParse(params.get(PATH_PARAM))
   return parsed.success ? parsed.data : null
+}
+
+/** 道筋の合計の目安の時間（分） */
+export function pathMinutes(path: LearningPath): number {
+  return path.themeIds.reduce(
+    (sum, id) => sum + (THEME_META.find((meta) => meta.id === id)?.minutes ?? 0),
+    0,
+  )
 }
 
 /** テーマのページへのリンクに付けるクエリ */

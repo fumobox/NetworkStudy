@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import {
+  pathMinutes,
   pathPosition,
   pathsContaining,
   readPathParam,
@@ -8,7 +9,7 @@ import {
   themeSearch,
 } from './learningPathNav'
 import { findLearningPath, type LearningPath } from './learningPaths'
-import { THEME_IDS } from './themeMeta'
+import { THEME_IDS, THEME_META } from './themeMeta'
 
 function path(id: string): LearningPath {
   const found = findLearningPath(id)
@@ -106,5 +107,16 @@ describe('resolvePathContext', () => {
         expect(context).toEqual({ kind: 'several', positions: expected })
       }
     }
+  })
+})
+
+describe('pathMinutes', () => {
+  it('道筋のテーマの目安の時間を足す', () => {
+    const expected = WEB.themeIds.reduce(
+      (sum, id) => sum + (THEME_META.find((meta) => meta.id === id)?.minutes ?? 0),
+      0,
+    )
+    expect(pathMinutes(WEB)).toBe(expected)
+    expect(expected).toBeGreaterThan(WEB.themeIds.length)
   })
 })

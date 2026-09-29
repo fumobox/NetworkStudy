@@ -106,6 +106,18 @@ export const ja = {
       `クイズを解き終えたテーマ: ${String(p.themes)} テーマ中 ${String(p.finished)} テーマ。正解: ${String(p.questions)} 問中 ${String(p.correct)} 問。`,
     progress: (p) => `クイズ: ${String(p.total)} 問中 ${String(p.correct)} 問正解`,
   },
+  paths: {
+    title: '学習の道筋',
+    lead: 'どこから始めるか迷ったら、仕事に合った道筋を選ぶ。どの道筋も、読む順にテーマを並べている。',
+    pageTitle: (p) => `学習の道筋: ${p.path}`,
+    themesTitle: 'この道筋のテーマ',
+    themeCount: (p) => `${String(p.count)} テーマ`,
+    progressTitle: 'この道筋の進み具合',
+    progress: (p) =>
+      `クイズを解き終えたテーマ: ${String(p.themes)} テーマ中 ${String(p.finished)} テーマ`,
+    start: '最初のテーマから始める',
+    continue: (p) => `続きから: ${p.title}`,
+  },
   categories: {
     basics: {
       title: 'ネットワークの基礎',

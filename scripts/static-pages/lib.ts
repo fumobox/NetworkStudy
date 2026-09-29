@@ -16,7 +16,7 @@ interface RenderOptions {
   locales: readonly Locale[]
   /** ロケール付きのページなら そのロケール、ルートのリダイレクト用ページなら null */
   locale: Locale | null
-  /** ロケールより後ろのパス。ホームは空文字、テーマは `themes/<id>` */
+  /** ロケールより後ろのパス。ホームは空文字、テーマは `themes/<id>`、道筋は `paths/<id>` */
   route: string
   meta: PageMeta
 }

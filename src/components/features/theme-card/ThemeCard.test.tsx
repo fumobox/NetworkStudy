@@ -29,3 +29,23 @@ describe('ThemeCard', () => {
     expect(screen.getByText('初級')).toHaveClass('bg-tone-green-soft')
   })
 })
+
+describe('ThemeCard の道筋のページでの表示', () => {
+  it('見出しの階層を変えられ、道筋の id を ?path= で付ける', () => {
+    render(
+      <MemoryRouter>
+        <LocaleProvider locale="en">
+          <ThemeCard theme={NAT_META} headingLevel={3} pathId="infrastructure" />
+        </LocaleProvider>
+      </MemoryRouter>,
+    )
+    expect(screen.getByRole('heading', { level: 3 })).toHaveTextContent(NAT_META.title.en)
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/en/themes/nat?path=infrastructure')
+  })
+
+  it('既定は h4 で、クエリを付けない', () => {
+    renderCard(NAT_META)
+    expect(screen.getByRole('heading', { level: 4 })).toBeInTheDocument()
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/ja/themes/nat')
+  })
+})

@@ -28,7 +28,7 @@
   },
   /*
    * e2e から import してよい src は、scripts と同じく DOM や import.meta.env に依存しないモジュール
-   * （src/content/themeMeta.ts、src/lib/i18n/locale.ts、src/lib/i18n/messages/）に限る
+   * （src/content/themeMeta.ts、src/content/learningPaths.ts、src/lib/i18n/locale.ts、src/lib/i18n/messages/）に限る
    */
   "include": ["e2e/**/*.ts", "playwright.config.ts"]
 }
