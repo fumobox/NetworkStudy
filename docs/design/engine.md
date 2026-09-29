@@ -68,11 +68,31 @@ export interface Actor {
 export const MESSAGE_STATUSES = ['delivered', 'lost', 'rejected'] as const
 export type MessageStatus = (typeof MESSAGE_STATUSES)[number]
 
+/** パケットの層（Wireshark の表示名。翻訳しない）。depth はカプセル化の深さ */
+export interface PacketLayerDef {
+  readonly name: ProtocolTerm
+  readonly depth: number
+}
+export const PACKET_LAYERS = {
+  eth: { name: 'Ethernet II', depth: 0 },
+  arp: { name: 'Address Resolution Protocol', depth: 1 },
+  ipv4: { name: 'Internet Protocol Version 4', depth: 1 },
+  icmp: { name: 'Internet Control Message Protocol', depth: 2 },
+  udp: { name: 'User Datagram Protocol', depth: 2 },
+  tcp: { name: 'Transmission Control Protocol', depth: 2 },
+  dns: { name: 'Domain Name System', depth: 3 },
+} as const satisfies Record<string, PacketLayerDef>
+export type PacketLayer = keyof typeof PACKET_LAYERS
+
 export interface PacketField {
   readonly name: ProtocolTerm
   readonly value: ProtocolTerm
   readonly description?: LocalizedText
   readonly highlight?: boolean
+  /** プロトコルの層。1 つのメッセージでは、すべてのフィールドが持つか、どれも持たない */
+  readonly layer?: PacketLayer
+  /** 層の 1 行の要約に `名前: 値` を入れる */
+  readonly inLayerSummary?: boolean
 }
 
 export interface Message {
@@ -338,9 +358,20 @@ ID の一意性などは型ではなく `validateScenario(handle): readonly Scen
   - `retransmitOf` が、それより前に出た message id を指す
   - stateChange の actorId が存在し、key が `stateSlots` で宣言されていて、値の種類（スカラーか表か）が initial と一致する。表の各行の長さが columns と一致する
   - steps が 1 つ以上ある
+  - フィールドの層: すべてのフィールドが持つか、どれも持たない。層は深くなる順に並び（連続する同じ層はまとめて 1 つ）、同じ層が分かれない。`inLayerSummary` は層のあるフィールドだけで、値は 1 行
   - `parseOptions({})` の結果が各 def の `defaultValue` と一致し、toggle の `'1'` → true・`'0'` → false、select の各 choice がそのまま通る（zod スキーマと optionDefs のずれの検出）
 - `collectLocalizedTexts(handle)` を別関数にし、翻訳の網羅テスト（#39）からも使う
 - `ScenarioProblem` は `{ readonly path: string; readonly message: string }`（開発者向けなので英語の文字列でよい）
+
+## パケットの層（src/engine/layers.ts、src/engine/ui/PacketLayerTree.tsx）
+
+Wireshark の詳細のように、フィールドを層ごとに折りたたんで表示する（#242）。
+
+- 値はフィールドにだけ書き、各フィールドに `layer` を付ける。層の木は `groupFieldsByLayer(fields)` が連続した同じ層をまとめて作り、層がなければ null を返す（平らな一覧のまま）。別に層の一覧を持たないので、2 か所の値が食い違わない。上の「層のフィールドが存在する」「空の層がない」は、この形から必ず成り立つ
+- 1 行の要約は、`inLayerSummary` のフィールドを `名前: 値` で `, ` でつないで作る。層の名前も要約も ProtocolTerm で、翻訳しない
+- 表示は層ごとのネイティブの `<details>`（`role="group"` でまとめる）。← → はステップの移動に使うので、矢印キーで動く tree のウィジェットにしない。注目するフィールドを含む層と、いちばん内側の層を開く。開き方はメッセージごとに持ち、details を作り直さない（← → でステップを移ってもフォーカスを失わない）
+- 層のあるメッセージでは、層の木が平らな一覧の代わりになる（同じものを 2 度出さない）
+- エラーのメッセージが運ぶ元のパケット（ICMP の Original datagram）は、1 つのフィールドとして外側の層に置く。中の層を描くなら、深さの規則を広げる
 
 ## What-if オプションと URL
 
@@ -424,3 +455,4 @@ composeScenarios({
 | `parseOptions` の引数を `RawOptionValues` に | URL の分解はエンジンの責務 |
 | `Scenario<TOptions>` と `ScenarioHandle` に分離 | 反変性のため、異なるテーマを同じ型で並べられない |
 | `PlayerStatus` → `isPlaying` + `stepCount` | finished は stepIndex から導出できる |
+| `PacketField.layer`・`inLayerSummary` と `PACKET_LAYERS` を追加（#242） | Wireshark のような層の表示。値は 1 か所に書き、層の木は導出する |
