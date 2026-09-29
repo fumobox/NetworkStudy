@@ -10,6 +10,7 @@ const PREREQUISITES: readonly (readonly [string, string])[] = [
   ['tls-handshake', 'https-overview'],
   ['tls-handshake', 'hsts'],
   ['cors', 'csrf'],
+  ['csrf', 'hsts'],
   ['websocket', 'server-sent-events'],
   ['tcp-handshake', 'firewall'],
   ['tcp-handshake', 'pmtud'],

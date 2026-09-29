@@ -7,7 +7,7 @@ import {
   resolvePathContext,
   themeSearch,
 } from './learningPathNav'
-import { findLearningPath, LEARNING_PATHS, type LearningPath } from './learningPaths'
+import { findLearningPath, type LearningPath } from './learningPaths'
 import { THEME_IDS } from './themeMeta'
 
 function path(id: string): LearningPath {
@@ -51,6 +51,7 @@ describe('pathPosition', () => {
       next: 'dns-resolution',
     })
     expect(pathPosition(WEB, 'cors')).toMatchObject({ previous: 'http-caching', next: 'csrf' })
+    expect(pathPosition(WEB, 'hsts')).toMatchObject({ previous: 'csrf', next: 'http2' })
     expect(pathPosition(WEB, 'reverse-proxy')).toMatchObject({
       index: last,
       previous: 'server-sent-events',
@@ -85,12 +86,25 @@ describe('resolvePathContext', () => {
     expect(resolvePathContext('tcp-sack', null)).toEqual({ kind: 'none' })
   })
 
-  it('どのテーマでも、結果は pathsContaining と一致する', () => {
-    for (const id of THEME_IDS) {
-      const context = resolvePathContext(id, null)
-      const count = { none: 0, single: 1, several: pathsContaining(id).length }[context.kind]
-      expect(pathsContaining(id).length).toBe(count)
+  it('複数の道筋にあるテーマでも、?path= の道筋を選べる', () => {
+    for (const id of ['web-developer', 'infrastructure'] as const) {
+      const context = resolvePathContext('dns-resolution', id)
+      expect(context.kind === 'single' && context.position.path.id).toBe(id)
     }
-    expect(LEARNING_PATHS.length).toBeGreaterThan(1)
+  })
+
+  it('どのテーマでも、?path= がなければテーマを含む道筋の数で決まる', () => {
+    for (const id of THEME_IDS) {
+      const expected = pathsContaining(id)
+      const context = resolvePathContext(id, null)
+      const [first] = expected
+      if (first === undefined) {
+        expect(context).toEqual({ kind: 'none' })
+      } else if (expected.length === 1) {
+        expect(context).toEqual({ kind: 'single', position: first })
+      } else {
+        expect(context).toEqual({ kind: 'several', positions: expected })
+      }
+    }
   })
 })

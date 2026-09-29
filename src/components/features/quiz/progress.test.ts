@@ -68,6 +68,14 @@ describe('summarizeQuizProgress', () => {
     expect(summary).toMatchObject({ finished: 2, correct: 7, nextThemeId: null })
   })
 
+  it('問題のないクイズは答え終えたものとして数えない', () => {
+    const summary = summarizeQuizProgress(
+      ['a'],
+      scores({ a: { correct: 0, answered: 0, total: 0 } }),
+    )
+    expect(summary).toMatchObject({ finished: 0, started: false, nextThemeId: 'a' })
+  })
+
   it('並びにないテーマの得点は数えない', () => {
     const summary = summarizeQuizProgress(
       ['a'],
