@@ -1,5 +1,5 @@
 import { ThemeCard } from '@/components/features/theme-card/ThemeCard'
-import { readQuizAnswers, scoreQuiz } from '@/components/features/quiz/useQuizProgress'
+import { readQuizScores, summarizeQuizProgress } from '@/components/features/quiz/progress'
 import { THEME_QUIZZES } from '@/content/quizzes'
 import { groupByCategory } from '@/content/themeMeta'
 import { CATEGORY_TONE } from '@/content/themeTone'
@@ -12,19 +12,11 @@ export function HomePage() {
   const m = useMessages()
   useDocumentDescription(m.common.tagline)
   // 表示のたびに localStorage を読む（他のタブの回答は、ホームを開き直すまで反映しない）
-  const scores = new Map(
-    THEME_QUIZZES.map((theme) => [
-      theme.meta.id,
-      scoreQuiz(theme.quiz, readQuizAnswers(theme.quiz)),
-    ]),
+  const scores = readQuizScores(THEME_QUIZZES)
+  const overall = summarizeQuizProgress(
+    THEME_QUIZZES.map((theme) => theme.meta.id),
+    scores,
   )
-  const all = [...scores.values()]
-  const overall = {
-    finished: all.filter((score) => score.answered === score.total).length,
-    themes: all.length,
-    correct: all.reduce((sum, score) => sum + score.correct, 0),
-    questions: all.reduce((sum, score) => sum + score.total, 0),
-  }
 
   return (
     <>
@@ -36,7 +28,7 @@ export function HomePage() {
         </section>
 
         {/* 初めての訪問では「0 / N」を出さない。1 問でも答えたら出す */}
-        {all.some((score) => score.answered > 0) && (
+        {overall.started && (
           <section aria-labelledby="home-progress" className="space-y-1">
             <h2 id="home-progress" className="font-heading text-xl font-semibold">
               {m.home.overallTitle}

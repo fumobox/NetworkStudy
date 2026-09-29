@@ -13,6 +13,7 @@ import { ROUTE_TEXT } from './route-lookup/routeText'
 import { CWND_TEXT, cwndSummary } from './tcp-congestion/cwndText'
 import { binarySplitText, SUBNET_TEXT } from './subnet-calculator/subnetText'
 import { CERT_CHAIN_TEXT } from './tls-handshake/certChainText'
+import { LEARNING_PATHS } from './learningPaths'
 import { THEME_META } from './themeMeta'
 
 // docs/glossary.md の表記の規則のうち、機械的に確かめられるものを日本語の文章すべてについて検査する
@@ -119,6 +120,10 @@ describe('用語集（docs/glossary.md）の表記', () => {
       ...THEME_META.flatMap((meta) => [
         { path: `${meta.id}.title`, text: meta.title.ja },
         { path: `${meta.id}.summary`, text: meta.summary.ja },
+      ]),
+      ...LEARNING_PATHS.flatMap((path) => [
+        { path: `paths.${path.id}.title`, text: path.title.ja },
+        { path: `paths.${path.id}.summary`, text: path.summary.ja },
       ]),
       ...collectJapanese(CERT_CHAIN_TEXT, 'tls-handshake.CertChainPanel'),
       ...collectJapanese(SUBNET_TEXT, 'subnet-calculator.SubnetCalculator'),
