@@ -1,0 +1,97 @@
+## 最初の要求は平文の http
+
+スキームを付けずに `example.com` と入力したり、古い `http://` のリンクをたどったりすると、ブラウザーの最初の要求は平文の http で出ていく。気の利いたサイトは https への恒久的なリダイレクト（301 か 308）で答え、そこから先はすべて暗号化される。しかしリダイレクト自体は http で運ばれる。経路の途中にいる者は、それを読むことも、変えることも、渡さないこともできる。
+
+## SSL ストリッピング
+
+2009 年、Moxie Marlinspike は **sslstrip** を発表した。カフェの Wi-Fi のように、同じネットワークにいる攻撃者のための道具。
+
+1. 攻撃者はブラウザーの http の要求を受け取り、サイトに転送する。
+2. サイトは https へのリダイレクトで答える。攻撃者はそれを渡さずに、自分の TLS の接続で自分が従う。
+3. 攻撃者はページを http でブラウザーに返す。`https://` のリンクとリダイレクトは、すべて `http://` に書き換えてある。
+4. 利用者がログインすると、パスワードは http で攻撃者に送られ、攻撃者はそれを https でサイトに渡す。
+
+サイトに見えるのは完全に正しい https のログインで、ただ攻撃者のアドレスから来ている。ブラウザーには正しいページが見え、安全でないことはアドレスバーにしか表れない。
+
+## Cookie と Secure 属性
+
+`Secure` 属性のある Cookie は https でだけ送られる（RFC 6265 §4.1.2.5）。剥ぎ取られた http の要求には付かないので、これはよい。しかし、剥ぎ取られたログインでできた新しいセッションは、攻撃者が自分の TLS の接続で読んでしまう。言語の設定のように `Secure` のない Cookie は、最初の http の要求で漏れる。
+
+sslstrip は、渡す Cookie から `Secure` も外す。今のブラウザーは、同じ名前の既存の `Secure` の Cookie を http の応答で上書きさせない（draft-ietf-httpbis-rfc6265bis §5.7）が、攻撃者がセッションを持ってしまえば役に立たない。
+
+## Strict-Transport-Security
+
+**HSTS**（RFC 6797）は、サイトがブラウザーに「この期間、自分には https だけを使って」と伝えるしくみ。
+
+```
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+```
+
+- `max-age` は秒単位の期間で、ここでは 1 年。`max-age=0` で記録を消す。
+- `includeSubDomains` は、この規則をすべてのサブドメインに広げる。
+- ブラウザーがホストを**既知の HSTS ホスト**として記録するのは、ヘッダーが誤りのない安全な接続で届いたときだけ。http で受けたヘッダーは無視しなければならない（§8.1）。そうしないと、攻撃者が誰に対しても HSTS を付けたり外したりできてしまう。サイトも http では送ってはならない（§7.2）。
+- すべての応答にヘッダーを付ければ、記録は切れない。
+
+## ブラウザーがすること
+
+- **送る前に**、既知の HSTS ホストへの `http://` の URL をすべて `https://` に、明示されたポート 80 を 443 に書き換える（§8.3）。http では何も送らないので、剥ぎ取るものがない。
+- **無視して進めない**。自己署名の証明書など、安全な接続に何か問題があれば、ブラウザーは接続を打ち切らなければならず（§8.4）、それでも先へ進む手段を出すべきでない（§12.1）。HSTS がなければ、ブラウザーはたいてい、利用者が無視して進める警告を出す。
+
+## includeSubDomains
+
+HSTS の記録はホストごとに持つ。`includeSubDomains` のない `example.com` の記録は `www.example.com` を含まないので、`http://www.example.com/` へのリンクは http で出ていき、剥ぎ取られうる。`includeSubDomains` があれば、上位の記録がそれを含む（§8.2、§8.3）。Cookie にも関わる。`Domain=example.com` の Cookie はすべてのサブドメインに送られるので、守られていないサブドメインがあれば、そこから http で漏れる（§14.4）。`includeSubDomains` を付ける前に、すべてのサブドメインが https で動くことを確かめる。
+
+## 初めての訪問とプリロードリスト
+
+HSTS が効くのは、ブラウザーが一度 https でヘッダーを受け取ってから。初めての訪問や、記録の期限が切れたあとは、ブラウザーはほかのサイトと同じく http で始め、攻撃者はその訪問を剥ぎ取れる（§14.6。初回の信頼、TOFU）。
+
+**HSTS プリロードリスト**がこの穴をふさぐ。ブラウザーに組み込まれたホストの一覧で、載っているホストは最初から既知の HSTS ホストになる（§12.3）。Chrome が運営し、ほかのブラウザーも使っているもので、RFC の一部ではない。[hstspreload.org](https://hstspreload.org/) では、正しい証明書を持ち、http を https にリダイレクトし、すべてのサブドメインを https で提供し、1 年以上の `max-age` と `includeSubDomains` と `preload` を送るサイトが申し込める。`preload` は RFC 6797 では定められておらず、ブラウザーは無視する。リストへの同意を示す印にすぎない。
+
+リストはブラウザーの更新とともに配られるので、外すのに何か月もかかる。2026 年 9 月の時点で、このサイトは HSTS は勧めるがプリロードは勧めないとしている。ブラウザーが自分で https に上げることが増えたから。
+
+## HSTS ができないこと
+
+- 攻撃者が接続を**妨げる**ことは止められない。攻撃をエラーに変えるだけ。
+- 自分で正しい証明書を持つフィッシングのサイトや、端末のマルウェアには役に立たない。
+- 記録は時刻で切れるので、端末の時計に頼っている（§14.7）。
+
+## 関連するしくみ
+
+- **自動の格上げ**。ブラウザーは、どのサイトにもまず https を試すようになってきている（HTTPS-First、HTTPS-Only）。HSTS と違い、https に失敗すると http に戻ったり、警告のあと利用者に続けさせたりすることがある。そのため、能動的な攻撃者はまだ問題になりうる。Chrome は、Chrome 154（2026 年 10 月）から「Always Use Secure Connections」を既定で有効にし、https のない公開サイトに初めてアクセスする前に利用者の許可を求めると発表している。
+- **DNS の HTTPS レコード**（RFC 9460）。サイトは DNS に HTTPS レコードを載せられ、それを見つけたブラウザーは、http の URL を https にリダイレクトされたものとして扱う。ただしこの合図は DNS で届き、DNS は保護されていないことが多い（[DNSSEC](/themes/dnssec) を参照）。
+
+## ウォークスルーで見るところ
+
+- 何かを送る前の、ブラウザーの**既知の HSTS ホスト**の表と **HSTS の照合**の結果。
+- 剥ぎ取られる選択肢:
+  - 攻撃者を通る `http` の区間。
+  - 書き換えられたリンクとリダイレクト。
+  - **読めるもの**に表れるパスワード。
+- 守られる選択肢:
+  - アドレスバーでの書き換え。
+  - 暗号文だけを中継する攻撃者。
+  - 更新される記録。
+- 「もしも…」の選択肢:
+  - 期限の切れた記録。
+  - 攻撃者の証明書。
+  - `www.example.com` と `includeSubDomains`。
+  - プリロードリスト。
+
+## このページについて
+
+- スキームを付けずに入力した名前は http で開く。ブラウザーの自動の https への格上げは使わない。
+- 攻撃者は同じ Wi-Fi にいて、すべてのパケットを受け取る。どうやって経路に入ったか（偽のアクセスポイント、ARP スプーフィング）は描かない。[Wi-Fi](/themes/wifi) と [ARP](/themes/arp) のテーマを参照。
+- TLS のハンドシェイクは 3 つのメッセージにまとめる（[TLS 1.3 のテーマ](/themes/tls-handshake) を参照）。TCP と NAT は描かず、TLS の中の HTTP は HTTP/1.1 で示す。
+- 時刻は UTC で、今回の訪問は 2026-10-01T09:00:00Z。ブラウザーによる 301 のキャッシュは描かない。
+- 組み込みのプリロードの項目と、ヘッダーで知った項目を別の行として持つのは、このページの模型。
+
+## 参考
+
+- [RFC 6797: HTTP Strict Transport Security (HSTS)](https://www.rfc-editor.org/rfc/rfc6797) — §6.1、§7、§8.1〜§8.4、§12.1、§12.3、§14.4、§14.6、§14.7
+- [RFC 6265: HTTP State Management Mechanism](https://www.rfc-editor.org/rfc/rfc6265) — §4.1.2.5、§5.4
+- [draft-ietf-httpbis-rfc6265bis-22](https://datatracker.ietf.org/doc/draft-ietf-httpbis-rfc6265bis/) — §5.7（Internet-Draft）
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — §15.4.2（301）、§15.4.9（308）
+- [RFC 9460: Service Binding and Parameter Specification via the DNS (SVCB and HTTPS Resource Records)](https://www.rfc-editor.org/rfc/rfc9460) — §9.5
+- Moxie Marlinspike「New Tricks for Defeating SSL in Practice」Black Hat DC 2009
+- [HSTS Preload List Submission](https://hstspreload.org/)（2026-09-29 に確認）
+- [Google Online Security Blog: HTTPS by default](https://security.googleblog.com/2025/10/https-by-default.html)（2025 年 10 月）
