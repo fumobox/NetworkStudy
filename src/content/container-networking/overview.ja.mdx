@@ -62,6 +62,22 @@ veth ペアのホスト側の端は、Linux の**ブリッジ**につながる�
   - 2 つのコンテナーが同じ送信元ポートを使う。
   - 公開していないポート。
 
+## 手元で試す
+
+これらは Linux の Docker 向けのコマンド。macOS と Windows の Docker Desktop はすべてを VM の中で動かすので、ブリッジは手元のコンピューターからは見えない。どれも設定を読むだけ。
+
+```sh
+docker network inspect bridge
+ip addr show docker0
+bridge link
+docker run --rm alpine ip route
+```
+
+- `docker network inspect bridge` は、サブネット（ふつう 172.17.0.0/16）、ゲートウェイ（172.17.0.1）、動いている各コンテナーのアドレスを表示する。
+- `ip addr show docker0` はブリッジ自身のアドレスを、`bridge link` はブリッジにつながった veth ペアのホスト側の端を表示する。
+- コンテナーの中では、`ip route` が 172.17.0.1（ブリッジ）へのデフォルトの経路を表示する。
+- `docker0` で Wireshark を使うと、表示フィルター `arp || icmp` で、コンテナーがゲートウェイを尋ね、外へ ping するのが見える。MASQUERADE が送信元を書き換える前のもの。
+
 ## このページについて
 
 - ホストは 1 台で IPv4 だけ。ホストのアドレスにはインターネットから届くものとする。実際は、さらに別の NAT の内側にあることが多い。

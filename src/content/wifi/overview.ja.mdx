@@ -95,6 +95,26 @@ AP がなくても、STA どうしで **IBSS**（independent BSS）を作れる�
   - 隠れ端末: RTS/CTS を使う場合と使わない場合。
   - アドホックモード。
 
+## 手元で試す
+
+```sh
+system_profiler SPAirPortDataType
+```
+
+今のネットワークについての出力の一部（macOS 26、2026-09-29。macOS はネットワークの名前を隠す）:
+
+```
+PHY Mode: 802.11ax
+Channel: 6 (2GHz, 20MHz)
+Security: WPA2 Personal
+Signal / Noise: -46 dBm / -88 dBm
+Transmit Rate: 229
+```
+
+- **PHY Mode** の 802.11ax は Wi-Fi 6。**Channel** の 6 は 2.4 GHz の帯で、幅は 20 MHz。**Security** の WPA2 Personal は、鍵がパスフレーズから、ウォークスルーの 4 ウェイハンドシェイクでできたこと。
+- **Signal / Noise** は dBm。その差（ここでは 42 dB）が、リンクの速さをおおむね決める。**Transmit Rate** は今の速さ（Mbit/s）。
+- Linux では、`iw dev wlan0 link` がつながっている AP、周波数、信号の強さを表示する。Wireshark では、表示フィルター `eapol` で 4 ウェイハンドシェイクが見えるが、モニターモードで 802.11 のフレームをキャプチャーしたときだけ。ふつうのキャプチャーでは、通信は Ethernet に見える。
+
 ## このページについて
 
 - 5 GHz の 1 つのチャネルで、non-HT の OFDM を 24 Mb/s で使い、DCF で送る。QoS のヘッダー、パワーセーブ、フラグメンテーション、アグリゲーションはない。

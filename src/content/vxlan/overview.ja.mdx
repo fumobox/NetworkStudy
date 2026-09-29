@@ -89,6 +89,19 @@ RFC 7348 は、外側のヘッダーに DF（Don’t Fragment）ビットを立�
   - 収まらない 1500 バイトのパケット。
   - 2 つの流れが 2 つの別々の経路を通る。
 
+## 手元で試す
+
+Linux では、次のコマンドが VXLAN のデバイス（ここでは `vxlan100`）とその表の設定を読む。
+
+```sh
+ip -d link show type vxlan
+bridge fdb show dev vxlan100
+```
+
+- `ip -d link show type vxlan` は、各デバイスの VNI（`id 100`）、自分のアドレス、宛先ポート（`dstport 4789`。指定しなければ 8472）、`nolearning` などのオプションを表示する。
+- `bridge fdb show dev vxlan100` は転送の表を表示する。MAC アドレスと `dst`（相手の VTEP のアドレス）。MAC アドレスがすべて 0（`00:00:00:00:00:00`）の行が、送信元での複製の流す先の一覧。
+- Wireshark では、表示フィルター `vxlan` で VNI と、中の Ethernet のフレームが見える。Wireshark は UDP のポート 4789 を既定で VXLAN として読む。Linux の古い既定の 8472 なら「Decode As」を使う。
+
 ## このページについて
 
 - ホストは 2 台で、VTEP はそれぞれ 1 つ。VTEP のレーンは、ホストのブリッジと VXLAN のデバイスを合わせたもの。
