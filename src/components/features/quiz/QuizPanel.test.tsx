@@ -140,4 +140,37 @@ describe('scoreQuiz', () => {
     expect(scoreQuiz(quiz, { q1: 'syn', q2: 'iss' })).toEqual({ correct: 1, answered: 2, total: 2 })
     expect(scoreQuiz(quiz, {})).toEqual({ correct: 0, answered: 0, total: 2 })
   })
+
+  it('間違えた問題だけを解き直せる。正解した回答は残り、最初の問題にフォーカスが移る', async () => {
+    const user = userEvent.setup()
+    renderQuiz()
+    const q1 = screen.getByRole('group', { name: /Which flag/ })
+    const q2 = screen.getByRole('group', { name: /Ack of the SYN, ACK/ })
+    await user.click(within(q1).getByRole('button', { name: 'FIN' }))
+    await user.click(within(q2).getByRole('button', { name: 'Client ISS + 1' }))
+    expect(screen.getByText('1 of 2 correct')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Retry the question you missed' }))
+    expect(screen.getByText('1 of 2 correct')).toBeInTheDocument()
+    expect(within(q1).getByRole('button', { name: 'FIN' })).toHaveAttribute('aria-pressed', 'false')
+    expect(within(q2).getByRole('button', { name: /Client ISS \+ 1/ })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect(document.activeElement).toBe(q1)
+    expect(screen.queryByRole('button', { name: /Retry/ })).toBeNull()
+    expect(JSON.parse(localStorage.getItem(quizStorageKey(quiz.id)) ?? '{}')).toEqual({
+      answers: { q2: 'iss1' },
+    })
+  })
+
+  it('解き直すボタンは、間違えた数を日本語でも示す', async () => {
+    const user = userEvent.setup()
+    renderQuiz('ja')
+    const q1 = screen.getByRole('group', { name: /接続を開くフラグ/ })
+    const q2 = screen.getByRole('group', { name: /SYN, ACK の Ack/ })
+    await user.click(within(q1).getByRole('button', { name: 'FIN' }))
+    await user.click(within(q2).getByRole('button', { name: 'クライアントの ISS' }))
+    expect(screen.getByRole('button', { name: '間違えた 2 問を解き直す' })).toBeInTheDocument()
+  })
 })

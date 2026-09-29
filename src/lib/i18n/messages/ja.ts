@@ -87,6 +87,7 @@ export const ja = {
     correctAnswer: '（正解）',
     score: (p) => `${String(p.total)} 問中 ${String(p.correct)} 問正解`,
     reset: 'もう一度',
+    retryIncorrect: (p) => `間違えた ${String(p.count)} 問を解き直す`,
   },
   home: {
     orderTitle: 'どこから始めるか',
@@ -100,6 +101,9 @@ export const ja = {
       '最後のクイズで理解を確かめる。',
     ],
     notStarted: 'クイズは未挑戦',
+    overallTitle: 'これまでの進み具合',
+    overall: (p) =>
+      `クイズを解き終えたテーマ: ${String(p.themes)} テーマ中 ${String(p.finished)} テーマ。正解: ${String(p.questions)} 問中 ${String(p.correct)} 問。`,
     progress: (p) => `クイズ: ${String(p.total)} 問中 ${String(p.correct)} 問正解`,
   },
   categories: {

@@ -1,10 +1,10 @@
 import { Check, X } from 'lucide-react'
-import { useId } from 'react'
+import { useEffect, useId, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import type { Quiz, QuizQuestion } from './types'
-import { useQuizProgress } from './useQuizProgress'
+import { incorrectQuestionIds, useQuizProgress } from './useQuizProgress'
 
 interface QuizPanelProps {
   quiz: Quiz
@@ -19,7 +19,18 @@ export function QuizPanel({ quiz }: QuizPanelProps) {
 function QuizBody({ quiz }: QuizPanelProps) {
   const m = useMessages()
   const titleId = useId()
-  const { answers, score, answer, reset } = useQuizProgress(quiz)
+  const baseId = useId()
+  const { answers, score, answer, reset, retryIncorrect } = useQuizProgress(quiz)
+  const incorrect = incorrectQuestionIds(quiz, answers)
+  // 解き直すときは、最初に解き直す問題にフォーカスを移す（ボタンが消えてフォーカスを失わないように）
+  const focusAfterRetry = useRef<string | null>(null)
+  useEffect(() => {
+    const id = focusAfterRetry.current
+    if (id !== null) {
+      focusAfterRetry.current = null
+      document.getElementById(`${baseId}-${id}`)?.focus()
+    }
+  }, [answers, baseId])
 
   return (
     <section aria-labelledby={titleId} className="space-y-6">
@@ -35,6 +46,7 @@ function QuizBody({ quiz }: QuizPanelProps) {
         {quiz.questions.map((question, i) => (
           <li key={question.id}>
             <QuestionView
+              id={`${baseId}-${question.id}`}
               question={question}
               index={i}
               total={quiz.questions.length}
@@ -47,15 +59,28 @@ function QuizBody({ quiz }: QuizPanelProps) {
         ))}
       </ol>
       {score.answered > 0 && (
-        <Button variant="outline" onClick={reset}>
-          {m.quiz.reset}
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {incorrect.length > 0 && (
+            <Button
+              onClick={() => {
+                focusAfterRetry.current = incorrect[0] ?? null
+                retryIncorrect()
+              }}
+            >
+              {m.quiz.retryIncorrect({ count: incorrect.length })}
+            </Button>
+          )}
+          <Button variant="outline" onClick={reset}>
+            {m.quiz.reset}
+          </Button>
+        </div>
       )}
     </section>
   )
 }
 
 interface QuestionViewProps {
+  id: string
   question: QuizQuestion
   index: number
   total: number
@@ -63,7 +88,7 @@ interface QuestionViewProps {
   onAnswer: (choiceId: string) => void
 }
 
-function QuestionView({ question, index, total, selectedId, onAnswer }: QuestionViewProps) {
+function QuestionView({ id, question, index, total, selectedId, onAnswer }: QuestionViewProps) {
   const m = useMessages()
   const t = useText()
   const promptId = useId()
@@ -74,9 +99,12 @@ function QuestionView({ question, index, total, selectedId, onAnswer }: Question
   return (
     // 長いアドレス（IPv6 など）が狭い画面ではみ出さないよう、どこでも折り返せるようにする
     <div
+      id={id}
       role="group"
       aria-labelledby={promptId}
-      className="space-y-3 rounded-lg border p-4 wrap-anywhere"
+      // 解き直すときにフォーカスを受ける（Tab の順には入らない）
+      tabIndex={-1}
+      className="space-y-3 rounded-lg border p-4 wrap-anywhere focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <div id={promptId}>
         <p className="text-xs text-muted-foreground">{m.quiz.question({ n: index + 1, total })}</p>
