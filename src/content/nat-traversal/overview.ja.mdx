@@ -51,9 +51,9 @@ RFC 4787 は 2 つの振る舞いを分ける。
 
 STUN のための組み込みのコマンドはないが、ビデオ通話のあいだ、ブラウザーで ICE の動きが見える。
 
-- Chrome では、通話中に別のタブで `chrome://webrtc-internals` を開く。ICE の候補が種類とともに並ぶ。`host`（自分のアドレス）、`srflx`（STUN サーバーに見えたアドレス）、`relay`（TURN サーバーのアドレス）。選ばれた候補の組で、どれが勝ったかがわかる。
+- Chrome では、通話中に別のタブで `chrome://webrtc-internals` を開く。ICE の候補が種類とともに並ぶ。`host`（自分のアドレス）、`srflx`（STUN サーバーに見えたアドレス）、`relay`（TURN サーバーのアドレス）。選ばれたペアで、どれが勝ったかがわかる。Chrome はふつう自分の host のアドレスを、乱数の `….local` の名前に隠す。`prflx` の候補が現れることもある。
 - Firefox では `about:webrtc`。
-- Wireshark では、表示フィルター `stun` で STUN のバインディングの要求と応答、TURN のメッセージも見える。
+- Wireshark では、表示フィルター `stun` で STUN の Binding の要求と応答、TURN のメッセージも見える。
 
 ## このページについて
 

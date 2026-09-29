@@ -45,8 +45,8 @@ $ ping -c 1 -D -s 1473 example.com
 1 packets transmitted, 0 packets received, 100.0% packet loss
 ```
 
-- 1500 バイトのパケットは通る。1501 バイトのものは、このコンピューター自身のリンク（MTU 1500）にさえ収まらず、DF が立っているので断片化もできないため、応答は返ってこない。PPPoE の回線（1492）のように小さいリンクのある経路なら、上限はもっと低く、ルーターが ICMP の「断片化が必要」で答えることがある。
-- Linux では、同じ試しは `ping -M do -s 1472 example.com`。`tracepath example.com` は、パス MTU をホップごとに表示する。Wireshark では、表示フィルター `icmp.type == 3 && icmp.code == 4` で「断片化が必要」のメッセージが見える。
+- 1500 バイトのパケットは通る。1501 バイトのものは、このコンピューター自身のリンク（MTU 1500）にさえ収まらず、DF が立っているので分割もできないため、応答は返ってこない。PPPoE の回線（1492）のように小さいリンクのある経路なら、上限はもっと低く、ルーターが ICMP の Fragmentation Needed で答えることがある。
+- Linux では、同じ試しは `ping -M do -s 1472 example.com`。`tracepath example.com` は、パス MTU をホップごとに表示する。Wireshark では、表示フィルター `icmp.type == 3 && icmp.code == 4` で Fragmentation Needed のメッセージが見える。macOS は 1501 バイトのパケットを何も表示せずに捨てる（`netstat -s -p ip` の「datagrams that can't be fragmented」が増える）。Linux は代わりに「message too long」と表示する。
 
 ## 参考
 

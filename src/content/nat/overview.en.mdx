@@ -22,14 +22,14 @@ Many ISPs now also share one public address among their customers with **carrier
 ipconfig getifaddr en0
 ```
 
-Output (macOS 26, 2026-09-29). Addresses on your own network and MAC addresses are replaced here with the values used in this theme.
+Output (macOS 26, 2026-09-29). Addresses on your own network are replaced here with the values used in this theme.
 
 ```
 $ ipconfig getifaddr en0
 192.168.1.10
 ```
 
-- This is your computer’s own address, a private one. A server on the Internet sees something else: your router’s public address. Any “what is my IP address” web page shows that one, and it is different. The router rewrote the source, as in the walkthrough.
+- This is your computer’s own address, a private one. A server on the Internet sees something else: your router’s public address. Any “what is my IP address” web page shows that one, and it is different (if it shows an IPv6 address, look for the IPv4 one; IPv6 does not use NAT). The router rewrote the source, as in the walkthrough.
 - On Linux, `ip -4 addr` shows the interface addresses. If the router’s own outside (WAN) address, shown on its admin page, is in 100.64.0.0/10, your provider uses carrier-grade NAT as well.
 
 ## About this page

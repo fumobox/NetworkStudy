@@ -28,7 +28,7 @@ route -n get 192.168.1.20
 netstat -rn -f inet
 ```
 
-Trimmed output (macOS 26, 2026-09-29). Addresses on your own network and MAC addresses are replaced here with the values used in this theme.
+Trimmed output (macOS 26, 2026-09-29). Addresses on your own network are replaced here with the values used in this theme.
 
 ```
 $ route -n get 192.0.2.10
@@ -40,7 +40,7 @@ destination: 192.168.1.20
   interface: en0
 ```
 
-- For an address on the Internet, the only match is the default route (0.0.0.0/0), so the packet goes to the gateway. For an address on your own network, the route is on-link: there is no gateway, and the packet goes straight out of `en0` (after ARP).
+- For an address on the Internet, the only match is the default route (0.0.0.0/0), so the packet goes to the gateway. For an address on your own network, the route is on-link: there is no gateway, and the packet goes straight out of `en0` (after ARP). Here the neighbor was already in the ARP cache; if it is not, the destination shown is the network itself (192.168.1.0, mask 255.255.255.0).
 - `netstat -rn -f inet` prints the whole IPv4 table. On Linux, the same questions are `ip route get 192.0.2.10` and `ip route`.
 
 ## About this page

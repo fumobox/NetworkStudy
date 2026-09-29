@@ -45,8 +45,8 @@ $ ping -c 1 -D -s 1473 example.com
 1 packets transmitted, 0 packets received, 100.0% packet loss
 ```
 
-- The 1500-byte packet gets through. The 1501-byte one does not even fit this computer’s own link (MTU 1500), and with DF set it may not be fragmented, so no reply comes back. On a path with a smaller link, such as a PPPoE line (1492), the limit would be lower, and a router could answer with an ICMP “fragmentation needed”.
-- On Linux, the same test is `ping -M do -s 1472 example.com`, and `tracepath example.com` shows the path MTU hop by hop. In Wireshark, the display filter `icmp.type == 3 && icmp.code == 4` shows “fragmentation needed” messages.
+- The 1500-byte packet gets through. The 1501-byte one does not even fit this computer’s own link (MTU 1500), and with DF set it may not be fragmented, so no reply comes back. On a path with a smaller link, such as a PPPoE line (1492), the limit would be lower, and a router could answer with an ICMP “Fragmentation Needed”.
+- On Linux, the same test is `ping -M do -s 1472 example.com`, and `tracepath example.com` shows the path MTU hop by hop. In Wireshark, the display filter `icmp.type == 3 && icmp.code == 4` shows “Fragmentation Needed” messages. macOS drops the 1501-byte packet without a message (the counter “datagrams that can't be fragmented” in `netstat -s -p ip` goes up); Linux instead prints “message too long”.
 
 ## References
 

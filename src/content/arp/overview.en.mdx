@@ -32,7 +32,7 @@ Trimmed output (macOS 26, 2026-09-29). Addresses on your own network and MAC add
 ```
 
 - Each line is one entry of the cache: an IP address on your network and the MAC address that answered for it. The default gateway is almost always there.
-- `(incomplete)` means a request was sent and no reply has come back, as in the “no reply” option of the walkthrough.
+- `(incomplete)` means a request was sent and no reply has come back, as when the target is turned off in the “What if…” options.
 - On Linux, `ip neigh` shows the same cache, with states such as REACHABLE and STALE. In Wireshark, the display filter `arp` shows requests and replies. Deleting entries needs administrator rights and briefly disturbs your connections, so this page does not suggest it.
 
 ## About this page
