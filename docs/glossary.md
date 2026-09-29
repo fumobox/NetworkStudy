@@ -51,6 +51,7 @@
 | メールの送信ドメイン認証 | SPF、DKIM、DMARC、ARC、SMTP、MX、EHLO、MAIL FROM、RCPT TO、DATA、From、To、Subject、DKIM-Signature、Authentication-Results、Received、List-Id、_domainkey、_dmarc、v=spf1、ip4、-all、~all、?all、v=DKIM1、k=rsa、d=、s=、h=、bh=、b=、c=、relaxed、strict、v=DMARC1、p=none、p=quarantine、p=reject、adkim、aspf、rua、pass、fail、softfail、neutral、none、temperror、permerror、RFC5321.MailFrom、RFC5322.From、250、550 5.7.1、SRS、smtp.mailfrom、header.d、header.from、accept、accept (p=none)、quarantine、reject、reject (550 5.7.1)、yes、no（状態の値と表の列・行 Identifier、Domain、Result、Aligned、SPF (MAIL FROM)、DKIM (d=)、From (header)、Name、TXT も翻訳しない） |
 | Wi-Fi（802.11） | 802.11、WPA2、WPA2-Personal、WPA2-PSK、WPA3、WPA3-Personal、WEP、SAE、PMF、802.11w、RSN、RSNA、RSNE、AKM、CCMP、CCMP-128、PBKDF2、HMAC-SHA1、PRF-384、AES Key Wrap、KRACK、SSID、BSSID、BSS、ESS、IBSS、DS、STA、AP、TSF、TU、TIM、DTIM、Beacon、Probe Request、Probe Response、Authentication、Association Request、Association Response、Deauthentication、Open System、AID、EAPOL、EAPOL-Key、802.1X、ANonce、SNonce、PMK、PTK、GTK、KCK、KEK、TK、MIC、KDE、Key Information、Key Replay Counter、Install、Key Ack、Key MIC、Secure、Encrypted Key Data、Frame Control、ToDS、FromDS、Retry、Protected、Duration、Address 1〜3、RA、TA、DA、SA、Ack（802.11 のフレーム。TCP の ACK とは別）、RTS、CTS、NAV、CCA、SIFS、DIFS、AIFS、CW、CSMA/CA、CSMA/CD、DCF、EDCA、OFDM、ATIM、Wi-Fi Direct、802.11s（状態の値 State 1〜4（State N (unauthenticated) などの説明付き）、… (channel …, WPA2-PSK)、EAPOL only、open、not used、derived、installed、received、duplicate discarded、MIC invalid (discarded)、MIC valid、EAPOL-Key 4/4 (MIC valid)、Ack received、Ack received (CW back to …)、Beacon (from STA B)、DIFS … + N × … (CW …)、sending (…)、no Ack: …、NAV … (busy)、NAV expired: …、paused (hears the AP’s Ack)、collision (nothing decoded)、ignored (not an AP)、Beacon (TSF synced)、CTS for STA …、Data from STA … (…)、IBSS started、looking for …、joined …、理由コードの 4-way handshake timeout と、表の列 SSID、BSSID、Security、Via、Key、Bits、Value、MAC、State、AID も翻訳しない） |
 | リバースプロキシとロードバランサー | Forwarded、for、by、host、proto、X-Forwarded-For、X-Forwarded-Proto、Via、Host、:authority、:scheme、:method、:path、:status、Connection、Keep-Alive、Proxy-Connection、TE、Transfer-Encoding、Upgrade、Location、Proxy-Status、Retry-After、Authorization、Set-Cookie、Cookie、Cache-Status、connection_terminated、connection_refused、http_response_timeout、destination_unavailable、next-hop、hit、fwd、uri-miss、stored、ttl、s-maxage、private、public、must-revalidate、502 Bad Gateway、503 Service Unavailable、504 Gateway Timeout、201 Created、SERVERID、Path、Secure、HttpOnly、PROXY protocol、SNI、ALPN、h2、L4、L7、DSR、SNAT、HAProxy、nginx、NGINX Plus、/healthz、FIN、RST（状態の値 unknown、up、down、idle、in use、closed、not visible、running、crashed、busy (45 s)、order 1001 created、terminated (cert …)、passthrough (ciphertext only)、B (A by cookie)、A (B is down)、h2, TLS 1.3 to …、TCP to …、TLS 1.3 (cert on A)、フィールド名 Frames、Removed、Line、Visible to the LB、Inside (encrypted)、Request line、Status line、Body、Flags、Dst、Dst port、Handshake、Certificate と、表の列 Backend、Address、Health、Fails、Conn、Requests、State、URL、Cache-Control、Age、Status、Field、Value、TCP peer、Scheme、Forwarded for、Forwarded proto、PROXY src、TLS も翻訳しない） |
+| Cookie と CSRF | SameSite、Strict、Lax、None、Default、Lax-allowing-unsafe、Lax+POST、Set-Cookie、Cookie、Secure、HttpOnly、Path、Domain、__Host-、__Secure-、Sec-Fetch-Site、Sec-Fetch-Mode、Sec-Fetch-Dest、Sec-Fetch-User、same-origin、same-site、cross-site、none、navigate、document、?1、Origin、303 See Other、403 Forbidden、200 OK、application/x-www-form-urlencoded、multipart/form-data、text/plain、form.submit()、location、PSL、OWASP、ambient authority（状態の値 sid sent、sid withheld (Lax)、sid withheld (Strict)、no cookie for evil.example、transferred (to mallory)、403 (no session)、403 (csrf missing)、403 (cross-site)、(not sent)、(none)、(missing)、bank.example (host-only)、yes、1000 USD、0 USD と、表の列 Name、Value、Domain、Path、SameSite、Secure、HttpOnly、Session、User、CSRF token、Initiator の値 bank.example page、redirect from /login、user (link in an email app)、evil.example page (form.submit())、evil.example page (location = …)、link on evil.example (click)、フィールド名 Initiator、Request line、Status line、Location、Host、Content-Type、Body、csrf も翻訳しない） |
 
 ## 3. 訳語の対応表
 
@@ -329,6 +330,21 @@
 | retry | 再試行 | TCP の再送（retransmission）と区別する |
 | timeout | タイムアウト | |
 | shared cache | 共有キャッシュ | |
+| cross-site request forgery (CSRF) | クロスサイトリクエストフォージェリ（CSRF） | |
+| site / same-site / cross-site | サイト／同じサイト／サイトをまたぐ | サイトはスキームと登録可能ドメインの組。値の same-site などは翻訳しない |
+| registrable domain | 登録可能ドメイン | |
+| public suffix / Public Suffix List | パブリックサフィックス／Public Suffix List（PSL） | |
+| session / session cookie | セッション／セッション Cookie | |
+| CSRF token / synchronizer token | CSRF トークン／シンクロナイザートークン | |
+| top-level navigation | トップレベルのナビゲーション | |
+| safe method | 安全なメソッド | RFC 9110 §9.2.1 |
+| attacker | 攻撃者 | |
+| defense in depth | 多層防御 | |
+| cookie jar | Cookie の保存場所 | |
+| host-only (cookie) | ホストだけ | Domain 属性のない Cookie |
+| hidden form / auto-submit | 隠しフォーム／自動送信 | |
+| third-party cookie | サードパーティー Cookie | |
+| user activation | ユーザーの操作 | Sec-Fetch-User |
 | interface | インターフェース | |
 | network card | ネットワークカード | |
 | layer | 層 | 「レイヤー」は UI の説明など一般的な文脈に限る |
