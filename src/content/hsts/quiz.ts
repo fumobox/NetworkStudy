@@ -106,15 +106,15 @@ export const hstsQuiz: Quiz = {
     {
       id: 'preload',
       prompt: {
-        en: 'What problem does the HSTS preload list solve?',
-        ja: 'HSTS のプリロードリストが解決する問題は？',
+        en: 'What does the HSTS preload list do?',
+        ja: 'HSTS のプリロードリストは何をする？',
       },
       choices: [
         {
           id: 'ignore',
           text: {
-            en: 'Browsers ignore Strict-Transport-Security headers that do not contain preload',
-            ja: 'ブラウザーは preload のない Strict-Transport-Security を無視する',
+            en: 'It makes browsers accept Strict-Transport-Security, which they would ignore without preload',
+            ja: 'preload のない Strict-Transport-Security は無視されるので、ブラウザーに受け入れさせる',
           },
         },
         {

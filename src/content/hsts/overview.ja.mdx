@@ -7,7 +7,7 @@
 2009 年、Moxie Marlinspike は **sslstrip** を発表した。カフェの Wi-Fi のように、同じネットワークにいる攻撃者のための道具。
 
 1. 攻撃者はブラウザーの http の要求を受け取り、サイトに転送する。
-2. サイトは https へのリダイレクトで答える。攻撃者はそれを渡さずに、自分の TLS の接続で自分が従う。
+2. サイトは https へのリダイレクトで答える。攻撃者はそれを http に書き換え（または渡さずに持っておき）、自分の TLS の接続で https のページを取りにいく。
 3. 攻撃者はページを http でブラウザーに返す。`https://` のリンクとリダイレクトは、すべて `http://` に書き換えてある。
 4. 利用者がログインすると、パスワードは http で攻撃者に送られ、攻撃者はそれを https でサイトに渡す。
 
@@ -29,8 +29,8 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 - `max-age` は秒単位の期間で、ここでは 1 年。`max-age=0` で記録を消す。
 - `includeSubDomains` は、この規則をすべてのサブドメインに広げる。
-- ブラウザーがホストを**既知の HSTS ホスト**として記録するのは、ヘッダーが誤りのない安全な接続で届いたときだけ。http で受けたヘッダーは無視しなければならない（§8.1）。そうしないと、攻撃者が誰に対しても HSTS を付けたり外したりできてしまう。サイトも http では送ってはならない（§7.2）。
-- すべての応答にヘッダーを付ければ、記録は切れない。
+- ブラウザーがホストを**既知の HSTS ホスト**として記録するのは、ヘッダーが誤りのない安全な接続で届いたときだけ。http で受けたヘッダーは無視しなければならない（§8.1）。そうしないと、攻撃者は通信の見えるどのサイトにも HSTS を付けたり外したりできてしまう。サイトも http では送ってはならない（§7.2）。
+- ヘッダーを受け取るたびに `max-age` が数え直される（§8.1）ので、利用者が訪れ続ける限り記録は切れない。
 
 ## ブラウザーがすること
 
@@ -39,7 +39,7 @@ Strict-Transport-Security: max-age=31536000; includeSubDomains
 
 ## includeSubDomains
 
-HSTS の記録はホストごとに持つ。`includeSubDomains` のない `example.com` の記録は `www.example.com` を含まないので、`http://www.example.com/` へのリンクは http で出ていき、剥ぎ取られうる。`includeSubDomains` があれば、上位の記録がそれを含む（§8.2、§8.3）。Cookie にも関わる。`Domain=example.com` の Cookie はすべてのサブドメインに送られるので、守られていないサブドメインがあれば、そこから http で漏れる（§14.4）。`includeSubDomains` を付ける前に、すべてのサブドメインが https で動くことを確かめる。
+HSTS の記録はホストごとに持つ。`includeSubDomains` のない `example.com` の記録は `www.example.com` を含まないので、`http://www.example.com/` へのリンクは http で出ていき、剥ぎ取られうる。`includeSubDomains` があれば、上位の記録がそれを含む（§8.2、§8.3）。Cookie にも関わる。`Domain=example.com` の Cookie はすべてのサブドメインに送られる。`Secure` のない Cookie は、含まれていないサブドメインから http で漏れる。`Secure` の Cookie でも漏れうる。攻撃者が自分の操る守られていないサブドメインにブラウザーを誘い、利用者が証明書の警告を無視して進めば漏れる（§14.4）。`includeSubDomains` を付ける前に、すべてのサブドメインが https で動くことを確かめる。
 
 ## 初めての訪問とプリロードリスト
 
@@ -57,29 +57,26 @@ HSTS が効くのは、ブラウザーが一度 https でヘッダーを受け�
 
 ## 関連するしくみ
 
-- **自動の格上げ**。ブラウザーは、どのサイトにもまず https を試すようになってきている（HTTPS-First、HTTPS-Only）。HSTS と違い、https に失敗すると http に戻ったり、警告のあと利用者に続けさせたりすることがある。そのため、能動的な攻撃者はまだ問題になりうる。Chrome は、Chrome 154（2026 年 10 月）から「Always Use Secure Connections」を既定で有効にし、https のない公開サイトに初めてアクセスする前に利用者の許可を求めると発表している。
+- **自動の https への書き換え**。ブラウザーは、どのサイトにもまず https を試すようになってきている（HTTPS-First、HTTPS-Only）。HSTS と違い、https に失敗すると http に戻ったり、警告のあと利用者に続けさせたりすることがある。そのため、能動的な攻撃者はまだ問題になりうる。Chrome は 2025 年 10 月に、Chrome 154（2026 年 10 月）から「Always Use Secure Connections」を既定で有効にし、https のない公開サイトに初めてアクセスする前に利用者の許可を求めると発表した。
 - **DNS の HTTPS レコード**（RFC 9460）。サイトは DNS に HTTPS レコードを載せられ、それを見つけたブラウザーは、http の URL を https にリダイレクトされたものとして扱う。ただしこの合図は DNS で届き、DNS は保護されていないことが多い（[DNSSEC](/themes/dnssec) を参照）。
 
 ## ウォークスルーで見るところ
 
 - 何かを送る前の、ブラウザーの**既知の HSTS ホスト**の表と **HSTS の照合**の結果。
-- 剥ぎ取られる選択肢:
+- 記録がないとき（既定と、期限の切れた記録）:
   - 攻撃者を通る `http` の区間。
   - 書き換えられたリンクとリダイレクト。
   - **読めるもの**に表れるパスワード。
-- 守られる選択肢:
+- 記録があるとき（前の訪問で知っている、`includeSubDomains` による `www.example.com`、プリロードリスト）:
   - アドレスバーでの書き換え。
   - 暗号文だけを中継する攻撃者。
   - 更新される記録。
-- 「もしも…」の選択肢:
-  - 期限の切れた記録。
-  - 攻撃者の証明書。
-  - `www.example.com` と `includeSubDomains`。
-  - プリロードリスト。
+- 攻撃者の証明書のとき: `unknown_ca` のアラートと、先へ進めないこと。
 
 ## このページについて
 
-- スキームを付けずに入力した名前は http で開く。ブラウザーの自動の https への格上げは使わない。
+- スキームを付けずに入力した名前は http で開く。ブラウザーが自動で https に上げるしくみは使わない。
+- 攻撃者はサイトの 301 を渡さず、自分で従う。sslstrip は実際にはそれを http に書き換え、ブラウザーが従ったときに https のページを取りにいく。ここでは結果だけを示す。
 - 攻撃者は同じ Wi-Fi にいて、すべてのパケットを受け取る。どうやって経路に入ったか（偽のアクセスポイント、ARP スプーフィング）は描かない。[Wi-Fi](/themes/wifi) と [ARP](/themes/arp) のテーマを参照。
 - TLS のハンドシェイクは 3 つのメッセージにまとめる（[TLS 1.3 のテーマ](/themes/tls-handshake) を参照）。TCP と NAT は描かず、TLS の中の HTTP は HTTP/1.1 で示す。
 - 時刻は UTC で、今回の訪問は 2026-10-01T09:00:00Z。ブラウザーによる 301 のキャッシュは描かない。
@@ -87,7 +84,7 @@ HSTS が効くのは、ブラウザーが一度 https でヘッダーを受け�
 
 ## 参考
 
-- [RFC 6797: HTTP Strict Transport Security (HSTS)](https://www.rfc-editor.org/rfc/rfc6797) — §6.1、§7、§8.1〜§8.4、§12.1、§12.3、§14.4、§14.6、§14.7
+- [RFC 6797: HTTP Strict Transport Security (HSTS)](https://www.rfc-editor.org/rfc/rfc6797) — §2.3.2、§6.1、§7、§8.1〜§8.4、§12.1、§12.3、§14.4、§14.6、§14.7
 - [RFC 6265: HTTP State Management Mechanism](https://www.rfc-editor.org/rfc/rfc6265) — §4.1.2.5、§5.4
 - [draft-ietf-httpbis-rfc6265bis-22](https://datatracker.ietf.org/doc/draft-ietf-httpbis-rfc6265bis/) — §5.7（Internet-Draft）
 - [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — §15.4.2（301）、§15.4.9（308）
