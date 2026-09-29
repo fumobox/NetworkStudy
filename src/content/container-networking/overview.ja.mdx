@@ -1,0 +1,88 @@
+## コンテナーはネットワーク名前空間
+
+コンテナーの中のプログラムから見ると、コンテナーはネットワークの上の別の機械のようだ。自分の `eth0`、自分の IP アドレス、自分の経路と ARP キャッシュを持つ。Linux では、これは**ネットワーク名前空間**（network_namespaces(7)）で、カーネルは名前空間ごとに別のインターフェース、経路表、ファイアウォールの規則を持たせる。名前空間を作って配線するのが、Docker のようなコンテナーの道具。このページは Docker を例にするが、部品はふつうの Linux のもの。
+
+## veth: 仮想のケーブル
+
+**veth ペア**は、いつも 2 つ 1 組で作られる仮想のインターフェースで、片方の端に送ったものは、すぐもう片方の端から出てくる（veth(4)）。Docker は片方の端を `eth0` としてコンテナーの中に入れ、もう片方の端（`veth1a2b3c4` のような名前）をホストに残す。veth ペアは何も判断しない。ただのケーブルなので、ウォークスルーではコンテナーとブリッジの間の矢印として描く。
+
+## ブリッジ: ホストの中のスイッチ
+
+veth ペアのホスト側の端は、Linux の**ブリッジ**につながる。Docker の既定のネットワークでは `docker0` という名前。ブリッジは[スイッチ](/themes/switching)とまったく同じことをする。どの MAC アドレスがどのポートの先にあるかを学習し、フレームをそのポートに転送し、ブロードキャストと知らない宛先はほかのすべてのポートに流す。
+
+ブリッジはホストの中に自分のインターフェースも持ち、IP アドレスがある。Docker の既定のブリッジでは `172.17.0.1` で、コンテナーは `172.17.0.0/16` からアドレスをもらう。このアドレスがコンテナーの**デフォルトゲートウェイ**。ブリッジ自身の MAC アドレスに送ったフレームは、ほかのポートには転送されず、ホストの IP の処理に上がる。ホストはそれを、ルーターと同じように経路を選んで送る。
+
+## 外へ出る: MASQUERADE
+
+コンテナーがインターネットのサーバーに接続するとき、次のことが起きる。
+
+1. サーバーはコンテナーのネットワークにないので、コンテナーはパケットをデフォルトゲートウェイに送る。そのために、まずゲートウェイの MAC アドレスを [ARP](/themes/arp) で尋ねる。
+2. フレームは veth ペアとブリッジを通ってホストに上がる。ホストは外側のインターフェースへの経路を選び、TTL を 1 減らす。Docker が IP 転送を有効にしているので、これができる。
+3. コンテナーのアドレス（`172.17.0.2`）はプライベートアドレス（RFC 1918）なので、そのままでは返事が戻ってこない。NAT の規則がパケットを**マスカレード**する。送信元を、パケットが出ていくインターフェースのアドレスに書き換える。家庭のルーターと同じ [NAPT](/themes/nat)（RFC 3022）。同じサーバーへのほかの接続が使っていなければ、ポートはそのまま。
+4. ホストの**接続の追跡**（conntrack）は、この接続を 2 つの組で記録する。元の向きと、これから来るはずの返事の向き。NAT は、この 2 つの組の違いとして表れる。
+5. 返事は追跡している接続に当たるので、ホストは規則を見ずに宛先を元に戻し、ブリッジを通してコンテナーに送る。NAT の規則を見るのは、接続の最初のパケットだけ。
+
+返事は追跡している接続と照らし合わせるので、返事を通す規則は要らない。[ステートフルファイアウォール](/themes/firewall)と同じしくみ。
+
+## 中へ入る: ポートの公開
+
+ホストの外からは、そのままではコンテナーに届かない。`docker run -p 8080:80` は、コンテナーのポート 80 をホストのポート 8080 として**公開**する。Docker は **DNAT** の規則を足す。ホストのアドレスのポート 8080 への TCP の宛先を、コンテナーのアドレスとポート 80 に変える。変わるのは宛先だけなので、コンテナーの中のアプリケーションには本当のクライアントのアドレスが見え、返事の送信元はホストのポート 8080 に戻される。
+
+公開したポートには、既定ではホストのすべてのアドレス（`0.0.0.0` と `[::]`）で届き、そこにはグローバルアドレスも含まれうる。ホストの中からだけ使えるようにするには `-p 127.0.0.1:8080:80` にする（Engine 28 より前は、同じ LAN のホストからも届くことがあった）。公開していないポートには、ホストの外からはまったく届かない。コンテナーのアドレスにはインターネットでの経路がなく、Engine 28 からは、既定の `nat` のゲートウェイのモードで、ホストの LAN からの直接のアクセスも Docker が止めている。
+
+## コンテナー同士
+
+同じブリッジのコンテナーは直接話す。コンテナーは相手のコンテナーの MAC アドレスを尋ね、ブリッジが 2 つの veth のポートの間でフレームを転送する。経路の選択も変換もなく、TTL も変わらない。公開は要らない。
+
+**ユーザー定義のネットワーク**（`docker network create`）では、Docker は各コンテナーに `127.0.0.11` の**組み込みの DNS サーバー**も与える。同じネットワークのコンテナーの名前（`db` など）に答え、ほかの名前はホストに設定された DNS サーバーに転送する。既定のブリッジにはこの名前解決がなく、コンテナーは（古い `--link` を除いて）IP アドレスでしか互いに届かない。ユーザー定義のネットワークは、それぞれ専用のブリッジ（`br-` とネットワーク ID の先頭の名前）と、専用のアドレスの範囲（次は `172.18.0.0/16`）を持つ。別のネットワークのコンテナー同士は、直接には届かない（届くのは、ホストで公開したポートを通してだけ）。
+
+## 標準か、実装か
+
+- **標準**: ARP（RFC 826）、ブリッジ（IEEE 802.1Q）、NAPT（RFC 3022）、プライベートアドレス（RFC 1918）、TCP（RFC 9293）。
+- **Linux**: ネットワーク名前空間、veth、ブリッジ、netfilter の NAT と接続の追跡（conntrack の状態の名前 `SYN_SENT` などは、RFC の `SYN-SENT` と違う）。
+- **Docker の選択**: `docker0`、`172.17.0.0/16` から始まるアドレスのプール、`-p`、組み込みの DNS サーバー、Docker が書く規則。ほかの道具（Podman、Kubernetes のネットワークのプラグイン）は、同じ Linux の部品で別の選択をする。
+
+## 版によって変わるもの
+
+- Docker は既定では iptables で規則を書き、nftables も使える。チェーンの名前は違うが、結果は同じ。
+- ホスト自身から公開したポートへの接続（`localhost:8080` など）や、設定によってはほかのコンテナーからの接続は、NAT ではなく Docker の `docker-proxy` のプロセスが扱うことがある。
+- Engine 28 より前は、コンテナーの MAC アドレスを IP アドレスから作っていた（172.17.0.2 なら `02:42:ac:11:00:02`）。それ以降は乱数。
+- `br_netfilter` のモジュールを読み込んでいると（`bridge-nf-call-iptables` が有効なら）、ブリッジを通るパケットもホストの netfilter を通り、接続の追跡にも記録される。
+- macOS と Windows の Docker Desktop は、これをすべて Linux の VM の中で行うので、目の前のホストに `docker0` はない。
+
+## ウォークスルーで見るところ
+
+- **MAC アドレステーブル**（FDB）と**ブリッジの判断**。流す、転送する、ホストに上げる。
+- **TTL**。コンテナーからは 64、ホストが経路を選ぶと 63、ブリッジを通るだけなら 64 のまま。
+- **接続の追跡**。元の向きと返事の向きの組と、状態（`SYN_SENT`、`SYN_RECV`、`ESTABLISHED`、`CLOSE`）。
+- 「もしも…」の選択肢:
+  - 公開したポートの DNAT。
+  - 同じブリッジの 2 つのコンテナー。
+  - ユーザー定義のネットワークの名前解決。
+  - 2 つのコンテナーが同じ送信元ポートを使う。
+  - 公開していないポート。
+
+## このページについて
+
+- ホストは 1 台で IPv4 だけ。ホストのアドレスにはインターネットから届くものとする。実際は、さらに別の NAT の内側にあることが多い。
+- ホストと外の間の Ethernet のヘッダーと、ホストから上流のルーターへの ARP は描かない。
+- MAC アドレスは説明用の値（RFC 9542）で、veth ペアのホスト側の端は `vethA` と `vethB` と呼ぶ。
+- FDB には、ブリッジ自身の行と学習した行だけを示す。
+- TCP はハンドシェイクだけで、シーケンス番号は描かない。
+- NAT の規則は、iptables でも nftables でもない表で示す。
+- 送信元のポートが重なったときの新しいポート 40001 は例の値。Linux がどのポートを選ぶかは決まっていない。
+- `br_netfilter`、`docker-proxy`、組み込みの DNS サーバーのしくみは描かない。
+
+## 参考
+
+- [RFC 826: An Ethernet Address Resolution Protocol](https://www.rfc-editor.org/rfc/rfc826)
+- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §3.3.1
+- [RFC 1918: Address Allocation for Private Internets](https://www.rfc-editor.org/rfc/rfc1918)
+- [RFC 3022: Traditional IP Network Address Translator](https://www.rfc-editor.org/rfc/rfc3022) — §2.2
+- [RFC 9293: Transmission Control Protocol](https://www.rfc-editor.org/rfc/rfc9293) — §3.5、§3.10.7.1
+- IEEE Std 802.1Q-2022、clause 8.6〜8.8（ブリッジ）
+- [veth(4)](https://man7.org/linux/man-pages/man4/veth.4.html)、[network_namespaces(7)](https://man7.org/linux/man-pages/man7/network_namespaces.7.html)
+- [Linux kernel: Ethernet Bridging](https://docs.kernel.org/networking/bridge.html)
+- [nftables wiki: Performing Network Address Translation (NAT)](https://wiki.nftables.org/wiki-nftables/index.php/Performing_Network_Address_Translation_(NAT))
+- Docker のドキュメント（2026-09-29 に確認）: [Networking overview](https://docs.docker.com/engine/network/)、[Bridge network driver](https://docs.docker.com/engine/network/drivers/bridge/)、[Port publishing and mapping](https://docs.docker.com/engine/network/port-publishing/)、[Packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/)
+- [Docker Engine 28 のリリースノート](https://docs.docker.com/engine/release-notes/28/)

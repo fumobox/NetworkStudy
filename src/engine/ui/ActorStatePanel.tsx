@@ -140,10 +140,11 @@ function StateTableView({
   const m = useMessages()
   const { ref, overflowing } = useHorizontalOverflow<HTMLDivElement>()
   return (
-    // はみ出して横にスクロールするときだけ、キーボードでも動かせるようフォーカスできるようにする
+    // はみ出して横にスクロールするときだけ、キーボードでも動かせるようフォーカスできるようにする。
+    // relative: 行の中の sr-only（position: absolute）が、この枠を越えてページを横に広げないように
     <div
       ref={ref}
-      className="overflow-x-auto rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+      className="relative overflow-x-auto rounded-sm focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
       {...(overflowing ? { tabIndex: 0 } : {})}
     >
       <table className="w-full text-left font-mono text-xs">

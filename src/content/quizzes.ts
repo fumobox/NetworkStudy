@@ -61,11 +61,13 @@ import {
   TCP_SACK_META,
   TLS_HANDSHAKE_META,
   VLAN_META,
+  CONTAINER_NETWORKING_META,
   WEBSOCKET_META,
   WIFI_META,
 } from './themeMeta'
 import { tlsHandshakeQuiz } from './tls-handshake/quiz'
 import { vlanQuiz } from './vlan/quiz'
+import { containerNetworkingQuiz } from './container-networking/quiz'
 import { webSocketQuiz } from './websocket/quiz'
 import { wifiQuiz } from './wifi/quiz'
 import type { ThemeModule } from './types'
@@ -88,6 +90,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: ROUTE_LOOKUP_META, quiz: routeLookupQuiz },
   { meta: SWITCHING_META, quiz: switchingQuiz },
   { meta: VLAN_META, quiz: vlanQuiz },
+  { meta: CONTAINER_NETWORKING_META, quiz: containerNetworkingQuiz },
   { meta: WIFI_META, quiz: wifiQuiz },
   { meta: IPV6_ND_META, quiz: ipv6NdQuiz },
   { meta: DNS_RESOLUTION_META, quiz: dnsResolutionQuiz },

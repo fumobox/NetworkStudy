@@ -1,0 +1,88 @@
+## A container is a network namespace
+
+To its programs, a container looks like a separate machine on the network: it has its own `eth0`, its own IP address, its own routes and its own ARP cache. On Linux this is a **network namespace** (network_namespaces(7)). The kernel gives each namespace its own interfaces, routing table and firewall rules. Container tools such as Docker create the namespace and wire it up. This page uses Docker as the example, but the pieces are plain Linux.
+
+## veth: a virtual cable
+
+A **veth pair** is two virtual interfaces that are always created together: whatever is sent into one end comes out of the other at once (veth(4)). Docker puts one end inside the container as `eth0` and leaves the other end, with a name like `veth1a2b3c4`, in the host. A veth pair makes no decisions. It is just a cable, so the walkthrough draws it as the arrow between a container and the bridge.
+
+## The bridge: a switch inside the host
+
+The host ends of the veth pairs are attached to a Linux **bridge**, which on Docker’s default network is called `docker0`. A bridge does exactly what a [switch](/themes/switching) does: it learns which MAC address is behind which port, forwards frames to that port, and floods broadcasts and unknown destinations to every other port.
+
+The bridge also has an interface of its own in the host, with an IP address: `172.17.0.1` on Docker’s default bridge, whose containers get addresses from `172.17.0.0/16`. That address is the containers’ **default gateway**. A frame sent to the bridge’s own MAC address is not switched to another port. It goes up to the host’s IP stack, which routes it like any router.
+
+## Going out: MASQUERADE
+
+When a container connects to a server on the Internet:
+
+1. The server is not on the container’s network, so the container sends the packet to its default gateway. First it asks for the gateway’s MAC address with [ARP](/themes/arp).
+2. The frame crosses the veth pair and the bridge and goes up to the host. The host routes it to its outside interface and lowers the TTL by 1. This works because Docker turns on IP forwarding.
+3. The container’s address (`172.17.0.2`) is private (RFC 1918), so a reply to it could never come back. A NAT rule **masquerades** the packet: it rewrites the source to the address of the interface the packet leaves by. This is the same [NAPT](/themes/nat) a home router does (RFC 3022). The port is kept if no other connection to the same server already uses it.
+4. The host’s **connection tracking** (conntrack) records the connection with two tuples: the original direction, and the reply it now expects. NAT is the difference between the two.
+5. The reply matches the tracked connection, so the host changes the destination back and sends it through the bridge to the container, without looking at any rule. NAT rules are only looked at for the first packet of a connection.
+
+Because replies are matched against tracked connections, no rule is needed to let them in. That is also what a [stateful firewall](/themes/firewall) does.
+
+## Coming in: publishing a port
+
+Nothing outside the host can reach a container by itself. `docker run -p 8080:80` **publishes** port 80 of the container as port 8080 of the host. Docker adds a **DNAT** rule: TCP to port 8080 of a host address has its destination changed to the container’s address and port 80. Only the destination changes, so the application in the container sees the real client’s address, and the reply’s source is changed back to the host’s port 8080.
+
+By default, a published port is reachable on all of the host’s addresses (`0.0.0.0` and `[::]`), which may include a public one. Use `-p 127.0.0.1:8080:80` to publish it to the host only (before Engine 28, hosts on the same LAN could sometimes still reach it). A port that is not published cannot be reached from outside the host at all. The container’s address has no route on the Internet, and since Engine 28, in the default `nat` gateway mode, Docker also blocks direct access to it from the host’s LAN.
+
+## Between containers
+
+Containers on the same bridge talk directly. A container asks for the other container’s MAC address, and the bridge switches the frames between the two veth ports. Nothing is routed or translated, and the TTL does not change. Publishing is not needed for this.
+
+On a **user-defined network** (`docker network create`), Docker also gives each container its **embedded DNS server** at `127.0.0.11`. It answers the names of containers on the same network (such as `db`) and forwards other names to the DNS servers configured on the host. On the default bridge there is no such lookup, and containers reach each other only by IP address (apart from the legacy `--link` option). Each user-defined network has its own bridge, named `br-` plus the start of the network ID, and its own address range (the next one is `172.18.0.0/16`). Containers on different networks cannot reach each other directly, only through ports published on the host.
+
+## Standard or implementation?
+
+- **Standards:** ARP (RFC 826), bridging (IEEE 802.1Q), NAPT (RFC 3022), private addresses (RFC 1918), TCP (RFC 9293).
+- **Linux:** network namespaces, veth, the bridge, netfilter’s NAT and connection tracking (conntrack’s state names such as `SYN_SENT` differ from the RFC’s `SYN-SENT`).
+- **Docker’s choices:** `docker0`, the address pools starting at `172.17.0.0/16`, `-p`, the embedded DNS server, and the rules it writes. Other tools (Podman, Kubernetes network plugins) make different choices with the same Linux pieces.
+
+## What depends on the version
+
+- Docker writes its rules with iptables by default and can use nftables. The chain names differ, and the result is the same.
+- Connections to a published port from the host itself (such as `localhost:8080`), and in some setups from other containers, can be handled by Docker’s `docker-proxy` process instead of NAT.
+- Before Engine 28, a container’s MAC address was derived from its IP address (`02:42:ac:11:00:02` for 172.17.0.2). Since then it is random.
+- If the `br_netfilter` module is loaded, bridged packets also pass the host’s netfilter hooks (with `bridge-nf-call-iptables` on), and connection tracking records them too.
+- Docker Desktop on macOS and Windows runs all of this inside a Linux VM, so there is no `docker0` on the host you see.
+
+## What to look for in the walkthrough
+
+- The **MAC address table (FDB)** and **What the bridge did**: flooding, forwarding, and passing frames up to the host.
+- The **TTL**: 64 from the container, 63 after the host routes, and still 64 across the bridge.
+- **Connection tracking**: the original and reply tuples, and the state (`SYN_SENT`, `SYN_RECV`, `ESTABLISHED`, `CLOSE`).
+- In the “What if…” options:
+  - the DNAT of a published port;
+  - two containers on one bridge;
+  - the name lookup on a user-defined network;
+  - two containers using the same source port;
+  - a port that is not published.
+
+## About this page
+
+- One host with IPv4 only, and its address can be reached from the Internet. In practice it is often behind another NAT.
+- The Ethernet header between the host and the outside, and the host’s ARP to its upstream router, are left out.
+- MAC addresses are documentation values (RFC 9542), and the host ends of the veth pairs are called `vethA` and `vethB`.
+- The FDB shows only the bridge’s own entry and learned entries.
+- TCP shows the handshake only, without sequence numbers.
+- NAT rules are shown in a table, not in iptables or nftables syntax.
+- When two source ports collide, the new port 40001 is an example: which port Linux picks is not fixed.
+- `br_netfilter`, `docker-proxy` and how the embedded DNS server works are not drawn.
+
+## References
+
+- [RFC 826: An Ethernet Address Resolution Protocol](https://www.rfc-editor.org/rfc/rfc826)
+- [RFC 1122: Requirements for Internet Hosts](https://www.rfc-editor.org/rfc/rfc1122) — §3.3.1
+- [RFC 1918: Address Allocation for Private Internets](https://www.rfc-editor.org/rfc/rfc1918)
+- [RFC 3022: Traditional IP Network Address Translator](https://www.rfc-editor.org/rfc/rfc3022) — §2.2
+- [RFC 9293: Transmission Control Protocol](https://www.rfc-editor.org/rfc/rfc9293) — §3.5, §3.10.7.1
+- IEEE Std 802.1Q-2022, clauses 8.6–8.8 (bridges)
+- [veth(4)](https://man7.org/linux/man-pages/man4/veth.4.html) and [network_namespaces(7)](https://man7.org/linux/man-pages/man7/network_namespaces.7.html)
+- [Linux kernel: Ethernet Bridging](https://docs.kernel.org/networking/bridge.html)
+- [nftables wiki: Performing Network Address Translation (NAT)](https://wiki.nftables.org/wiki-nftables/index.php/Performing_Network_Address_Translation_(NAT))
+- Docker documentation (checked 2026-09-29): [Networking overview](https://docs.docker.com/engine/network/), [Bridge network driver](https://docs.docker.com/engine/network/drivers/bridge/), [Port publishing and mapping](https://docs.docker.com/engine/network/port-publishing/), [Packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/)
+- [Docker Engine 28 release notes](https://docs.docker.com/engine/release-notes/28/)

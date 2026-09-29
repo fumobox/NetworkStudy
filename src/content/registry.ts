@@ -30,6 +30,7 @@ import { tcpSackTheme } from './tcp-sack'
 import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
 import { vlanTheme } from './vlan'
+import { containerNetworkingTheme } from './container-networking'
 import { webSocketTheme } from './websocket'
 import { wifiTheme } from './wifi'
 import type { ThemeModule } from './types'
@@ -48,6 +49,7 @@ export const THEMES: readonly ThemeModule[] = [
   routeLookupTheme,
   switchingTheme,
   vlanTheme,
+  containerNetworkingTheme,
   wifiTheme,
   ipv6NdTheme,
   dnsResolutionTheme,

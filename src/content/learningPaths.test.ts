@@ -16,6 +16,8 @@ const PREREQUISITES: readonly (readonly [string, string])[] = [
   ['tcp-handshake', 'pmtud'],
   ['arp', 'dhcp'],
   ['switching', 'vlan'],
+  ['nat', 'container-networking'],
+  ['switching', 'container-networking'],
 ]
 
 describe('学習の道筋', () => {
