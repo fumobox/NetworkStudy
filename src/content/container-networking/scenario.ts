@@ -421,8 +421,9 @@ type Port = 'vethA' | 'vethB' | 'bridge'
 class HostModel {
   fdb: readonly FdbEntry[]
   conntrack: readonly ConntrackEntry[] = []
-  private readonly neigh: [string, string][] = []
-  private readonly arpCache: Record<'a' | 'b', [string, string][]> = { a: [], b: [] }
+  // 状態のイベントは表の配列をそのまま持つので、書き換えずに作り直す（前のステップの表が後の行を見せないように）
+  private neigh: readonly (readonly string[])[] = []
+  private arpCache: Record<'a' | 'b', readonly (readonly string[])[]> = { a: [], b: [] }
 
   readonly net: Network
 
@@ -512,12 +513,12 @@ class HostModel {
 
   /** ホストの ARP キャッシュ（ブリッジの側）に書く */
   hostLearns(ip: string, mac: string): StepEvent {
-    this.neigh.push([ip, mac])
+    this.neigh = [...this.neigh, [ip, mac]]
     return set(HOST, NEIGH, table(ARP_COLUMNS, this.neigh))
   }
 
   containerLearns(who: 'a' | 'b', ip: string, mac: string): StepEvent {
-    this.arpCache[who].push([ip, mac])
+    this.arpCache = { ...this.arpCache, [who]: [...this.arpCache[who], [ip, mac]] }
     return set(who === 'a' ? A : B, ARP, table(ARP_COLUMNS, this.arpCache[who]))
   }
 
@@ -614,7 +615,7 @@ function outboundSteps(): Step[] {
       title: { en: 'Docker has set up the network', ja: 'Docker がネットワークを用意した' },
       description: {
         en: `${SETUP_TEXT.en} On the host, the bridge ${net.bridge} has ${net.gateway}, IP forwarding is on, and a NAT rule masquerades traffic from ${net.prefix} that leaves through another interface.`,
-        ja: `${SETUP_TEXT.ja} ホストでは、ブリッジ ${net.bridge} が ${net.gateway} を持ち、IP 転送が有効で、${net.prefix} から来てほかのインターフェースへ出ていくパケットをマスカレードする NAT の規則がある。`,
+        ja: `${SETUP_TEXT.ja}ホストでは、ブリッジ ${net.bridge} が ${net.gateway} を持ち、IP 転送が有効で、${net.prefix} から来てほかのインターフェースへ出ていくパケットをマスカレードする NAT の規則がある。`,
       },
       events: setupEvents(model, [MASQUERADE_RULE]),
     },
@@ -804,7 +805,7 @@ function publishedSteps(): Step[] {
       title: { en: 'A publishes port 80 as 8080', ja: 'A がポート 80 を 8080 として公開する' },
       description: {
         en: `${SETUP_TEXT.en} A was started with -p 8080:80, and a web server in it listens on port 80. Docker has added a NAT rule: TCP to port 8080 of a host address has its destination changed to ${formatEndpoint(container)}.`,
-        ja: `${SETUP_TEXT.ja} A は -p 8080:80 を付けて起動し、中の Web サーバーがポート 80 で待ち受けている。Docker は、ホストのアドレスのポート 8080 への TCP の宛先を ${formatEndpoint(container)} に変える NAT の規則を足した。`,
+        ja: `${SETUP_TEXT.ja}A は -p 8080:80 を付けて起動し、中の Web サーバーがポート 80 で待ち受けている。Docker は、ホストのアドレスのポート 8080 への TCP の宛先を ${formatEndpoint(container)} に変える NAT の規則を足した。`,
       },
       events: [
         ...setupEvents(model, [DNAT_RULE, MASQUERADE_RULE]),
@@ -1006,7 +1007,7 @@ function sameBridgeSteps(net: Network, port: number, userNetwork: boolean): Step
         },
         description: {
           en: `${SETUP_TEXT.en} Both A and B are on the default bridge ${net.bridge}. B runs a web server on port ${String(port)}. It was not published with -p, which is not needed inside the bridge’s network.`,
-          ja: `${SETUP_TEXT.ja} A と B はどちらも既定のブリッジ ${net.bridge} にいる。B はポート ${String(port)} で Web サーバーを動かしている。-p で公開していないが、ブリッジのネットワークの中では要らない。`,
+          ja: `${SETUP_TEXT.ja}A と B はどちらも既定のブリッジ ${net.bridge} にいる。B はポート ${String(port)} で Web サーバーを動かしている。-p で公開していないが、ブリッジのネットワークの中では要らない。`,
         },
         events: [
           ...setupEvents(model, [MASQUERADE_RULE]),
@@ -1184,7 +1185,7 @@ function twoContainersSteps(): Step[] {
       },
       description: {
         en: `${SETUP_TEXT.en} A and B have talked to the gateway before, so their ARP caches, the bridge’s table and the host’s ARP cache are already filled, as in the default situation.`,
-        ja: `${SETUP_TEXT.ja} A と B は前にもゲートウェイと通信したので、ARP キャッシュ、ブリッジの表、ホストの ARP キャッシュは、既定の状況のように埋まっている。`,
+        ja: `${SETUP_TEXT.ja}A と B は前にもゲートウェイと通信したので、ARP キャッシュ、ブリッジの表、ホストの ARP キャッシュは、既定の状況のように埋まっている。`,
       },
       events: [
         ...setupEvents(model, [MASQUERADE_RULE]),
@@ -1296,7 +1297,7 @@ function unpublishedSteps(): Step[] {
       },
       description: {
         en: `${SETUP_TEXT.en} A runs a web server on port 80, but it was started without -p. There is no DNAT rule for it.`,
-        ja: `${SETUP_TEXT.ja} A はポート 80 で Web サーバーを動かしているが、-p を付けずに起動した。そのための DNAT の規則はない。`,
+        ja: `${SETUP_TEXT.ja}A はポート 80 で Web サーバーを動かしているが、-p を付けずに起動した。そのための DNAT の規則はない。`,
       },
       events: [...setupEvents(model, [MASQUERADE_RULE]), set(A, SOCKET, 'LISTEN 0.0.0.0:80')],
     },
