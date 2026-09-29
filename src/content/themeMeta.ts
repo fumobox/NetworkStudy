@@ -18,7 +18,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
  * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、パス MTU 探索、NAT、NAT 越え、経路制御）、lan: LAN の中（スイッチ、VLAN、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
- * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket、リバースプロキシとロードバランサー）、security: ネットワークのセキュリティ（ファイアウォール、DNSSEC、メールの送信ドメイン認証、HSTS、Cookie と CSRF）
+ * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket、Server-Sent Events、リバースプロキシとロードバランサー）、security: ネットワークのセキュリティ（ファイアウォール、DNSSEC、メールの送信ドメイン認証、HSTS、Cookie と CSRF）
  */
 export const THEME_CATEGORIES = ['basics', 'ip', 'lan', 'web', 'tcp', 'http', 'security'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
@@ -259,6 +259,22 @@ export const WEBSOCKET_META = {
   },
   difficulty: 'intermediate',
   minutes: 15,
+} as const satisfies ThemeMeta
+
+export const SERVER_SENT_EVENTS_META = {
+  id: 'server-sent-events',
+  kind: 'sequence',
+  category: 'http',
+  title: {
+    en: 'Server-Sent Events: a response that never ends',
+    ja: 'Server-Sent Events: 終わらない応答と自動の再接続',
+  },
+  summary: {
+    en: 'How a server sends events to a page over one HTTP response that never ends (text/event-stream), how the browser parses the stream, reconnects on its own with Last-Event-ID and gives up on 204 or a wrong Content-Type, and why six tabs over HTTP/1.1 run out of connections while HTTP/2 does not.',
+    ja: 'サーバーが終わらない 1 つの HTTP の応答（text/event-stream）でページにイベントを送るしくみ、ブラウザーがストリームを読み、Last-Event-ID を付けて自分で接続し直し、204 や誤った Content-Type ではあきらめるまで、そして 6 つのタブで HTTP/1.1 の接続が足りなくなり、HTTP/2 ではそうならない理由。',
+  },
+  difficulty: 'intermediate',
+  minutes: 10,
 } as const satisfies ThemeMeta
 
 export const REVERSE_PROXY_META = {
@@ -514,7 +530,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -544,6 +560,7 @@ export const THEME_META = [
   HTTP2_META,
   QUIC_META,
   WEBSOCKET_META,
+  SERVER_SENT_EVENTS_META,
   REVERSE_PROXY_META,
   FIREWALL_META,
   DNSSEC_META,

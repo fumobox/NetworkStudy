@@ -20,6 +20,7 @@ import { pmtudQuiz } from './pmtud/quiz'
 import { quicQuiz } from './quic/quiz'
 import { reverseProxyQuiz } from './reverse-proxy/quiz'
 import { routeLookupQuiz } from './route-lookup/quiz'
+import { sseQuiz } from './server-sent-events/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
 import { switchingQuiz } from './switching/quiz'
 import { tcpCloseQuiz } from './tcp-close/quiz'
@@ -50,6 +51,7 @@ import {
   QUIC_META,
   REVERSE_PROXY_META,
   ROUTE_LOOKUP_META,
+  SERVER_SENT_EVENTS_META,
   SUBNET_CALCULATOR_META,
   SWITCHING_META,
   TCP_CLOSE_META,
@@ -101,6 +103,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: HTTP2_META, quiz: http2Quiz },
   { meta: QUIC_META, quiz: quicQuiz },
   { meta: WEBSOCKET_META, quiz: webSocketQuiz },
+  { meta: SERVER_SENT_EVENTS_META, quiz: sseQuiz },
   { meta: REVERSE_PROXY_META, quiz: reverseProxyQuiz },
   { meta: FIREWALL_META, quiz: firewallQuiz },
   { meta: DNSSEC_META, quiz: dnssecQuiz },
