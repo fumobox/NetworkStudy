@@ -18,6 +18,26 @@ After step 3, both sides know each other’s starting point and the connection i
 - How each side’s **state** changes (CLOSED → SYN-SENT → ESTABLISHED on the client, LISTEN → SYN-RECEIVED → ESTABLISHED on the server).
 - In the “What if…” options: what the **retransmission timer** does when a segment is lost, and what a closed port answers.
 
+## Try it yourself
+
+`nc -vz` opens a TCP connection and closes it again at once. Try an open port, then a closed one on your own computer:
+
+```sh
+nc -vz example.com 443
+nc -vz 127.0.0.1 9
+```
+
+Output (macOS 26, 2026-09-29):
+
+```
+Connection to example.com port 443 [tcp/https] succeeded!
+nc: connectx to 127.0.0.1 port 9 (tcp) failed: Connection refused
+```
+
+- “succeeded” means the three-way handshake completed. “Connection refused” means the other side answered the SYN with a reset: nothing listens on that port, as in the closed-port option of the walkthrough.
+- If a firewall silently drops the SYN instead, nc waits and times out: the SYN is retransmitted, as in the lost-SYN options.
+- Linux’s nc prints the same result in slightly different words. To see the segments themselves, capture with Wireshark and use the display filter `tcp.flags.syn == 1 || tcp.flags.reset == 1`. Wireshark shows sequence numbers relative to the first one (starting at 0) by default.
+
 ## References
 
 - [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.5 “Establishing a Connection”

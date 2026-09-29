@@ -23,6 +23,29 @@
 - **証明書チェーン**のパネルで、各項目が ✓ や ✗ になっていくところ。
 - 「もしも…」のオプションで、期限切れ・名前の不一致・信頼していない CA・中間証明書の欠落が、それぞれどうなるか。
 
+## 手元で試す
+
+`openssl s_client` は TLS のハンドシェイクをして、合意した内容を表示する。OpenSSL（たとえば Homebrew の `openssl@3`）を使う。macOS に入っている `openssl`（`/usr/bin/openssl`）は LibreSSL で、`-brief` も `-verify_hostname` もない。
+
+```sh
+openssl s_client -connect example.com:443 -servername example.com -brief < /dev/null
+```
+
+出力の一部（macOS 26 の OpenSSL 3.6.1、2026-09-29）:
+
+```
+CONNECTION ESTABLISHED
+Protocol version: TLSv1.3
+Ciphersuite: TLS_AES_256_GCM_SHA384
+Peer certificate: CN=example.com
+Verification: OK
+Negotiated TLS1.3 group: X25519MLKEM768
+```
+
+- **Protocol version** と **Ciphersuite** は、ServerHello が選んだもの。**Verification: OK** は、サーバーの証明書チェーンを信頼ストアと照らして確かめたこと。`-servername` は SNI で名前を送るが、証明書がその名前と一致するかを s_client が確かめるのは、`-verify_hostname example.com` も付けたときだけ。
+- **group** は、key share に使った鍵交換の方式（グループ）。ここでは X25519MLKEM768 で、X25519 と耐量子の ML-KEM を組み合わせたもの。ステップ実行ではふつうの X25519 を使う。`-brief` を外して `-showcerts` を付けると、チェーン全体を表示する。
+- `curl -v https://example.com/` でも、TLS のバージョンと証明書が見える。Wireshark のフィルター `tls.handshake` で読めるのは ClientHello と ServerHello だけ。TLS 1.3 では、ハンドシェイクの残りはもう暗号化されている。
+
 ## 参考
 
 - [RFC 9846: The Transport Layer Security (TLS) Protocol Version 1.3](https://www.rfc-editor.org/rfc/rfc9846)

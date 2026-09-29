@@ -18,6 +18,26 @@ TCP はバイトの並びを、欠けず順番どおりに届ける。そのた�
 - それぞれの**状態**の変化（クライアントは CLOSED → SYN-SENT → ESTABLISHED、サーバーは LISTEN → SYN-RECEIVED → ESTABLISHED）。
 - 「もしも…」のオプションで、セグメントが失われたときに**再送タイマー**が何をするか、閉じたポートが何を返すか。
 
+## 手元で試す
+
+`nc -vz` は TCP の接続を開き、すぐに閉じる。開いているポートと、自分のコンピューターの閉じているポートを試す。
+
+```sh
+nc -vz example.com 443
+nc -vz 127.0.0.1 9
+```
+
+出力（macOS 26、2026-09-29）:
+
+```
+Connection to example.com port 443 [tcp/https] succeeded!
+nc: connectx to 127.0.0.1 port 9 (tcp) failed: Connection refused
+```
+
+- 「succeeded」は、3 ウェイハンドシェイクが終わったこと。「Connection refused」は、相手が SYN にリセットで答えたこと。ステップ実行のポートが閉じている場合と同じく、そのポートで待ち受けているものはない。
+- ファイアウォールが SYN を黙って捨てると、nc は待ち続けてタイムアウトになる。ステップ実行の SYN が失われる場合と同じく、SYN は再送される。
+- Linux の nc も、少し違う言葉で同じ結果を出す。セグメントそのものを見るには、Wireshark でキャプチャーして、表示フィルター `tcp.flags.syn == 1 || tcp.flags.reset == 1` を使う。Wireshark は既定で、シーケンス番号を最初の番号からの相対値（0 から）で表示する。
+
 ## 参考
 
 - [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.5「Establishing a Connection」

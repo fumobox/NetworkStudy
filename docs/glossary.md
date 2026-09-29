@@ -416,6 +416,7 @@
 | broadcast address | ブロードキャストアドレス | |
 | network address | ネットワークアドレス | |
 | step | ステップ | UI |
+| Try it yourself | 手元で試す | 概要の節の見出し。手元のコンピューターでコマンドを試す |
 | learning path | 学習の道筋 | UI。対象者別に順番を付けたテーマの一覧 |
 | Web developers (path) | Web エンジニア向け | 道筋の名前 |
 | Infrastructure and operations (path) | インフラ運用向け | 道筋の名前 |

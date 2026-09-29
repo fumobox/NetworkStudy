@@ -24,6 +24,31 @@
 
 このページでは、キャッシュの表に合わせてレコードを `NAME TYPE RDATA TTL` の順に書いている。`dig` などのツールでは `NAME TTL CLASS TYPE RDATA` の順に表示される。
 
+## 手元で試す
+
+`dig +trace` は、リゾルバーと同じように、ルートから委任を 1 台ずつたどる。
+
+```sh
+dig +trace www.example.com A
+```
+
+出力の一部（macOS 26、2026-09-29。結果は環境によって変わる）:
+
+```
+.                 486140 IN NS a.root-servers.net.
+;; Received 945 bytes from 192.0.2.1#53(192.0.2.1)
+com.              172800 IN NS a.gtld-servers.net.
+;; Received 840 bytes from 2001:500:2f::f#53(f.root-servers.net)
+example.com.      172800 IN NS hera.ns.cloudflare.com.
+;; Received 363 bytes from 192.12.94.30#53(e.gtld-servers.net)
+www.example.com.  300    IN A  104.20.23.154
+;; Received 76 bytes from 2a06:98c1:50::ac40:20a2#53(hera.ns.cloudflare.com)
+```
+
+- 各まとまりの最後の行が、答えたサーバー。最初は自分のリゾルバー（ここではアドレスを 192.0.2.1 に置き換えた）で、ルートサーバーがどこにあるかを教えるだけ。その後に、ルートサーバー、.com のサーバー、example.com 自身のネームサーバーが続く。ステップ実行と同じ委任のたどり方。
+- `+trace` を付けると、dig は自分のコンピューターから、すべてのサーバーに反復で問い合わせる。付けずに `dig www.example.com` とすると、リゾルバーに 1 度だけ問い合わせる。2 回続けて実行すると、2 回目の答えはキャッシュから来るので TTL が減っている。
+- 同じコマンドは Linux でも使える。Wireshark では、表示フィルター `dns` で問い合わせと応答が見える。
+
 ## 参考
 
 - [RFC 1034: Domain Names — Concepts and Facilities](https://www.rfc-editor.org/rfc/rfc1034)
