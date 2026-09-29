@@ -53,6 +53,7 @@
 | リバースプロキシとロードバランサー | Forwarded、for、by、host、proto、X-Forwarded-For、X-Forwarded-Proto、Via、Host、:authority、:scheme、:method、:path、:status、Connection、Keep-Alive、Proxy-Connection、TE、Transfer-Encoding、Upgrade、Location、Proxy-Status、Retry-After、Authorization、Set-Cookie、Cookie、Cache-Status、connection_terminated、connection_refused、http_response_timeout、destination_unavailable、next-hop、hit、fwd、uri-miss、stored、ttl、s-maxage、private、public、must-revalidate、502 Bad Gateway、503 Service Unavailable、504 Gateway Timeout、201 Created、SERVERID、Path、Secure、HttpOnly、PROXY protocol、SNI、ALPN、h2、L4、L7、DSR、SNAT、HAProxy、nginx、NGINX Plus、/healthz、FIN、RST（状態の値 unknown、up、down、idle、in use、closed、not visible、running、crashed、busy (45 s)、order 1001 created、terminated (cert …)、passthrough (ciphertext only)、B (A by cookie)、A (B is down)、h2, TLS 1.3 to …、TCP to …、TLS 1.3 (cert on A)、フィールド名 Frames、Removed、Line、Visible to the LB、Inside (encrypted)、Request line、Status line、Body、Flags、Dst、Dst port、Handshake、Certificate と、表の列 Backend、Address、Health、Fails、Conn、Requests、State、URL、Cache-Control、Age、Status、Field、Value、TCP peer、Scheme、Forwarded for、Forwarded proto、PROXY src、TLS も翻訳しない） |
 | Cookie と CSRF | SameSite、Strict、Lax、None、Default、Lax-allowing-unsafe、Lax+POST、Set-Cookie、Cookie、Secure、HttpOnly、Path、Domain、__Host-、__Secure-、Sec-Fetch-Site、Sec-Fetch-Mode、Sec-Fetch-Dest、Sec-Fetch-User、same-origin、same-site、cross-site、none、navigate、document、?1、Origin、303 See Other、403 Forbidden、200 OK、application/x-www-form-urlencoded、multipart/form-data、text/plain、form.submit()、location、PSL、OWASP、ambient authority（状態の値 sid sent、sid withheld (Lax)、sid withheld (Strict)、no cookie for evil.example、transferred (to mallory)、403 (no session)、403 (csrf missing)、403 (cross-site)、(not sent)、(none)、(missing)、bank.example (host-only)、yes、1000 USD、0 USD と、表の列 Name、Value、Domain、Path、SameSite、Secure、HttpOnly、Session、User、CSRF token、Initiator の値 bank.example page、redirect from /login、user (link in an email app)、evil.example page (form.submit())、evil.example page (location = …)、link on evil.example (click)、フィールド名 Initiator、Request line、Status line、Location、Host、Content-Type、Body、csrf も翻訳しない） |
 | HSTS | HSTS、Strict-Transport-Security、max-age、includeSubDomains、preload、sslstrip、Known HSTS Host、301 Moved Permanently、303 See Other、308 Permanent Redirect、Location、Set-Cookie、Cookie、Secure、HttpOnly、Domain、Path、SID、lang、unknown_ca、SNI、HTTPS RR、HTTPS-First、HTTPS-Only、TOFU（状態の値 no match、expired (evicted)、congruent: …、superdomain: … (includeSubDomains)、(built in)、header、preload list、yes、no、waiting for http、stripping、relaying TLS (ciphertext only)、posing as example.com、holding alice’s session、(removed)、(ciphertext only)、http from …、https from …、none (http)、TLS 1.3, cert OK、aborted: unknown_ca、error page (no proceed)、http://example.com/ (not secure)、https://… (HSTS upgrade)、alice (from …)、https from … (alice’s session)、ClientHello / ServerHello only と、表の列 Host、Subdomains、Expires、Source、Name、Value、Secure、Field、TLS records、フィールド名 TCP、Request line、Status line、Body、Handshake、Certificate、server_name、AlertDescription、Visible to the attacker も翻訳しない） |
+| Server-Sent Events | Server-Sent Events、SSE、EventSource、text/event-stream、data、event、id、retry、message、open、error、Last-Event-ID、lastEventId、readyState、CONNECTING、OPEN、CLOSED、close()、onmessage、onerror、withCredentials、Accept、Cache-Control、no-cache、no-store、Pragma、Content-Type、Content-Length、Transfer-Encoding、chunked、200 OK、204 No Content、text/html、application/json、HEADERS、DATA、SETTINGS、MAX_CONCURRENT_STREAMS、END_STREAM、:status、:path、:method、FIN、BOM、LF、CR、CRLF（状態の値 UA default、5000 ms、""、waiting、streaming、queued、idle、closed、open、live、ended と、表の列 type、data、lastEventId、id、event、Conn、Request、State、イベントの種類 price、news、フィールド名 On connection、Request line、Status line、Chunk size、Lines、Body、Stream ID、Flags、Host、accept、content-type、SETTINGS_MAX_CONCURRENT_STREAMS も翻訳しない） |
 
 ## 3. 訳語の対応表
 
@@ -355,6 +356,16 @@
 | no user recourse / click through | 先へ進む手段がない／警告を無視して進む | RFC 6797 §12.1 |
 | public Wi-Fi | 公衆 Wi-Fi | |
 | domain cookie | ドメインの Cookie | Domain 属性のある Cookie |
+| event stream | イベントストリーム | text/event-stream の形式 |
+| reconnection time | 再接続の待ち時間 | retry のフィールドで変わる |
+| reestablish the connection (EventSource) | 接続を張り直す（接続し直す） | HTML Standard |
+| last event ID | 最後のイベント ID | ヘッダー名の Last-Event-ID は翻訳しない |
+| fire / dispatch (an event) | （イベントを）発火する／出す | |
+| chunked transfer coding / chunk / last chunk | chunked の転送コーディング／チャンク／最後のチャンク | RFC 9112 §7.1 |
+| connection limit (per server) | （サーバーごとの）接続数の上限 | ブラウザーの動き |
+| buffering | バッファリング | |
+| one-way / two-way | 片方向／双方向 | SSE をサーバープッシュと呼ばない（HTTP/2 の push と紛れる） |
+| long-lived response | 長く続く応答 | |
 | interface | インターフェース | |
 | network card | ネットワークカード | |
 | layer | 層 | 「レイヤー」は UI の説明など一般的な文脈に限る |
