@@ -37,8 +37,8 @@ src/
 ├── components/
 │   ├── ui/         shadcn/ui の生成コード
 │   ├── layout/     AppLayout, Header, Footer, LanguageSwitcher
-│   └── features/   クイズ（quiz/）、テーマカード（theme-card/）、概要（overview/）
-├── content/        テーマごとのシナリオ・クイズ（themeMeta.ts にメタ情報、registry.ts に登録、quizzes.ts にホーム用のメタ情報とクイズ）
+│   └── features/   クイズ（quiz/）、テーマカード（theme-card/）、概要（overview/）、学習の道筋（learning-path/）
+├── content/        テーマごとのシナリオ・クイズ（themeMeta.ts にメタ情報、registry.ts に登録、quizzes.ts にホーム用のメタ情報とクイズ、learningPaths.ts に学習の道筋）
 ├── engine/         シーケンスエンジン（型・導出・検証・プレイヤー・UI）
 ├── lib/            汎用処理（i18n/, hooks/, storage.ts, utils.ts）
 ├── types/          横断的な型（DeepReadonly など）
@@ -80,7 +80,7 @@ e2e/                Playwright のスモークテストとアクセシビリテ�
 
 ## 学習コンテンツの正確性
 
-- 技術的な内容の誤りは学習サイトとして致命的。シナリオの定義には根拠となる RFC の参照をコメントで残す（TCP: RFC 9293、DNS: RFC 1034/1035、TLS 1.3: RFC 9846、証明書: RFC 5280、ARP: RFC 826、DHCP: RFC 2131/2132、ICMP: RFC 792/1122/1812、NAT: RFC 3022/4787/5382、経路制御: RFC 1812/4632、HTTP のキャッシュ: RFC 9111/9110、CORS: Fetch Standard（WHATWG）・RFC 6454、HTTP/1.1・HTTP/2: RFC 9112/9113/7541、QUIC・HTTP/3: RFC 9000/9001/9002/9114、スイッチ・VLAN: IEEE Std 802.1Q-2022・RFC 4188、IPv6: RFC 4291/5952/4861/4862/2464、TCP のフロー制御: RFC 9293/1122/7323、SACK: RFC 2018/5681/6675/6582/8985、パス MTU 探索: RFC 1191/791/792/1812/6691/2516/2923/4821/8899/8201、ファイアウォール: RFC 6092/4787/5382/7857/9293/792/1122/1812、DNSSEC: RFC 4033/4034/4035/6840/5155/3225/6891/9904、メールの送信ドメイン認証: RFC 5321/5322/7208/6376/9989/9990/8601/7960/8617/3463、WebSocket: RFC 6455・WebSockets Standard（WHATWG）・RFC 9110、NAT 越え: RFC 8489/8656/8445/4787/8839/5769/7675/8838、Wi-Fi: IEEE Std 802.11-2024・RFC 8018/3394/9542、リバースプロキシとロードバランサー: RFC 9110/9112/9113/7239/9209/9111/9211/9651/6265・PROXY protocol（HAProxy の仕様）、Cookie と CSRF: draft-ietf-httpbis-rfc6265bis-22・RFC 6265/6454/9110・HTML・URL・Fetch Standard（WHATWG）・Fetch Metadata（W3C）、HSTS: RFC 6797/9110/6265/9846/9460・rfc6265bis の草案、Server-Sent Events: HTML Standard（WHATWG）の Server-sent events・Fetch Standard・RFC 9110/9112/9113）
+- 技術的な内容の誤りは学習サイトとして致命的。シナリオの定義には根拠となる RFC の参照をコメントで残す（TCP: RFC 9293、DNS: RFC 1034/1035、TLS 1.3: RFC 9846、証明書: RFC 5280、ARP: RFC 826、DHCP: RFC 2131/2132、ICMP: RFC 792/1122/1812、NAT: RFC 3022/4787/5382、経路制御: RFC 1812/4632、HTTP のキャッシュ: RFC 9111/9110、CORS: Fetch Standard（WHATWG）・RFC 6454、HTTP/1.1・HTTP/2: RFC 9112/9113/7541、QUIC・HTTP/3: RFC 9000/9001/9002/9114、スイッチ・VLAN: IEEE Std 802.1Q-2022・RFC 4188、IPv6: RFC 4291/5952/4861/4862/2464、TCP のフロー制御: RFC 9293/1122/7323、SACK: RFC 2018/5681/6675/6582/8985、パス MTU 探索: RFC 1191/791/792/1812/6691/2516/2923/4821/8899/8201、ファイアウォール: RFC 6092/4787/5382/7857/9293/792/1122/1812、DNSSEC: RFC 4033/4034/4035/6840/5155/3225/6891/9904、メールの送信ドメイン認証: RFC 5321/5322/7208/6376/9989/9990/8601/7960/8617/3463、WebSocket: RFC 6455・WebSockets Standard（WHATWG）・RFC 9110、NAT 越え: RFC 8489/8656/8445/4787/8839/5769/7675/8838、Wi-Fi: IEEE Std 802.11-2024・RFC 8018/3394/9542、リバースプロキシとロードバランサー: RFC 9110/9112/9113/7239/9209/9111/9211/9651/6265・PROXY protocol（HAProxy の仕様）、Cookie と CSRF: draft-ietf-httpbis-rfc6265bis-22・RFC 6265/6454/9110・HTML・URL・Fetch Standard（WHATWG）・Fetch Metadata（W3C）、HSTS: RFC 6797/9110/6265/9846/9460・rfc6265bis の草案、Server-Sent Events: HTML Standard（WHATWG）の Server-sent events・Fetch Standard・RFC 9110/9112/9113、コンテナーのネットワーク: RFC 826/1122/3022/1918/5737/9542/9293・IEEE Std 802.1Q-2022・Linux（veth(4)、network_namespaces(7)、Ethernet Bridging、IP Sysctl、netfilter の NAT と接続の追跡）・Docker のドキュメント（版で変わるものは書き分ける））
 - seq/ack の値やメッセージの順序などはテストで固定する
 
 ## テスト
@@ -98,12 +98,13 @@ e2e/                Playwright のスモークテストとアクセシビリテ�
 ## 静的ページ生成（scripts/）
 
 - GitHub Pages には SPA 用のフォールバックがないため、`build` の最後に「ロケール × ルート」と「ロケールなし × ルート」の `index.html`、および `404.html` を生成する（`lang`・`title`・`description`・`hreflang`、ロケール付きのページには `canonical` も埋め込む）
-- テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ。分類 `category` も決め、`THEME_META` では分類ごとにまとめて並べる）を足し、`src/content/registry.ts` に登録し、`src/content/quizzes.ts` の `THEME_QUIZZES` にもメタ情報とクイズを足す（順序は registry と同じ。registry.test.ts で確かめる）。静的ページも e2e の対象も自動で増える
+- テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ。分類 `category` も決め、`THEME_META` では分類ごとにまとめて並べる）を足し、`src/content/registry.ts` に登録し、`src/content/quizzes.ts` の `THEME_QUIZZES` にもメタ情報とクイズを足す（順序は registry と同じ。registry.test.ts で確かめる）。静的ページも e2e の対象も自動で増える。どの学習の道筋に入れるか（入れないか）も決め、入れるなら `src/content/learningPaths.ts` の `themeIds` の読む順の位置に足す（前提の順は learningPaths.test.ts の `PREREQUISITES` で確かめる）
+- 学習の道筋（`src/content/learningPaths.ts`）は対象者別の順番付きのテーマの一覧で、`/:locale/paths/:id` のページになる（静的ページ・sitemap・e2e・Lighthouse の対象に自動で入る）。テーマのページは `?path=` の道筋（ないか、テーマを含まない道筋ならテーマを含む道筋。複数なら並べる）の中の位置と前後のテーマを出す。位置の文言は「Theme n of m」にし、ステップ実行の「Step n of m」と紛れさせない
 - テーマには種類（`kind`）がある。`ThemeModule` は `kind` で判別する共用体（`src/content/types.ts`）で、メタ情報の `kind` と同じ値にする（型で強制される）。どの種類にも概要（MDX）とクイズが必要
   - `sequence`: シーケンスエンジンを使う（`SequenceThemeModule`。`scenario` と、必要なら `panels`）。e2e は最終ステップまで進める
   - `custom`: テーマ独自の UI を持つ（`CustomThemeModule`。`body` に `lazy` で本体のコンポーネントを渡す）。ThemePage は概要とクイズの間に `body` を表示する。e2e はページが開くことだけ確かめるので、操作のテストは各テーマで書く。例: `src/content/subnet-calculator/`（計算の純関数 `subnet.ts`、本体 `SubnetCalculator.tsx`、文言 `subnetText.ts`）、`src/content/osi-model/`（engine の `useScenarioPlayer`・`useStepParam`・`useStepUrlSync`・`StepControls`・`StepDescription` を再利用したステップ実行）。本体の文言は `LocalizedText` の定数にまとめ、用語集のテスト（`glossary.test.tsx`）の対象に加える
 - 各ページに Open Graph と Twitter カードを入れ、`sitemap.xml`（hreflang 付き）も生成する。OG 画像は `public/og.png` で、元の HTML は `scripts/og/og.html`（作り直し方はそのファイルの先頭に書いてある）。robots.txt はプロジェクトサイトでは効かないので置かない
-- scripts は `tsconfig.scripts.json`（DOM なし）で型チェックされる。scripts から import してよい src は、DOM や `import.meta.env` に依存しないモジュール（`content/themeMeta.ts`、`lib/i18n/locale.ts`、`lib/i18n/messages/`）に限る
+- scripts は `tsconfig.scripts.json`（DOM なし）で型チェックされる。scripts から import してよい src は、DOM や `import.meta.env` に依存しないモジュール（`content/themeMeta.ts`、`content/learningPaths.ts`、`lib/i18n/locale.ts`、`lib/i18n/messages/`）に限る
 
 ## 開発フロー
 
