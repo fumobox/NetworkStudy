@@ -3,6 +3,11 @@
 An interactive portal for learning how network protocols work, one packet at a time.
 ネットワークプロトコルの動きを、1 パケットずつ自分の手で進めて学ぶインタラクティブな学習サイトです。
 
+## Learning paths / 学習の道筋
+
+Not sure where to start? Follow a path: Web developers (14 themes) or Infrastructure and operations (17 themes).
+どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（14 テーマ）、インフラ運用向け（17 テーマ）。
+
 ## Topics / テーマ
 
 Network basics / ネットワークの基礎
@@ -25,6 +30,7 @@ Inside the LAN / LAN の中
 
 - Switching: how a switch learns MAC addresses / スイッチ: MAC アドレスを学習する
 - VLAN: one switch, separate networks / VLAN: 1 台のスイッチを別々のネットワークに分ける
+- Container networking: veth, bridge and NAT / コンテナーのネットワーク: veth、ブリッジ、NAT
 - Wi-Fi: joining a wireless network / Wi-Fi: 無線 LAN につながる
 - IPv6 on the LAN: SLAAC and Neighbor Discovery / IPv6 で LAN につながる: SLAAC と近隣探索
 
