@@ -18,7 +18,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
  * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、パス MTU 探索、NAT、NAT 越え、経路制御）、lan: LAN の中（スイッチ、VLAN、コンテナーのネットワーク、VXLAN、Wi-Fi、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
- * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket、Server-Sent Events、リバースプロキシとロードバランサー）、security: ネットワークのセキュリティ（ファイアウォール、DNSSEC、メールの送信ドメイン認証、HSTS、Cookie と CSRF）
+ * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket、Server-Sent Events、リバースプロキシとロードバランサー）、security: ネットワークのセキュリティ（ファイアウォール、WireGuard、DNSSEC、メールの送信ドメイン認証、HSTS、Cookie と CSRF）
  */
 export const THEME_CATEGORIES = ['basics', 'ip', 'lan', 'web', 'tcp', 'http', 'security'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
@@ -182,6 +182,22 @@ export const FIREWALL_META = {
   },
   difficulty: 'intermediate',
   minutes: 12,
+} as const satisfies ThemeMeta
+
+export const WIREGUARD_META = {
+  id: 'wireguard',
+  kind: 'sequence',
+  category: 'security',
+  title: {
+    en: 'WireGuard: a remote-access VPN built on public keys',
+    ja: 'WireGuard: 公開鍵で結ぶリモートアクセス VPN',
+  },
+  summary: {
+    en: 'How a laptop reaches an office network through WireGuard: a one-round-trip handshake between two public keys, AllowedIPs that pick the peer for outgoing packets and check the source of incoming ones, an endpoint that follows the laptop from network to network, keepalives that hold a NAT mapping open, fresh keys every two minutes, and cookies that protect a busy server.',
+    ja: 'ノート PC が WireGuard でオフィスのネットワークに届くまで。2 つの公開鍵の間の 1 往復のハンドシェイク、出ていくパケットのピアを選び、入ってくるパケットの送信元を確かめる AllowedIPs、ネットワークを移るノート PC を追うエンドポイント、NAT の対応を保つキープアライブ、2 分ごとの鍵の更新、負荷の高いサーバーを守る cookie。',
+  },
+  difficulty: 'intermediate',
+  minutes: 20,
 } as const satisfies ThemeMeta
 
 export const DNSSEC_META = {
@@ -562,7 +578,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → コンテナーのネットワーク → VXLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ファイアウォール → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → コンテナーのネットワーク → VXLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ファイアウォール → WireGuard → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -597,6 +613,7 @@ export const THEME_META = [
   SERVER_SENT_EVENTS_META,
   REVERSE_PROXY_META,
   FIREWALL_META,
+  WIREGUARD_META,
   DNSSEC_META,
   MAIL_AUTH_META,
   HSTS_META,
