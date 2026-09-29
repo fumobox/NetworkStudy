@@ -52,6 +52,14 @@ const pages: readonly PageCase[] = LOCALES.flatMap((locale) => [
   }),
 ])
 
+/** 折りたたんだ中身（パケットの層、道筋のテーマの一覧）も確かめるため、すべての details を開く */
+const openAllDetails = (page: Page) =>
+  page.locator('details').evaluateAll((elements) => {
+    for (const element of elements) {
+      if (element instanceof HTMLDetailsElement) element.open = true
+    }
+  })
+
 async function expectNoViolations(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()
   // 失敗したときに、どの要素が何の規則に違反したかがわかる形にする
@@ -110,6 +118,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
         if (path.includes('?path=')) {
           await showAll.click()
         }
+        await openAllDetails(page)
         await expectNoViolations(page)
       })
     }

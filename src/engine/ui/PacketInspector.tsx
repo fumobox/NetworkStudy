@@ -3,10 +3,11 @@ import { useId } from 'react'
 import { useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import { resolveSelectedMessage } from '../derive'
+import { groupFieldsByLayer } from '../layers'
 import type { Actor, DerivedState, MessageId } from '../types'
+import { PacketFieldRows } from './PacketFieldRows'
+import { PacketLayerTree } from './PacketLayerTree'
 import { useActorName } from './useActorName'
-
-const HIGHLIGHT_MARK = '●'
 
 interface PacketInspectorProps {
   actors: readonly Actor[]
@@ -26,6 +27,7 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
     message?.retransmitOf === undefined
       ? undefined
       : derived.messages.find((candidate) => candidate.id === message.retransmitOf)
+  const layers = message === null ? null : groupFieldsByLayer(message.fields)
 
   return (
     <section aria-labelledby={titleId} className="space-y-3">
@@ -65,47 +67,12 @@ export function PacketInspector({ actors, derived, selectedMessageId }: PacketIn
               {m.inspector.encrypted}
             </p>
           )}
-          {message.fields.length > 0 && (
-            // 説明の列が細くならないよう、表ではなく「名前と値」の下に説明を置く
-            <dl className="text-sm">
-              {message.fields.map((field, i) => (
-                <div
-                  // 同じ名前のフィールドが並ぶこともある（DNS の複数の Answer など）
-                  key={`${String(i)}:${field.name}`}
-                  data-highlight={field.highlight === true}
-                  className={cn(
-                    'grid grid-cols-[minmax(5.5rem,auto)_minmax(0,1fr)] items-baseline gap-x-3 border-t px-1 py-2',
-                    field.highlight === true && 'bg-accent',
-                  )}
-                >
-                  <dt className="font-mono text-xs text-muted-foreground">
-                    {field.highlight === true && (
-                      <span aria-hidden className="mr-1 text-primary">
-                        {HIGHLIGHT_MARK}
-                      </span>
-                    )}
-                    {field.name}
-                    {field.highlight === true && (
-                      <span className="sr-only">{m.inspector.highlighted}</span>
-                    )}
-                  </dt>
-                  <dd
-                    className={cn(
-                      'font-mono break-words whitespace-pre-line',
-                      field.highlight === true && 'font-semibold',
-                    )}
-                  >
-                    {field.value}
-                  </dd>
-                  {field.description !== undefined && (
-                    <dd className="col-start-2 mt-0.5 text-xs text-muted-foreground">
-                      {t(field.description)}
-                    </dd>
-                  )}
-                </div>
-              ))}
-            </dl>
-          )}
+          {message.fields.length > 0 &&
+            (layers === null ? (
+              <PacketFieldRows fields={message.fields} />
+            ) : (
+              <PacketLayerTree messageId={message.id} layers={layers} />
+            ))}
         </div>
       )}
     </section>

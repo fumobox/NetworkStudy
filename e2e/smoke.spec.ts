@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_META, themeMetaOfKind } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
@@ -164,6 +164,14 @@ test('サブネット計算: 入力すると結果と URL が変わる', async (
   await expect(networkRow.locator('xpath=following-sibling::dd[1]')).toHaveText('192.168.1.128')
 })
 
+/** パケットの層など、折りたたんだ中身も幅に収まるか確かめるため、すべての details を開く */
+const openAllDetails = (page: Page) =>
+  page.locator('details').evaluateAll((elements) => {
+    for (const element of elements) {
+      if (element instanceof HTMLDetailsElement) element.open = true
+    }
+  })
+
 test.describe('スマホの幅（390px）', () => {
   test.use({ viewport: { width: 390, height: 844 } })
 
@@ -237,6 +245,7 @@ test.describe('スマホの幅（390px）', () => {
       await page.goto(`ja/themes/${meta.id}?step=99`)
       await expect(page.getByRole('heading', { level: 1, name: meta.title.ja })).toBeVisible()
       await expect(page.getByRole('region', { name: MESSAGES.ja.quiz.title })).toBeVisible()
+      await openAllDetails(page)
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       )

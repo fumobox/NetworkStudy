@@ -178,4 +178,57 @@ describe('PacketInspector', () => {
     )
     expect(screen.getByText('No message to show yet.')).toBeInTheDocument()
   })
+
+  it('層のあるメッセージは、層ごとの details で表示する（層の名前は翻訳しない）', () => {
+    const layered: Step[] = [
+      {
+        id: 'l',
+        title: text('l'),
+        description: text('l'),
+        events: [
+          {
+            kind: 'message',
+            message: {
+              id: 'seg',
+              from: 'client',
+              to: 'server',
+              label: 'SYN',
+              status: 'delivered',
+              fields: [
+                { name: 'IP Src', value: '192.0.2.1', layer: 'ipv4', inLayerSummary: true },
+                { name: 'TTL', value: '64', layer: 'ipv4' },
+                { name: 'Seq', value: '1000', layer: 'tcp', inLayerSummary: true },
+                { name: 'Flags', value: 'SYN', layer: 'tcp', highlight: true },
+              ],
+            },
+          },
+        ],
+      },
+    ]
+    render(
+      <LocaleProvider locale="ja">
+        <PacketInspector
+          actors={actors}
+          derived={deriveState(actors, layered, 0)}
+          selectedMessageId={null}
+        />
+      </LocaleProvider>,
+    )
+    const group = screen.getByRole('group', { name: 'プロトコルの層ごとのフィールド' })
+    const details = group.querySelectorAll('details')
+    expect(details).toHaveLength(2)
+    expect(details[0]).toHaveTextContent('Internet Protocol Version 4')
+    expect(details[0]).toHaveTextContent('IP Src: 192.0.2.1')
+    expect(details[0]).not.toHaveAttribute('open')
+    expect(details[1]).toHaveTextContent('Transmission Control Protocol')
+    expect(details[1]).toHaveTextContent('このステップで注目するフィールドを含む')
+    expect(details[1]).toHaveAttribute('open')
+    // 平らな一覧は重ねて出さない
+    expect(screen.getAllByRole('term').map((term) => term.textContent)).toEqual([
+      'IP Src',
+      'TTL',
+      'Seq',
+      expect.stringContaining('Flags'),
+    ])
+  })
 })

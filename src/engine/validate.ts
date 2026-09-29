@@ -1,13 +1,15 @@
 import type { LocalizedText } from '@/lib/i18n/locale'
 import { findTextProblems, type LocalizedTextEntry } from '@/lib/i18n/textProblems'
-import type {
-  Actor,
-  RawOptionValues,
-  ResolvedScenario,
-  ScenarioHandle,
-  ScenarioOptionDef,
-  StateValue,
-  Step,
+import {
+  PACKET_LAYERS,
+  type Actor,
+  type Message,
+  type RawOptionValues,
+  type ResolvedScenario,
+  type ScenarioHandle,
+  type ScenarioOptionDef,
+  type StateValue,
+  type Step,
 } from './types'
 
 /** 開発者向けの問題の報告（テストの失敗メッセージとして表示する） */
@@ -74,6 +76,46 @@ function sameColumns(a: StateValue, b: StateValue): boolean {
     return true
   }
   return a.columns.join('\u0000') === b.columns.join('\u0000')
+}
+
+/** フィールドの層: すべてか、どれもないか。層は深くなる順に並び、同じ層は分かれない。要約に入れるのは層のある 1 行の値だけ */
+function checkFieldLayers(path: string, message: Message, problems: ScenarioProblem[]): void {
+  const layered = message.fields.filter((field) => field.layer !== undefined)
+  for (const field of message.fields) {
+    if (field.layer === undefined && field.inLayerSummary === true) {
+      problems.push({
+        path,
+        message: `inLayerSummary is set on field "${field.name}" without a layer`,
+      })
+    }
+    if (field.inLayerSummary === true && field.value.includes('\n')) {
+      problems.push({ path, message: `summary field "${field.name}" has a multi-line value` })
+    }
+  }
+  if (layered.length === 0) {
+    return
+  }
+  for (const field of message.fields) {
+    if (field.layer === undefined) {
+      problems.push({ path, message: `field "${field.name}" has no layer but other fields do` })
+    }
+  }
+  let depth = -1
+  let previous: string | undefined
+  for (const field of layered) {
+    if (field.layer === undefined || field.layer === previous) {
+      continue
+    }
+    const next = PACKET_LAYERS[field.layer].depth
+    if (next <= depth) {
+      problems.push({
+        path,
+        message: `layer "${field.layer}" comes after a deeper layer or is split`,
+      })
+    }
+    depth = next
+    previous = field.layer
+  }
 }
 
 function checkTableShape(path: string, value: StateValue, problems: ScenarioProblem[]): void {
@@ -156,6 +198,7 @@ function checkSteps(
               message: `retransmitOf "${message.retransmitOf}" does not refer to an earlier message`,
             })
           }
+          checkFieldLayers(eventPath, message, problems)
           messageIds.add(message.id)
           break
         }

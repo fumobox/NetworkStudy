@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { deriveState } from '@/engine/derive'
+import { groupFieldsByLayer } from '@/engine/layers'
 import { toScenarioHandle } from '@/engine/scenario'
 import type { Message, Step } from '@/engine/types'
 import { validateScenario } from '@/engine/validate'
@@ -182,5 +183,28 @@ describe('tcpHandshakeScenario', () => {
         ['RST, ACK', 'delivered'],
       ])
     })
+  })
+})
+
+describe('パケットの詳細の層', () => {
+  const all = [
+    ...messages(build()),
+    ...messages(build({ serverPort: 'closed' })),
+    ...messages(build({ synLoss: 'twice', synAckLost: true })),
+  ]
+
+  it('どのメッセージも、すべてのフィールドが TCP の層にある', () => {
+    for (const message of all) {
+      expect(groupFieldsByLayer(message.fields)?.map((layer) => layer.layer)).toEqual(['tcp'])
+    }
+  })
+
+  it('要約はポートと Seq、ACK のフラグがあれば Ack', () => {
+    const summary = (label: string) =>
+      groupFieldsByLayer(all.find((m) => m.label === label)?.fields ?? [])?.[0]?.summary
+    expect(summary('SYN')).toBe('Src → Dst Port: 49152 → 443, Seq: 1000')
+    expect(summary('SYN, ACK')).toBe('Src → Dst Port: 443 → 49152, Seq: 5000, Ack: 1001')
+    expect(summary('ACK')).toBe('Src → Dst Port: 49152 → 443, Seq: 1001, Ack: 5001')
+    expect(summary('RST, ACK')).toBe('Src → Dst Port: 443 → 49152, Seq: 0, Ack: 1001')
   })
 })

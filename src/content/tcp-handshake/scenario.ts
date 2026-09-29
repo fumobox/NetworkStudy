@@ -19,6 +19,7 @@ import type {
   Step,
   StepEvent,
 } from '@/engine/types'
+import { inLayer } from '@/engine/layers'
 import type { LocalizedText } from '@/lib/i18n/locale'
 
 const optionsSchema = z.object({
@@ -93,6 +94,20 @@ const FIELD_TEXT = {
   },
 } satisfies Record<string, LocalizedText>
 
+/**
+ * TCP の層に入れる（パケットの詳細を Wireshark のように層で表示するため）。要約はポートと Seq、ACK のフラグがあれば Ack。
+ * このテーマは IP のアドレスを描かないので、IP の層は付けない
+ */
+function tcpSegment(fields: readonly PacketField[]): PacketField[] {
+  const flags = fields.find((field) => field.name === 'Flags')?.value ?? ''
+  const hasAck = flags.split(', ').includes('ACK')
+  return inLayer('tcp', fields).map((field) =>
+    field.name === 'Src → Dst Port' || field.name === 'Seq' || (hasAck && field.name === 'Ack')
+      ? { ...field, inLayerSummary: true }
+      : field,
+  )
+}
+
 function ports(from: 'client' | 'server'): PacketField {
   const [source, destination] =
     from === 'client' ? [CLIENT_PORT, SERVER_PORT] : [SERVER_PORT, CLIENT_PORT]
@@ -113,7 +128,7 @@ const synMessage: Message = {
     en: 'Asks the server to open a connection and tells it the client’s initial sequence number.',
     ja: 'サーバーに接続の開始を求め、クライアントの初期シーケンス番号を伝える。',
   },
-  fields: [
+  fields: tcpSegment([
     ports('client'),
     {
       name: 'Flags',
@@ -124,7 +139,7 @@ const synMessage: Message = {
     { name: 'Seq', value: String(CLIENT_ISS), highlight: true, description: FIELD_TEXT.seqSyn },
     { name: 'Ack', value: '0', description: FIELD_TEXT.ackUnused },
     { name: 'Options', value: `MSS=${MSS}`, description: FIELD_TEXT.mss },
-  ],
+  ]),
 }
 
 const synAckMessage: Message = {
@@ -137,7 +152,7 @@ const synAckMessage: Message = {
     en: 'Acknowledges the client’s SYN and sends the server’s own initial sequence number.',
     ja: 'クライアントの SYN を確認応答し、サーバー自身の初期シーケンス番号を送る。',
   },
-  fields: [
+  fields: tcpSegment([
     ports('server'),
     {
       name: 'Flags',
@@ -164,7 +179,7 @@ const synAckMessage: Message = {
       },
     },
     { name: 'Options', value: `MSS=${MSS}`, description: FIELD_TEXT.mss },
-  ],
+  ]),
 }
 
 const ackMessage: Message = {
@@ -177,7 +192,7 @@ const ackMessage: Message = {
     en: 'Acknowledges the server’s SYN. The connection is now established on the client side.',
     ja: 'サーバーの SYN を確認応答する。これでクライアント側の接続は確立する。',
   },
-  fields: [
+  fields: tcpSegment([
     ports('client'),
     {
       name: 'Flags',
@@ -199,7 +214,7 @@ const ackMessage: Message = {
         ja: 'サーバーの ISS + 1。クライアントが次に期待するシーケンス番号',
       },
     },
-  ],
+  ]),
 }
 
 const rstMessage: Message = {
@@ -212,7 +227,7 @@ const rstMessage: Message = {
     en: 'No process is listening on the port, so the server refuses the connection with a reset.',
     ja: 'そのポートで待ち受けているプロセスがないので、サーバーはリセットで接続を拒否する。',
   },
-  fields: [
+  fields: tcpSegment([
     ports('server'),
     {
       name: 'Flags',
@@ -240,7 +255,7 @@ const rstMessage: Message = {
         ja: 'SYN を確認応答し、クライアントがリセットを受け入れられるようにする',
       },
     },
-  ],
+  ]),
 }
 
 function buildSteps(options: TcpOptions): readonly Step[] {
