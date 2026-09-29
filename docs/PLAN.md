@@ -707,7 +707,7 @@ Issue は #224〜#226 に分けて起票した。
 
 **完了条件**: 「ネットワークのセキュリティ」（`security`）に Cookie と CSRF のテーマがあり、根拠（rfc6265bis の草案 -22、RFC 6265、HTML・URL・Fetch Standard、Fetch Metadata、RFC 6454 / 9110）、クイズ、en／ja の概要がある。
 
-**完了**（#244〜#246）: テーマは 31 → 32。オリジンと同じサイトの判定（`site.ts`。PSL はごく一部）、SameSite の解析と Cookie を付けるかどうか（`cookies.ts`。草案 §5.8.3、Lax-allowing-unsafe）、Origin と Sec-Fetch-Site（`requestHeaders.ts`）の純関数を足した。
+**完了**（#244〜#246）: テーマは 31 → 32（Cookie と CSRF）。オリジンと同じサイトの判定（`site.ts`。PSL はごく一部）、SameSite の解析と Cookie を付けるかどうか（`cookies.ts`。草案 §5.8.3、Lax-allowing-unsafe）、Origin と Sec-Fetch-Site（`requestHeaders.ts`）の純関数を足した。
 
 | # | タスク | ラベル |
 |---|---|---|
@@ -715,10 +715,14 @@ Issue は #224〜#226 に分けて起票した。
 | 13-2 | Cookie と CSRF のページ（概要、クイズ、登録） | content |
 | 13-3 | PLAN、CLAUDE.md、README の仕上げ | content |
 
+Issue は #244〜#246 に分けて起票した。
+
 #### Phase 13 の判断
 
 | 項目 | 判断 | 理由 |
 |---|---|---|
+| 分類と位置 | `security` の最後（メールの送信ドメイン認証の次。Phase 14 で HSTS がその間に入った） | Cookie の守りは、トランスポートの守りの次。前提の CORS は `http` にあり、先に読む |
+| オプション | `situation`（none / lax / strict / laxGet / token / fetchMetadata）の 1 つの選択 | 防御を組み合わせると意味の薄い組が増える（Phase 11・12 と同じ） |
 | 根拠の版 | draft-ietf-httpbis-rfc6265bis-22 を草案だと明記して節番号で引く（2026-09-29 に datatracker で RFC Ed Queue を確認）。RFC 6265 を添える | RFC 6265 には SameSite がない。RFC になったら引用を直す |
 | 規格の置き場所 | same site は HTML、registrable domain は URL、Origin は Fetch、Sec-Fetch-* は W3C の Fetch Metadata（Working Draft） | Living Standard は節番号が動くので、名前とアンカーで引く |
 | レーン | ブラウザー、bank.example、evil.example の 3 本。利用者のレーンは作らない | 利用者の操作はネットワークのメッセージではない。誰が始めた要求かは Initiator のフィールドと section の帯で示す |
@@ -730,13 +734,15 @@ Issue は #224〜#226 に分けて起票した。
 
 **完了条件**: `security` に HSTS と SSL ストリッピングのテーマがあり、根拠の RFC（6797 / 9110 / 6265 / 9846 / 9460、rfc6265bis の草案）、クイズ、en／ja の概要がある。
 
-**完了**（#249〜#251）: テーマは 32 → 33。Strict-Transport-Security の解析（`sts.ts`。§6.1 の癖と §6.2 の例）、既知の HSTS ホストの記録と照合と書き換え（`store.ts`。§8.1〜§8.3）、Cookie の送信（`cookies.ts`。RFC 6265 §5.4）の純関数を足した。SYN フラッドのテーマも設計したが、見送った（#253〜#255）。
+**完了**（#249〜#251）: テーマは 32 → 33（HSTS と SSL ストリッピング）。Strict-Transport-Security の解析（`sts.ts`。§6.1 の癖と §6.2 の例）、既知の HSTS ホストの記録と照合と書き換え（`store.ts`。§8.1〜§8.3）、Cookie の送信（`cookies.ts`。RFC 6265 §5.4）の純関数を足した。SYN フラッドのテーマも設計したが、見送った（#253〜#255）。
 
 | # | タスク | ラベル |
 |---|---|---|
 | 14-1 | HSTS のシナリオ（HSTS なしのストリッピング。もしも: 既知の HSTS ホスト、期限切れ、攻撃者の証明書、includeSubDomains、プリロードリスト）とテスト | content |
 | 14-2 | HSTS のページ（概要、クイズ、登録） | content |
 | 14-3 | PLAN、CLAUDE.md、README の仕上げ | content |
+
+Issue は #249〜#251 に分けて起票した。
 
 #### Phase 14 の判断
 
@@ -745,9 +751,10 @@ Issue は #224〜#226 に分けて起票した。
 | 分類と位置 | `security` のメールの送信ドメイン認証の次、Cookie と CSRF の前 | TLS の知識を使う。トランスポートの守りから Cookie の守りへ |
 | レーン | ブラウザー、攻撃者（経路上。`router`）、サイト（example.com と www）の 3 本。DNS は描かない | 攻撃に要るのは経路だけ。すべてのメッセージを攻撃者を経由して区間ごとに描き、http は読めて TLS は読めないことを見せる |
 | HSTS ホスト | 頂点の example.com。www は includeSubDomains の例 | 記録はホストごと（§5.3）。プリロードは頂点のドメインに要る |
+| オプション | `situation`（noHsts / known / expired / badCert / subdomain / preload）の 1 つの選択 | 2 つの軸にすると、意味のない組み合わせができる |
 | 初めての訪問 | 期限切れの選択肢と同じ流れとして説明し、プリロードの選択肢で答えを示す | 通信の上では同じ |
 | Cookie の上書き | 攻撃者が Secure を外した Set-Cookie は、既存の Secure の Cookie を上書きできない（rfc6265bis §5.7 手順 16）として、Cookie の表は変えない | 今のブラウザーの動き。攻撃者はセッションを自分の TLS の接続で読んでいるので、攻撃は成り立つ |
-| RFC でないもの | sslstrip（Black Hat DC 2009）、プリロードリスト（hstspreload.org）、Chrome の自動の格上げ（Google のブログ）は、確認した日付を添える | 変わりやすい |
+| RFC でないもの | sslstrip（Black Hat DC 2009）、プリロードリスト（hstspreload.org、2026-09-29 に確認）、Chrome の自動の https への書き換え（Google のブログ、2025 年 10 月の発表）は、日付を添える | 変わりやすい |
 | 扱わないもの | 攻撃者が経路に入る手段、TCP と NAT、301 のキャッシュ、IDNA、`<meta>` | 主題がぼやける。一部は概要で触れる |
 
 ## 9. リスクと対策
