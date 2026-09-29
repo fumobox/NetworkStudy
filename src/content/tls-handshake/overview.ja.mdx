@@ -25,7 +25,7 @@
 
 ## 手元で試す
 
-`openssl s_client` は TLS のハンドシェイクをして、合意した内容を表示する。
+`openssl s_client` は TLS のハンドシェイクをして、合意した内容を表示する。OpenSSL（たとえば Homebrew の `openssl@3`）を使う。macOS に入っている `openssl`（`/usr/bin/openssl`）は LibreSSL で、`-brief` も `-verify_hostname` もない。
 
 ```sh
 openssl s_client -connect example.com:443 -servername example.com -brief < /dev/null
@@ -42,9 +42,9 @@ Verification: OK
 Negotiated TLS1.3 group: X25519MLKEM768
 ```
 
-- **Protocol version** と **Ciphersuite** は、ServerHello が選んだもの。**Verification: OK** は、サーバーの証明書の連鎖を信頼ストアと照らして確かめたこと。`-servername` は SNI で名前を送るが、証明書がその名前と一致するかを s_client が確かめるのは、`-verify_hostname example.com` も付けたときだけ。
-- **group** は、鍵共有の鍵交換の方式。ここでは X25519MLKEM768 で、X25519 と耐量子の ML-KEM を組み合わせたもの。ステップ実行ではふつうの X25519 を使う。`-showcerts` を付けると、連鎖全体を表示する。
-- macOS に入っている `openssl` は LibreSSL で、表示が違う。この出力は OpenSSL のもの。`curl -v https://example.com/` でも、TLS の版と証明書が見える。Wireshark のフィルター `tls.handshake` で読めるのは ClientHello と ServerHello だけ。TLS 1.3 では、ハンドシェイクの残りはもう暗号化されている。
+- **Protocol version** と **Ciphersuite** は、ServerHello が選んだもの。**Verification: OK** は、サーバーの証明書チェーンを信頼ストアと照らして確かめたこと。`-servername` は SNI で名前を送るが、証明書がその名前と一致するかを s_client が確かめるのは、`-verify_hostname example.com` も付けたときだけ。
+- **group** は、key share に使った鍵交換の方式（グループ）。ここでは X25519MLKEM768 で、X25519 と耐量子の ML-KEM を組み合わせたもの。ステップ実行ではふつうの X25519 を使う。`-brief` を外して `-showcerts` を付けると、チェーン全体を表示する。
+- `curl -v https://example.com/` でも、TLS のバージョンと証明書が見える。Wireshark のフィルター `tls.handshake` で読めるのは ClientHello と ServerHello だけ。TLS 1.3 では、ハンドシェイクの残りはもう暗号化されている。
 
 ## 参考
 

@@ -25,7 +25,7 @@ The server’s certificate is signed by an **intermediate CA**, whose certificat
 
 ## Try it yourself
 
-`openssl s_client` runs a TLS handshake and prints what was agreed:
+`openssl s_client` runs a TLS handshake and prints what was agreed. Use OpenSSL (for example Homebrew’s `openssl@3`): the `openssl` that comes with macOS (`/usr/bin/openssl`) is LibreSSL, which has neither `-brief` nor `-verify_hostname`.
 
 ```sh
 openssl s_client -connect example.com:443 -servername example.com -brief < /dev/null
@@ -43,8 +43,8 @@ Negotiated TLS1.3 group: X25519MLKEM768
 ```
 
 - **Protocol version** and **Ciphersuite** are what the ServerHello chose. **Verification: OK** means the server’s certificate chain was checked against the trust store. `-servername` sends the name in SNI, but s_client checks that the certificate matches it only if you also add `-verify_hostname example.com`.
-- **group** is the key exchange of the key shares. Here it is X25519MLKEM768, a hybrid that combines X25519 with the post-quantum ML-KEM; the walkthrough uses plain X25519. Add `-showcerts` to print the whole chain.
-- The `openssl` that comes with macOS is LibreSSL and prints differently; this output is from OpenSSL. `curl -v https://example.com/` also shows the TLS version and the certificate. In Wireshark, the filter `tls.handshake` shows only the ClientHello and ServerHello in readable form: in TLS 1.3 the rest of the handshake is already encrypted.
+- **group** is the key-exchange group used for the key shares. Here it is X25519MLKEM768, a hybrid that combines X25519 with the post-quantum ML-KEM; the walkthrough uses plain X25519. Run it without `-brief` and with `-showcerts` to print the whole chain.
+- `curl -v https://example.com/` also shows the TLS version and the certificate. In Wireshark, the filter `tls.handshake` shows only the ClientHello and ServerHello in readable form: in TLS 1.3 the rest of the handshake is already encrypted.
 
 ## References
 

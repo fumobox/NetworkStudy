@@ -34,7 +34,7 @@ Trimmed output (curl 8.7.1 on macOS 26, 2026-09-29):
 *   Trying [2606:4700:10::6814:179a]:443...
 * Connected to example.com (2606:4700:10::6814:179a) port 443
 * ALPN: curl offers h2,http/1.1
-* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256
+* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256 / [blank] / UNDEF
 * ALPN: server accepted h2
 > GET / HTTP/2
 < HTTP/2 200
@@ -51,7 +51,7 @@ curl -o /dev/null -s -w 'dns %{time_namelookup}  tcp %{time_connect}  tls %{time
 dns 0.001950  tcp 0.034158  tls 0.072933  first byte 0.131620
 ```
 
-- Here the name came from a cache (2 ms). The TCP handshake took about one round trip (32 ms), TLS about one more (39 ms), and the first byte of the response one more after the request. Linux’s curl takes the same options.
+- Here the name came from a cache (2 ms). The TCP handshake took about one round trip (32 ms), TLS about one more (39 ms), and the first byte of the response about one more round trip plus the server’s processing time (59 ms). Linux’s curl takes the same options.
 
 ## References
 

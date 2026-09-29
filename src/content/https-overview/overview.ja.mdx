@@ -34,7 +34,7 @@ curl -v -o /dev/null https://example.com/
 *   Trying [2606:4700:10::6814:179a]:443...
 * Connected to example.com (2606:4700:10::6814:179a) port 443
 * ALPN: curl offers h2,http/1.1
-* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256
+* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256 / [blank] / UNDEF
 * ALPN: server accepted h2
 > GET / HTTP/2
 < HTTP/2 200
@@ -51,7 +51,7 @@ curl -o /dev/null -s -w 'dns %{time_namelookup}  tcp %{time_connect}  tls %{time
 dns 0.001950  tcp 0.034158  tls 0.072933  first byte 0.131620
 ```
 
-- ここでは名前はキャッシュから来た（2 ms）。TCP のハンドシェイクに約 1 往復（32 ms）、TLS にもう約 1 往復（39 ms）、要求の後、応答の最初のバイトまでにさらに 1 往復かかった。Linux の curl も同じオプションを使える。
+- ここでは名前はキャッシュから来た（2 ms）。TCP のハンドシェイクに約 1 往復（32 ms）、TLS にもう約 1 往復（39 ms）、要求の後、応答の最初のバイトまでに、さらに約 1 往復とサーバーの処理時間（59 ms）かかった。Linux の curl も同じオプションを使える。
 
 ## 参考
 
