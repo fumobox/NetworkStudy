@@ -19,7 +19,7 @@
  * 根拠（Docker のドキュメント。2026 年 9 月に参照。Engine 28 の時点）:
  * - 「Networking overview」: 既定のアドレスのプール（最初は 172.17.0.0/16）、組み込みの DNS サーバー 127.0.0.11、
  *   外への名前はホストの DNS サーバーに転送する
- * - 「Bridge network driver」: 既定のブリッジネットワーク（docker0）の上のコンテナーは IP アドレスでしか互いに届かない。
+ * - 「Bridge network driver」: 既定のブリッジネットワーク（docker0）の上のコンテナーは（古い --link を除いて）IP アドレスでしか互いに届かない。
  *   ユーザー定義のネットワークは名前解決を持つ。送信元はマスカレードされる
  * - 「Port publishing and mapping」: -p 8080:80 はホストのポート 8080 をコンテナーの TCP のポート 80 に対応づける。
  *   公開していないポートには、ホストの外から届かない
@@ -553,11 +553,13 @@ function hostRoutes(net: Network): StateTable {
   return table(ROUTE_COLUMNS, rows)
 }
 
-const MASQUERADE_RULE = [
+/** Docker はネットワークごとに、その範囲から来て別のインターフェースへ出るパケットをマスカレードする規則を足す */
+const masqueradeRule = (net: Network): readonly string[] => [
   'postrouting',
-  `src ${DEFAULT_NETWORK.prefix}, out ≠ ${DEFAULT_NETWORK.bridge}`,
+  `src ${net.prefix}, out ≠ ${net.bridge}`,
   'masquerade',
-] as const
+]
+const MASQUERADE_RULE = masqueradeRule(DEFAULT_NETWORK)
 const DNAT_RULE = [
   'prerouting',
   'dst a host address, tcp dport 8080',
@@ -686,8 +688,8 @@ function outboundSteps(): Step[] {
         ja: 'ホストが経路を選び、送信元を書き換える',
       },
       description: {
-        en: `The host routes the packet to eth0 (TTL 64 → 63). It is the first packet of a new connection, so the MASQUERADE rule applies: the source becomes the address of the interface it leaves by, ${HOST_IP}. The port 40000 is kept because no other connection uses it. Connection tracking records the original direction and the reply it now expects.`,
-        ja: `ホストはパケットを eth0 へ送る経路を選ぶ（TTL は 64 → 63）。新しい接続の最初のパケットなので MASQUERADE の規則が当てはまり、送信元は出ていくインターフェースのアドレス ${HOST_IP} になる。ほかの接続が使っていないので、ポート 40000 はそのまま。接続の追跡は、元の向きと、これから来るはずの返事の向きを記録する。`,
+        en: `The host routes the packet to eth0 (TTL 64 → 63). It is the first packet of a new connection, so the MASQUERADE rule applies: the source becomes the address of the interface it leaves by, ${HOST_IP}. The port 40000 is kept because no other connection to the same server uses it (the reply tuple is unique). Connection tracking records the original direction and the reply it now expects.`,
+        ja: `ホストはパケットを eth0 へ送る経路を選ぶ（TTL は 64 → 63）。新しい接続の最初のパケットなので MASQUERADE の規則が当てはまり、送信元は出ていくインターフェースのアドレス ${HOST_IP} になる。同じサーバーへのほかの接続が使っていない（返事の向きの組が重ならない）ので、ポート 40000 はそのまま。接続の追跡は、元の向きと、これから来るはずの返事の向きを記録する。`,
       },
       events: [
         model.track(entry),
@@ -790,7 +792,7 @@ function publishedSteps(): Step[] {
   }
   const insideText = {
     en: 'Inside: the destination is the container, and the source is still the real client.',
-    ja: '中。宛先はコンテナーで、送信元は本当のクライアントのまま。',
+    ja: 'ホストの中。宛先はコンテナーで、送信元は本当のクライアントのまま。',
   }
   const replyText = {
     en: 'The container answers the real client.',
@@ -991,7 +993,7 @@ function sameBridgeSteps(net: Network, port: number, userNetwork: boolean): Step
           ja: `コンテナーは docker network create で作ったネットワークで起動した。このネットワークは専用のブリッジ ${net.bridge} と、次のアドレスの範囲 ${net.prefix} を持つ。A は Web アプリケーションで、B（名前は db）はポート ${String(port)} で待ち受けるデータベース。ユーザー定義のネットワークでは、Docker は各コンテナーのリゾルバーを組み込みの DNS サーバー 127.0.0.11 に向ける。`,
         },
         events: [
-          ...setupEvents(model, [MASQUERADE_RULE]),
+          ...setupEvents(model, [MASQUERADE_RULE, masqueradeRule(net)]),
           set(A, DNS, 'nameserver 127.0.0.11'),
           set(B, SOCKET, `LISTEN 0.0.0.0:${String(port)}`),
         ],
@@ -1018,8 +1020,8 @@ function sameBridgeSteps(net: Network, port: number, userNetwork: boolean): Step
       id: 'dns',
       title: { en: 'A looks up the name db', ja: 'A が名前 db を引く' },
       description: {
-        en: `A asks the embedded DNS server for db and gets ${net.b}. 127.0.0.11 is a loopback address inside A’s own namespace, so the query never crosses the veth pair. The embedded DNS server knows the containers on the same network by name and forwards other names to the DNS servers configured on the host. On the default bridge there is no such lookup: containers there reach each other by IP address only.`,
-        ja: `A は組み込みの DNS サーバーに db を尋ね、${net.b} を得る。127.0.0.11 は A 自身の名前空間の中のループバックアドレスなので、問い合わせは veth ペアを通らない。組み込みの DNS サーバーは同じネットワークのコンテナーを名前で知っていて、ほかの名前はホストに設定された DNS サーバーに転送する。既定のブリッジにはこの名前解決がなく、コンテナーは IP アドレスでしか互いに届かない。`,
+        en: `A asks the embedded DNS server for db and gets ${net.b}. 127.0.0.11 is a loopback address inside A’s own namespace, so the query never crosses the veth pair. The embedded DNS server knows the containers on the same network by name and forwards other names to the DNS servers configured on the host. On the default bridge there is no such lookup: containers there reach each other by IP address only (apart from the legacy --link option).`,
+        ja: `A は組み込みの DNS サーバーに db を尋ね、${net.b} を得る。127.0.0.11 は A 自身の名前空間の中のループバックアドレスなので、問い合わせは veth ペアを通らない。組み込みの DNS サーバーは同じネットワークのコンテナーを名前で知っていて、ほかの名前はホストに設定された DNS サーバーに転送する。既定のブリッジにはこの名前解決がなく、コンテナーは（古い --link を除いて）IP アドレスでしか互いに届かない。`,
       },
       events: [set(A, DNS, `db → ${net.b} (via 127.0.0.11)`)],
     })
@@ -1327,8 +1329,8 @@ function unpublishedSteps(): Step[] {
       id: 'rst',
       title: { en: 'The host refuses the connection', ja: 'ホストが接続を断る' },
       description: {
-        en: `The host answers with RST, as for any closed port (RFC 9293 §3.10.7.1). The container’s address ${net.a} cannot be reached directly either: it is a private address with no route on the Internet (RFC 1918), and Docker also blocks such direct access from the host’s LAN by default. To make the port reachable from outside, publish it with -p.`,
-        ja: `ホストは、閉じたポートと同じく RST で答える（RFC 9293 §3.10.7.1）。コンテナーのアドレス ${net.a} にも直接は届かない。インターネットに経路のないプライベートアドレス（RFC 1918）で、ホストの LAN からの直接のアクセスも Docker が既定で止めている。ポートに外から届くようにするには、-p で公開する。`,
+        en: `The host answers with RST, as for any closed port (RFC 9293 §3.10.7.1). The container’s address ${net.a} cannot be reached directly either: it is a private address with no route on the Internet (RFC 1918), and Docker (since Engine 28, in the default nat gateway mode) also blocks such direct access from the host’s LAN. To make the port reachable from outside, publish it with -p.`,
+        ja: `ホストは、閉じたポートと同じく RST で答える（RFC 9293 §3.10.7.1）。コンテナーのアドレス ${net.a} にも直接は届かない。インターネットに経路のないプライベートアドレス（RFC 1918）で、ホストの LAN からの直接のアクセスも、Docker（Engine 28 から。既定の nat のゲートウェイのモード）が止めている。ポートに外から届くようにするには、-p で公開する。`,
       },
       events: [
         send(
