@@ -20,6 +20,7 @@ import { osiModelTheme } from './osi-model'
 import { quicTheme } from './quic'
 import { reverseProxyTheme } from './reverse-proxy'
 import { routeLookupTheme } from './route-lookup'
+import { serverSentEventsTheme } from './server-sent-events'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { switchingTheme } from './switching'
 import { tcpCloseTheme } from './tcp-close'
@@ -62,6 +63,7 @@ export const THEMES: readonly ThemeModule[] = [
   http2Theme,
   quicTheme,
   webSocketTheme,
+  serverSentEventsTheme,
   reverseProxyTheme,
   firewallTheme,
   dnssecTheme,

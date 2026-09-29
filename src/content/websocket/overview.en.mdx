@@ -6,7 +6,7 @@ In HTTP the client asks and the server answers. A chat, a live dashboard or a ga
 |---|---|---|---|
 | Polling | The client asks every few seconds | A request each time | A whole HTTP request, often for nothing |
 | Long polling | The server holds the request until there is news | A new request after each answer | A whole HTTP request per message |
-| Server-Sent Events | Only the server, as a stream | One HTTP response that never ends | A few bytes, but one direction only |
+| [Server-Sent Events](/themes/server-sent-events) | Only the server, as a stream | One HTTP response that never ends | A few bytes, but one direction only |
 | **WebSocket** | Both sides, at any time | One connection kept open | A 2- to 14-byte header |
 
 ## The opening handshake
