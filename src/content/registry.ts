@@ -31,6 +31,7 @@ import { tcpHandshakeTheme } from './tcp-handshake'
 import { tlsHandshakeTheme } from './tls-handshake'
 import { vlanTheme } from './vlan'
 import { containerNetworkingTheme } from './container-networking'
+import { vxlanTheme } from './vxlan'
 import { webSocketTheme } from './websocket'
 import { wifiTheme } from './wifi'
 import type { ThemeModule } from './types'
@@ -50,6 +51,7 @@ export const THEMES: readonly ThemeModule[] = [
   switchingTheme,
   vlanTheme,
   containerNetworkingTheme,
+  vxlanTheme,
   wifiTheme,
   ipv6NdTheme,
   dnsResolutionTheme,

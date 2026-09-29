@@ -1,0 +1,112 @@
+## Why an overlay?
+
+A [bridge](/themes/container-networking) connects containers or VMs on one host into a LAN. But workloads run on many hosts, and the hosts are usually connected by a routed IP network, not by one big switch. Stretching one [VLAN](/themes/vlan) across every rack is fragile, and a VLAN ID has only 12 bits, which allows 4094 segments. That is not enough when every tenant of a data center wants its own networks.
+
+An **overlay** builds the LAN on top of the IP network instead. Each host takes the Ethernet frames of its containers, wraps them in UDP, and sends them over the ordinary IP network, the **underlay**, to the right host, which unwraps them. The containers see one LAN. The underlay sees UDP packets between hosts. **VXLAN** (RFC 7348) is the most widely used way to do this.
+
+## The VXLAN packet: 50 bytes around a frame
+
+A VXLAN packet is the whole inner Ethernet frame, behind three headers:
+
+- the **VXLAN header**, 8 bytes: a flag byte (`I` = `0x08`, meaning the VNI is valid), reserved bits, a **24-bit VNI** (VXLAN Network Identifier) and a reserved byte;
+- a **UDP header**, with destination port **4789**, which IANA assigned to VXLAN;
+- an **outer IP header**, from the sending host to the receiving host.
+
+With IPv4 outside, that adds 50 bytes to the inner IP packet: the inner Ethernet header (14), VXLAN (8), UDP (8) and outer IP (20). With IPv6 outside, it adds 70 bytes. The 24-bit VNI allows about 16 million segments.
+
+RFC 7348 says the UDP checksum SHOULD be sent as zero (with an IPv4 outer header; over IPv6, a zero UDP checksum is allowed only under the conditions of RFC 6935 and RFC 6936).
+
+## The VTEP: a switch with a tunnel port
+
+The device that wraps and unwraps is the **VTEP** (VXLAN Tunnel End Point). On Linux it is a VXLAN network device attached to the host’s bridge. It behaves like a switch whose one extra port is the tunnel:
+
+- It learns local MAC addresses from its own ports, as a [switch](/themes/switching) does.
+- When it receives a VXLAN packet, it learns that the inner source MAC address is behind the outer source IP address, separately for each VNI (RFC 7348 §4.1).
+- A frame for a MAC address it knows is sent in one VXLAN packet, straight to that VTEP.
+
+## Broadcasts and unknown destinations
+
+A broadcast such as the first ARP request, or a frame for a MAC address no VTEP has learned yet, must reach every host with that VNI. There are two ways:
+
+- **Multicast**: each VNI is mapped to an IP multicast group that every VTEP of the VNI joins. The sender sends one copy to the group, and the underlay replicates it (RFC 7348 §4.2). The underlay must then support multicast routing.
+- **Head-end replication**: each VTEP keeps a **flood list** of the other VTEPs of the VNI and sends a separate unicast copy to each one (RFC 8365 calls this ingress replication). It works on any IP network, and the sender does the work.
+
+Either way, the reply is unicast, because the replying VTEP has just learned where the sender is. A VTEP never floods a packet that came from the tunnel back into the tunnel: every other VTEP has already received its own copy from the sender. This is split horizon, the same reason a switch never sends a frame back out of the port it arrived on.
+
+## The VNI keeps tenants apart
+
+Each VNI is its own Layer 2 segment. A broadcast in VNI 100 goes only to the ports and VTEPs of VNI 100, and the receiving VTEP delivers it only to the ports of VNI 100. So two tenants can use the same addresses, even the same MAC addresses, in different VNIs without ever seeing each other’s traffic. The underlay does not care: for it, the only difference is a number in the VXLAN header.
+
+VXLAN has no encryption or authentication of its own. Anyone who can reach the underlay can read the frames, or send forged ones to a VTEP. The underlay must therefore be trusted, or be protected by other means.
+
+## MTU: the 50 bytes have to fit somewhere
+
+A 1500-byte inner packet becomes a 1550-byte outer packet. RFC 7348 §4.3 says VTEPs MUST NOT fragment VXLAN packets, and recommends that the underlay MTU be large enough for the encapsulated frames. There are two ways to make it fit:
+
+- Raise the underlay MTU to at least 1550, for example with 9000-byte jumbo frames. Then the overlay can keep MTU 1500.
+- Lower the overlay MTU to 1450. Linux gives a VXLAN device this value (minus 70 over IPv6) when it is created on a lower device (`dev`), but the containers’ interfaces must use it too.
+
+If neither is done, small packets pass and full-sized ones vanish, as in the walkthrough. The TCP handshake succeeds, and then the connection hangs: the same black hole as in [path MTU discovery](/themes/pmtud).
+
+RFC 7348 does not say whether the outer header should have the Don’t Fragment bit set. On Linux it is not set by default. Then a router in the underlay with a smaller MTU may fragment the outer packet, and the receiving VTEP MAY discard such fragments. If DF is set, the router’s ICMP message goes to the sending VTEP, not to the container. What happens next depends on the implementation.
+
+## The source port and equal-cost paths
+
+Data center networks usually have several equal-cost paths between two hosts, and routers choose one per packet with a hash of the headers (ECMP). Between two hosts, every VXLAN packet has the same outer addresses and destination port. If they all looked the same, the hash would put every flow on one path.
+
+So RFC 7348 §5 recommends that the VTEP derive the outer **source port** from a hash of the inner packet, in the range 49152–65535. Different inner flows get different source ports, and are spread over the paths. Each flow always gets the same port, stays on one path, and does not arrive out of order.
+
+## Control planes: static entries and EVPN
+
+Learning by flooding works, but it floods, and a VTEP learns only once traffic arrives. Larger networks use a **control plane** instead. Each VTEP announces the MAC and IP addresses behind it, for example as EVPN routes carried by BGP (RFC 8365, RFC 7432). The other VTEPs write them into their tables before any traffic flows. With the IP addresses known, a VTEP can even answer ARP requests itself (proxy ARP, RFC 9161), so most broadcasts never cross the underlay.
+
+## VXLAN, NVGRE and Geneve
+
+- **VXLAN** (RFC 7348): Ethernet in UDP, port 4789, 24-bit VNI, 8-byte header. It is an Informational RFC describing a widely deployed protocol, not a Standards Track one.
+- **NVGRE** (RFC 7637, Informational): Ethernet in GRE, with a 24-bit VSID. Without UDP ports, routers have less to hash, so it adds an 8-bit FlowID for that.
+- **Geneve** (RFC 8926, Standards Track): UDP, port 6081, 24-bit VNI, a Protocol Type field (usually Ethernet, but not only), and variable-length options. It was designed to be extensible where VXLAN is fixed.
+
+## Standard or implementation?
+
+- **RFC 7348:** the header, port 4789, learning, flooding by multicast, no fragmentation by the VTEP, the recommended source port range.
+- **Linux:**
+  - its default destination port is 8472, used before 4789 was assigned; set `dstport 4789` to use the standard one;
+  - the outer DF bit is not set by default (`df`);
+  - a VXLAN device created on a lower device gets that device’s MTU minus 50;
+  - without `srcport`, the source port comes from `ip_local_port_range` (32768–60999 by default);
+  - the TTL of multicast packets defaults to 1;
+  - head-end replication is written as several all-zero MAC entries in the forwarding table.
+- **Tools** such as flannel and Docker’s overlay driver choose their own defaults on top of this.
+
+## What to look for in the walkthrough
+
+- The **Forwarding table (FDB)** of each VTEP: local ports, and remote MAC addresses behind the other VTEP’s IP address. Also the **Flood list** (head-end replication) and the **Neighbor table** (proxy ARP).
+- The fields of the encapsulated packets: outer addresses, **TTL** (64, then 63 after the underlay), **Total Length** (the inner length plus 50), **UDP Dst** 4789, the 8 bytes of the **VXLAN** header, and the **VNI**.
+- In the “What if…” options:
+  - one copy to a multicast group, replicated by the underlay;
+  - tables filled by a control plane, and an ARP request answered by the VTEP;
+  - two tenants with the same addresses in VNI 100 and 200;
+  - the 1500-byte packet that does not fit;
+  - two flows on two different paths.
+
+## About this page
+
+- There are two hosts, each with one VTEP. The VTEP lane stands for the host’s bridge and VXLAN device together.
+- IPv4 only. The underlay is one lane standing for a routed network, and in the ECMP option its two paths appear only in the **Path** field.
+- Routing protocols, PIM and IGMP messages are not drawn, and the forwarding tables do not age out.
+- Inner frames have no VLAN tag, and FCS and padding are not counted.
+- Source ports and ECMP paths come from an illustrative hash, not from Linux’s.
+- In the MTU option, the VTEP drops the frame and nothing comes back; real implementations differ.
+- In the multicast option, the TTL of the VTEPs is assumed to be configured above 1.
+- TCP sequence numbers are not drawn. Control-plane entries appear in the first step, and BGP is not drawn.
+
+## References
+
+- [RFC 7348: Virtual eXtensible Local Area Network (VXLAN)](https://www.rfc-editor.org/rfc/rfc7348) — §3, §4, §4.1, §4.2, §4.3, §5, §7
+- [RFC 8365: A Network Virtualization Overlay Solution Using EVPN](https://www.rfc-editor.org/rfc/rfc8365) — §4
+- [RFC 7432: BGP MPLS-Based Ethernet VPN](https://www.rfc-editor.org/rfc/rfc7432)
+- [RFC 9161: Operational Aspects of Proxy ARP/ND in Ethernet Virtual Private Networks](https://www.rfc-editor.org/rfc/rfc9161)
+- [RFC 7637: NVGRE](https://www.rfc-editor.org/rfc/rfc7637) and [RFC 8926: Geneve](https://www.rfc-editor.org/rfc/rfc8926)
+- [RFC 1112](https://www.rfc-editor.org/rfc/rfc1112) — §6.4 (multicast MAC addresses), [RFC 5771](https://www.rfc-editor.org/rfc/rfc5771) — §9.2
+- [RFC 2992: Analysis of an Equal-Cost Multi-Path Algorithm](https://www.rfc-editor.org/rfc/rfc2992)
+- [ip-link(8)](https://man7.org/linux/man-pages/man8/ip-link.8.html) — the VXLAN options, and the [Linux kernel VXLAN documentation](https://docs.kernel.org/networking/vxlan.html)

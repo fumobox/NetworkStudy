@@ -18,6 +18,11 @@ const PREREQUISITES: readonly (readonly [string, string])[] = [
   ['switching', 'vlan'],
   ['nat', 'container-networking'],
   ['switching', 'container-networking'],
+  ['switching', 'vxlan'],
+  ['vlan', 'vxlan'],
+  ['container-networking', 'vxlan'],
+  ['pmtud', 'vxlan'],
+  ['tcp-handshake', 'vxlan'],
 ]
 
 describe('学習の道筋', () => {
