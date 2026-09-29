@@ -5,6 +5,7 @@ import { dhcpTheme } from './dhcp'
 import { dnsResolutionTheme } from './dns-resolution'
 import { dnssecTheme } from './dnssec'
 import { firewallTheme } from './firewall'
+import { wireguardTheme } from './wireguard'
 import { hstsTheme } from './hsts'
 import { httpCachingTheme } from './http-caching'
 import { http2Theme } from './http2'
@@ -70,6 +71,7 @@ export const THEMES: readonly ThemeModule[] = [
   serverSentEventsTheme,
   reverseProxyTheme,
   firewallTheme,
+  wireguardTheme,
   dnssecTheme,
   mailAuthTheme,
   hstsTheme,

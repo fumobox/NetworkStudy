@@ -23,6 +23,12 @@ const PREREQUISITES: readonly (readonly [string, string])[] = [
   ['container-networking', 'vxlan'],
   ['pmtud', 'vxlan'],
   ['tcp-handshake', 'vxlan'],
+  ['nat', 'wireguard'],
+  ['pmtud', 'wireguard'],
+  ['firewall', 'wireguard'],
+  ['vxlan', 'wireguard'],
+  ['tls-handshake', 'wireguard'],
+  ['nat-traversal', 'wireguard'],
 ]
 
 describe('学習の道筋', () => {

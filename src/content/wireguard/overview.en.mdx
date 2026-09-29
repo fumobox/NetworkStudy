@@ -1,0 +1,105 @@
+## Why a remote-access VPN
+
+An office network (here 10.10.0.0/24) is not reachable from the Internet: it is behind a [firewall](/themes/firewall), and its addresses are private. A laptop at home or in a café still needs to reach it. A **remote-access VPN** gives the laptop an address inside the office’s world and carries its packets there through an encrypted **tunnel** over the Internet.
+
+**WireGuard** is a small VPN protocol built into Linux and available on other systems. It is described in a whitepaper (Donenfeld, NDSS 2017, updated since), not in an RFC.
+
+## Peers are public keys
+
+Each WireGuard interface (`wg0`) has a private key and a public key. You configure each **peer** by its public key, like an SSH key. There are no user names, certificates or negotiation of algorithms: the cryptography is fixed (Curve25519, ChaCha20-Poly1305, BLAKE2s). If a better algorithm is ever needed, the protocol gets a new version.
+
+## Cryptokey routing: AllowedIPs both ways
+
+Each peer also has **AllowedIPs**, a list of address ranges. WireGuard uses it in both directions:
+
+- **Sending:** the destination address is looked up in all peers’ AllowedIPs (longest match). The peer found decides which key encrypts the packet and where it is sent. No match, no sending.
+- **Receiving:** after decrypting, the inner source address is looked up the same way. It must belong to the peer that sent the packet, or the packet is dropped.
+
+So a peer can only ever speak for its own addresses. On the server, the laptop’s AllowedIPs is just `10.8.0.2/32`. On the laptop, the server’s AllowedIPs is `10.8.0.0/24, 10.10.0.0/24` (only those go through the tunnel: a **split tunnel**), or `0.0.0.0/0` to send everything (a **full tunnel**).
+
+## A handshake in one round trip
+
+WireGuard’s handshake is the Noise framework’s IK pattern with an optional pre-shared key (IKpsk2). It takes one round trip:
+
+1. **Handshake Initiation** (148 bytes): the laptop’s new ephemeral public key in the clear, then its static public key and a timestamp, encrypted with a key only it and the server can compute. An observer cannot tell who is connecting.
+2. **Handshake Response** (92 bytes): the server’s ephemeral key and an empty encrypted payload. Both sides now derive the same **keypair**.
+
+Every handshake uses new ephemeral keys, so recording traffic and later stealing a static private key does not reveal old sessions (forward secrecy). The timestamp stops replays: the server accepts an initiation only if its timestamp is newer than the last one from that peer. The server may not send data until the laptop has used the new keys, which proves that both sides really have them.
+
+WireGuard is silent to anything it cannot authenticate: a scan with the wrong keys gets no answer at all. The `mac1` field, a MAC keyed with the server’s public key, means only someone who knows that public key can even get a response.
+
+## Transport data: index, counter, authenticated encryption
+
+A **Transport Data** message has a 16-byte header (the receiver’s index, which finds the keypair without trying keys, and a 64-bit counter), the encrypted packet, and a 16-byte authentication tag. The packet is padded to a multiple of 16 bytes inside the encryption. A **keepalive** is a data message with nothing inside: 32 bytes.
+
+The counter is also checked against a **replay window**: a counter already seen, or much older than the newest one, is dropped. The whitepaper does not fix the window’s size; Linux uses 8128 on 64-bit systems. The check happens only after the tag has been verified.
+
+## Timers: new keys, keepalives, giving up
+
+- **New keys every 2 minutes:** the side that started the current keypair starts a new handshake when it sends on a keypair that is 120 seconds old. After 180 seconds a keypair is no longer used at all.
+- **Retries:** a handshake without an answer is retried every 5 seconds, with a new ephemeral key each time, for up to 90 seconds.
+- **Passive keepalive:** a peer that has received data but sent nothing for 10 seconds sends a keepalive, so the other side knows its packets arrived.
+- **Dead peer:** a peer that has sent data but received nothing for 15 seconds starts a new handshake.
+- **Erasing keys:** if no new session is made for 540 seconds, all keys are erased.
+
+## Roaming and NAT
+
+The server does not need to know where the laptop is. Its **endpoint** for the laptop is simply the source address and port of the last correctly authenticated packet from it. When the laptop moves to another network, its next packet updates the endpoint, and the connection carries on with the same keys. Forged or replayed packets cannot move the endpoint.
+
+A [NAT](/themes/nat) in front of the laptop is no problem while the laptop keeps sending. But a NAT forgets an idle UDP mapping, and then the server can no longer reach the laptop. **PersistentKeepalive** makes the laptop send a keepalive after a set number of seconds of silence; WireGuard’s documentation suggests 25. It is off by default, and only needed when the peer behind the NAT must be reachable while it is idle. RFC 4787 asks NATs to keep UDP mappings for at least 2 minutes, but shorter timers exist.
+
+## Under load: cookies
+
+A handshake costs the server several Curve25519 computations. An attacker could send many initiations from spoofed addresses to exhaust it. When a server is **under load**, it may require a second MAC, `mac2`, keyed with a **cookie**. An initiation without it gets a small **Cookie Reply** (64 bytes) instead of any computation. The cookie is a MAC of the source address and port under a secret that changes every 2 minutes, so only a sender that really receives packets at that address can use it. The initiator stores the cookie and uses it in its next retry. The cookie here has nothing to do with HTTP cookies.
+
+## MTU: 60 or 80 bytes
+
+A data message adds 32 bytes, plus UDP (8) and the outer IP header: 60 bytes over IPv4, 80 over IPv6. The padding to a multiple of 16 never takes a packet past the interface MTU, so 80 bytes is enough. Linux gives a WireGuard interface MTU 1420 by default (1500 − 80), and wg-quick sets it from the route’s MTU minus 80. Linux sends the outer packet without the Don’t Fragment bit, so an oversized packet is fragmented on the way instead of vanishing; see [path MTU discovery](/themes/pmtud) and [VXLAN](/themes/vxlan) for why the overhead matters.
+
+## Compared with IPsec
+
+IPsec is the standard VPN of the IETF: IKEv2 (RFC 7296) sets up the keys in at least four messages, with a choice of algorithms and several ways to authenticate, and ESP (RFC 4303) carries the packets, with a replay window of 64 by default. IKE uses UDP 500; when a NAT is detected, IKE and ESP move to UDP 4500. WireGuard does less on purpose: one fixed set of algorithms, only public keys, and a much smaller implementation, which is easier to review.
+
+## What WireGuard leaves to you
+
+- Distributing public keys and choosing tunnel addresses: you write them into the configuration (or a tool does).
+- DNS, and routes outside AllowedIPs: wg-quick or other tools set them up.
+- UDP only: networks that block UDP block WireGuard. Port 51820 is only the port used in examples; it is not registered.
+- Identity is a public key. There is no user name or password, and nothing expires unless you remove the peer.
+
+## What to look for in the walkthrough
+
+- The **Peers** tables: Endpoint, AllowedIPs, Latest handshake, Keepalive.
+- The **Keypairs** slots (previous, current, next): the server keeps a new keypair in next until the laptop uses it.
+- The fields: **Sender** and **Receiver** indexes, **Counter**, **Padding**, the outer addresses before and after the NAT, and the **IP Length**.
+- The **What the server did** state for every packet it drops.
+- In the “What if…” options:
+  - replayed, forged and disallowed packets, and no peer for a destination;
+  - the endpoint moving to the café;
+  - the NAT mapping expiring, and PersistentKeepalive;
+  - new keys after 120 seconds;
+  - a Cookie Reply and a retry with mac2.
+
+## Whitepaper, wg(8) or Linux?
+
+- **Whitepaper:** the messages and their sizes, the handshake, cryptokey routing (including an ICMP “no route to host” for a destination with no peer), roaming, the timers, cookies.
+- **wg(8) and wg-quick(8):** PersistentKeepalive, a random ListenPort when none is set, setting the MTU from routes.
+- **Linux:** the replay window of 8128, the default MTU 1420, when the server counts as under load, no Don’t Fragment bit, and sending a keepalive at once when PersistentKeepalive is set.
+
+## About this page
+
+- IPv4 only. Keys, indexes, nonces, cookies and times are names or example values, and no real cryptography is computed. No pre-shared key is used.
+- The jitter of retries (0 to 333 ms) and rate limiting are not drawn. “Under load” is a state, and the flood is one arrow.
+- The NAT keeps one mapping per internal address and port and picks ports in order. Its mapping lifetime is 30 seconds in the keepalive option, an example of a device shorter than RFC 4787 asks, and 2 minutes elsewhere. The home and café routers share one lane.
+- The VPN server forwards without NAT, and the internal server has a route to 10.8.0.0/24.
+- The inner packets are only ICMP Echo. Fragmentation and DNS are not drawn, and traffic between steps is left out.
+
+## References
+
+- [WireGuard: Next Generation Kernel Network Tunnel](https://www.wireguard.com/papers/wireguard.pdf) (whitepaper, NDSS 2017, updated)
+- [WireGuard: Protocol & Cryptography](https://www.wireguard.com/protocol/) and [Quick Start](https://www.wireguard.com/quickstart/)
+- [The Noise Protocol Framework](https://noiseprotocol.org/noise.html) (IKpsk2)
+- [RFC 7748](https://www.rfc-editor.org/rfc/rfc7748) (X25519), [RFC 8439](https://www.rfc-editor.org/rfc/rfc8439) (ChaCha20-Poly1305; WireGuard’s documents cite the obsoleted RFC 7539), [RFC 7693](https://www.rfc-editor.org/rfc/rfc7693) (BLAKE2)
+- [RFC 4787](https://www.rfc-editor.org/rfc/rfc4787) — §4.3 (NAT UDP mapping lifetime)
+- [RFC 7296](https://www.rfc-editor.org/rfc/rfc7296) (IKEv2) and [RFC 4303](https://www.rfc-editor.org/rfc/rfc4303) (ESP)
+- [wg(8)](https://man7.org/linux/man-pages/man8/wg.8.html) and [wg-quick(8)](https://man7.org/linux/man-pages/man8/wg-quick.8.html)
