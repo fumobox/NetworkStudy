@@ -56,6 +56,8 @@ Network security / ネットワークのセキュリティ
 - Stateful firewall: letting replies in, keeping strangers out / ステートフルファイアウォール: 返事は通し、見知らぬ相手は止める
 - DNSSEC: a chain of trust for DNS answers / DNSSEC: DNS の答えをたどる信頼の連鎖
 - Email authentication: SPF, DKIM and DMARC / メールの送信ドメイン認証: SPF、DKIM、DMARC
+- HSTS and SSL stripping / HSTS と SSL ストリッピング
+- Cookies and CSRF: SameSite, tokens and Fetch Metadata / Cookie と CSRF: SameSite、トークン、Fetch Metadata
 
 Available in English and Japanese. / 英語・日本語に対応しています。
 
