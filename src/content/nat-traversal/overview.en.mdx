@@ -47,6 +47,14 @@ While the call lasts, each side sends checks every 4–6 seconds to confirm that
 - On the server: the **permissions** (an IP without a port), the **channel**, and the lifetimes after four minutes.
 - In “What if…”, the “symmetric” NAT (the relay wins), **UDP blocked** (TURN over TLS), and a **forgotten permission** (PC B’s packets are dropped).
 
+## Try it yourself
+
+There is no built-in command for STUN, but a browser shows ICE at work during a video call:
+
+- In Chrome, open `chrome://webrtc-internals` in another tab during a call. The ICE candidates are listed with their types: `host` (your own address), `srflx` (the address a STUN server saw) and `relay` (an address on a TURN server). The selected candidate pair shows which one won. Chrome usually hides your own host addresses behind random `….local` names, and `prflx` candidates can also appear.
+- In Firefox, the page is `about:webrtc`.
+- In Wireshark, the display filter `stun` shows the STUN binding requests and responses, and the TURN messages too.
+
 ## About this page
 
 - IPv4 only, one media stream, and UDP only for ICE. Both PCs run full ICE, which is why the offerer is the controlling side.

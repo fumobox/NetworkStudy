@@ -18,6 +18,31 @@ Your PC has a routing table too, usually with just two routes: its own network, 
 - Turn routes off to see which one is used next, and what happens when there is no route at all.
 - Switch to the PC’s table and compare.
 
+## Try it yourself
+
+Your own computer has a routing table too, and can tell you which route it would use:
+
+```sh
+route -n get 192.0.2.10
+route -n get 192.168.1.20
+netstat -rn -f inet
+```
+
+Trimmed output (macOS 26, 2026-09-29). Addresses on your own network are replaced here with the values used in this theme.
+
+```
+$ route -n get 192.0.2.10
+destination: default
+    gateway: 192.168.1.1
+  interface: en0
+$ route -n get 192.168.1.20
+destination: 192.168.1.20
+  interface: en0
+```
+
+- For an address on the Internet, the only match is the default route (0.0.0.0/0), so the packet goes to the gateway. For an address on your own network, the route is on-link: there is no gateway, and the packet goes straight out of `en0` (after ARP). Here the neighbor was already in the ARP cache; if it is not, the destination shown is the network itself (192.168.1.0, mask 255.255.255.0).
+- `netstat -rn -f inet` prints the whole IPv4 table. On Linux, the same questions are `ip route get 192.0.2.10` and `ip route`.
+
 ## About this page
 
 When two routes are equal in length and metric, this tool takes the first one in the table; real routers may split traffic between them (ECMP) or use other rules. Administrative distance (preferring routes learned from one source over another), routing protocols such as OSPF and BGP, and IPv6 are not covered.

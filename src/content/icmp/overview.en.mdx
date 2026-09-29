@@ -23,6 +23,36 @@ Windows `tracert` sends ICMP Echo probes; Linux `traceroute` sends UDP probes to
 - The source address of each ICMP error: it is the router that sent it, not the server.
 - In the “What if…” options: an unreachable server (Destination Unreachable), a missing answer (a lost reply in ping, `*` at hop 2 in traceroute), and UDP probes that end with Port Unreachable.
 
+## Try it yourself
+
+```sh
+ping -c 3 example.com
+traceroute -n -q 1 -m 12 example.com
+```
+
+Trimmed output (macOS 26, 2026-09-29). The home router and the first hops, which belong to the internet provider, are replaced with example addresses.
+
+```
+PING example.com (104.20.23.154): 56 data bytes
+64 bytes from 104.20.23.154: icmp_seq=0 ttl=58 time=35.899 ms
+round-trip min/avg/max/stddev = 30.821/33.124/37.181/2.878 ms
+```
+
+```
+traceroute to example.com (104.20.23.154), 12 hops max, 40 byte packets
+ 1  192.168.1.1  8.609 ms
+ 2  198.51.100.17  11.281 ms
+ 3  198.51.100.149  28.434 ms
+ 4  203.0.113.178  39.474 ms
+ 5  *
+ 6  103.22.201.21  61.408 ms
+ 7  104.20.23.154  38.096 ms
+```
+
+- `time` is the round-trip time of each Echo Request and Echo Reply. `ttl=58` is the TTL left in the reply: the server probably started at 64, so it came through 6 routers.
+- Each traceroute line is one TTL: the router whose Time Exceeded came back for probes with that TTL. `*` means no answer came back in time; routers may limit or turn off their ICMP errors, and the next hop still answers.
+- traceroute on macOS and Linux sends UDP probes by default, as in the UDP option of the walkthrough; `traceroute -I` uses ICMP Echo instead (on Linux it needs root, and traceroute may need to be installed first), and Windows’ `tracert` always does. In Wireshark, the display filter is `icmp`.
+
 ## About this page
 
 The home router’s NAT is left out, so the PC’s private address appears along the whole path (see the NAT theme). traceroute sends one probe per hop here; the real command sends three and shows three times. Round-trip times are not shown, because this site does not model delay. Many hosts and routers limit or block ICMP, so a missing answer does not always mean a problem.

@@ -27,6 +27,27 @@ Fragmentation costs routers work, and losing any one fragment loses the whole pa
 - The packet with **DF** that the router drops, the **Next-Hop MTU** in the ICMP, and the PC’s path MTU and MSS going down.
 - In “What if…”, a firewall that blocks the ICMP (the **black hole**) and a packet sent **without DF** (the router fragments it).
 
+## Try it yourself
+
+`ping -D` sets the Don’t Fragment bit, and `-s` sets the size of the data. 1472 bytes of data, plus 8 bytes of ICMP header and 20 of IPv4 header, make a 1500-byte packet:
+
+```sh
+ping -c 1 -D -s 1472 example.com
+ping -c 1 -D -s 1473 example.com
+```
+
+Trimmed output (macOS 26, 2026-09-29):
+
+```
+$ ping -c 1 -D -s 1472 example.com
+1 packets transmitted, 1 packets received, 0.0% packet loss
+$ ping -c 1 -D -s 1473 example.com
+1 packets transmitted, 0 packets received, 100.0% packet loss
+```
+
+- The 1500-byte packet gets through. The 1501-byte one does not even fit this computer’s own link (MTU 1500), and with DF set it may not be fragmented, so no reply comes back. On a path with a smaller link, such as a PPPoE line (1492), the limit would be lower, and a router could answer with an ICMP “Fragmentation Needed”.
+- On Linux, the same test is `ping -M do -s 1472 example.com`, and `tracepath example.com` shows the path MTU hop by hop. In Wireshark, the display filter `icmp.type == 3 && icmp.code == 4` shows “Fragmentation Needed” messages. macOS drops the 1501-byte packet without a message (the counter “datagrams that can't be fragmented” in `netstat -s -p ip` goes up); Linux instead prints “message too long”.
+
 ## References
 
 - [RFC 1191: Path MTU Discovery](https://www.rfc-editor.org/rfc/rfc1191)
