@@ -1,8 +1,9 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_META, themeMetaOfKind } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { LOCALE_NAMES, MESSAGES } from '@/lib/i18n/messages'
+import { openAllDetails } from './details'
 
 // スモークテスト: 本番と同じビルドで、各ページが開いて最後まで操作できることだけを確かめる（挙動の詳細は Vitest で確かめる）
 
@@ -163,14 +164,6 @@ test('サブネット計算: 入力すると結果と URL が変わる', async (
   const networkRow = page.getByRole('term').filter({ hasText: /^Network address$/ })
   await expect(networkRow.locator('xpath=following-sibling::dd[1]')).toHaveText('192.168.1.128')
 })
-
-/** パケットの層など、折りたたんだ中身も幅に収まるか確かめるため、すべての details を開く */
-const openAllDetails = (page: Page) =>
-  page.locator('details').evaluateAll((elements) => {
-    for (const element of elements) {
-      if (element instanceof HTMLDetailsElement) element.open = true
-    }
-  })
 
 test.describe('スマホの幅（390px）', () => {
   test.use({ viewport: { width: 390, height: 844 } })

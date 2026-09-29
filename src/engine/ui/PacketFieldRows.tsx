@@ -2,7 +2,8 @@ import { useMessages, useText } from '@/lib/i18n'
 import { cn } from '@/lib/utils'
 import type { PacketField } from '../types'
 
-const HIGHLIGHT_MARK = '●'
+/** 注目するフィールドの記号（読み上げない。読み上げ用の文字を別に置く） */
+export const HIGHLIGHT_MARK = '●'
 
 /** フィールドの「名前と値」の一覧。説明の列が細くならないよう、表ではなく名前と値の下に説明を置く */
 export function PacketFieldRows({ fields }: { fields: readonly PacketField[] }) {

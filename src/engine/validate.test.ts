@@ -268,6 +268,10 @@ describe('validateScenario', () => {
         ],
       },
     ])
+    // 正しい層のメッセージ（events[0]）には問題がない
+    expect(
+      validateScenario(handle).filter((problem) => problem.path.includes('.events[0]')),
+    ).toEqual([])
     const found = messagesOf(validateScenario(handle))
     expect(found).toEqual(
       expect.arrayContaining([

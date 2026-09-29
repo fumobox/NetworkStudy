@@ -4,6 +4,7 @@ import {
   PACKET_LAYERS,
   type Actor,
   type Message,
+  type PacketLayer,
   type RawOptionValues,
   type ResolvedScenario,
   type ScenarioHandle,
@@ -80,7 +81,9 @@ function sameColumns(a: StateValue, b: StateValue): boolean {
 
 /** フィールドの層: すべてか、どれもないか。層は深くなる順に並び、同じ層は分かれない。要約に入れるのは層のある 1 行の値だけ */
 function checkFieldLayers(path: string, message: Message, problems: ScenarioProblem[]): void {
-  const layered = message.fields.filter((field) => field.layer !== undefined)
+  const layered = message.fields.flatMap((field) =>
+    field.layer === undefined ? [] : [field.layer],
+  )
   for (const field of message.fields) {
     if (field.layer === undefined && field.inLayerSummary === true) {
       problems.push({
@@ -101,20 +104,17 @@ function checkFieldLayers(path: string, message: Message, problems: ScenarioProb
     }
   }
   let depth = -1
-  let previous: string | undefined
-  for (const field of layered) {
-    if (field.layer === undefined || field.layer === previous) {
+  let previous: PacketLayer | undefined
+  for (const layer of layered) {
+    if (layer === previous) {
       continue
     }
-    const next = PACKET_LAYERS[field.layer].depth
+    const next = PACKET_LAYERS[layer].depth
     if (next <= depth) {
-      problems.push({
-        path,
-        message: `layer "${field.layer}" comes after a deeper layer or is split`,
-      })
+      problems.push({ path, message: `layer "${layer}" comes after a deeper layer or is split` })
     }
     depth = next
-    previous = field.layer
+    previous = layer
   }
 }
 

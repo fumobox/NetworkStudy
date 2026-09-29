@@ -4,6 +4,7 @@ import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_META, type ThemeMeta } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { MESSAGES } from '@/lib/i18n/messages'
+import { openAllDetails } from './details'
 
 // アクセシビリティの自動チェック（axe）。WCAG 2.1 の A / AA の違反がないことを、明暗の両方の配色で確かめる
 
@@ -51,14 +52,6 @@ const pages: readonly PageCase[] = LOCALES.flatMap((locale) => [
     ]
   }),
 ])
-
-/** 折りたたんだ中身（パケットの層、道筋のテーマの一覧）も確かめるため、すべての details を開く */
-const openAllDetails = (page: Page) =>
-  page.locator('details').evaluateAll((elements) => {
-    for (const element of elements) {
-      if (element instanceof HTMLDetailsElement) element.open = true
-    }
-  })
 
 async function expectNoViolations(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze()
