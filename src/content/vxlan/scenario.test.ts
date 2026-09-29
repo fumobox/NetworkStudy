@@ -184,4 +184,31 @@ describe('vxlanScenario', () => {
     expect(port('reply-out')).toBe('52731')
     expect(field(byId(steps, 'reply-out'), 'UDP Dst')).toBe('4789')
   })
+
+  it('ECMP の表は、その時点までの行だけを持ち、同じ送信元ポートは 1 行', () => {
+    const steps = build('ecmp')
+    expect(rows(stateAt(steps, 'flow1').underlay?.values.paths)).toEqual([['52221', 'spine 1']])
+    expect(rows(stateAt(steps, 'flow1-again').underlay?.values.paths)).toEqual([
+      ['52221', 'spine 1'],
+      ['62137', 'spine 2'],
+    ])
+  })
+
+  it('ECMP の状況でなければ、経路のフィールドも表もない', () => {
+    for (const situation of SITUATIONS.filter((s) => s !== 'ecmp')) {
+      const steps = build(situation)
+      expect(
+        encapsulated(steps).some((m) => field(m, 'Path') !== undefined),
+        situation,
+      ).toBe(false)
+      const last = deriveState(vxlanScenario.actors, steps, steps.length - 1).actorStates
+      expect(rows(last.underlay?.values.paths), situation).toEqual([])
+    }
+  })
+
+  it('ARP キャッシュも、その時点までの行だけ', () => {
+    const steps = build('firstContact')
+    expect(rows(stateAt(steps, 'arp-request').containerA?.values.arp)).toEqual([])
+    expect(rows(stateAt(steps, 'learn-back').containerA?.values.arp)).toEqual([['10.0.0.2', MAC.b]])
+  })
 })

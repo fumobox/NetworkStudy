@@ -18,7 +18,7 @@
  * - IEEE Std 802.1Q-2022 clause 8.6〜8.8（VNI ごとのブリッジの学習と転送。vtep.ts）
  *
  * 標準ではなく実装で決まるもの（概要で書き分ける）: Linux の既定の宛先ポート 8472（drivers/net/vxlan/vxlan_core.c。4789 は
- * dstport で指定する）、外側の DF の既定（ip-link(8) の df。既定は unset）、VXLAN のデバイスの MTU（下のデバイスの MTU − 50）、
+ * dstport で指定する）、外側の DF の既定（ip-link(8) の df。既定は unset）、VXLAN のデバイスの MTU（下のデバイス dev を指定して作ると、その MTU − 50）、
  * 送信元ポートの既定の範囲（ip_local_port_range）、マルチキャストの TTL の既定 1、送信元での複製の書き方（FDB の全ゼロの行）
  *
  * 学習用の単純化: ホストは 2 台で、VTEP はホストに 1 つずつ。VTEP のレーンは、ホストのブリッジと VXLAN のデバイスを合わせたもの。
@@ -388,6 +388,8 @@ interface ModelConfig {
   readonly flood: Readonly<Record<Side, Readonly<Record<number, FloodTarget>>>>
   /** トンネルの向こうを学習しない（コントロールプレーンが表を配る） */
   readonly noLearning?: boolean
+  /** アンダーレイに等コストの経路が 2 つある（ECMP の状況だけ） */
+  readonly ecmp?: boolean
 }
 
 /** ポートがレーンに対応するか（テナントの状況の vethC・vethD はレーンを持たない） */
@@ -412,8 +414,9 @@ function floodText(target: FloodTarget | null): string {
 class VxlanModel {
   readonly config: ModelConfig
   fdb: Record<Side, readonly VtepEntry[]> = { host1: [], host2: [] }
-  private readonly arp: Record<'a' | 'b', [string, string][]> = { a: [], b: [] }
-  private readonly paths: [string, string][] = []
+  // 状態のイベントは表の配列をそのまま持つので、書き換えずに作り直す（前のステップの表が後の行を見せないように）
+  private arp: Record<'a' | 'b', readonly (readonly string[])[]> = { a: [], b: [] }
+  private paths: readonly (readonly string[])[] = []
 
   constructor(config: ModelConfig) {
     this.config = config
@@ -433,7 +436,7 @@ class VxlanModel {
 
   /** コンテナーの ARP キャッシュに書く */
   containerLearns(who: 'a' | 'b', ip: string, mac: string): StepEvent {
-    this.arp[who].push([ip, mac])
+    this.arp = { ...this.arp, [who]: [...this.arp[who], [ip, mac]] }
     return set(who === 'a' ? A : B, ARP, table(ARP_COLUMNS, this.arp[who]))
   }
 
@@ -520,7 +523,7 @@ class VxlanModel {
       dstIp,
       dstPort: VXLAN_PORT,
     }
-    const path = frame.flow === undefined ? null : `spine ${String(ecmpIndex(outer, 2) + 1)}`
+    const path = this.config.ecmp === true ? `spine ${String(ecmpIndex(outer, 2) + 1)}` : null
     const label = `VXLAN ${String(vni)} [${frame.innerLabel}]`
     const [firstDst, secondDst] = toGroup
       ? [multicastMac(GROUP), multicastMac(GROUP)]
@@ -569,7 +572,9 @@ class VxlanModel {
       }),
     ]
     if (path !== null) {
-      this.paths.push([String(srcPort), path])
+      if (!this.paths.some((row) => row[0] === String(srcPort))) {
+        this.paths = [...this.paths, [String(srcPort), path]]
+      }
       events.push(set(U, PATHS, table(PATH_COLUMNS, this.paths)))
     }
     events.push(
@@ -698,9 +703,14 @@ function baseSetup(mtu: number, flood: ModelConfig['flood'], extra = ''): StepEv
   ]
 }
 
+const SETUP_BASE = {
+  en: `Containers A and B are on two different hosts, but both are on one overlay segment, 10.0.0.0/24, VNI ${String(RED)}. Each host has a VTEP: a VXLAN device attached to the host’s bridge. The hosts can reach each other only over an ordinary routed IP network, the underlay (${HOST1_IP} and ${HOST2_IP}).`,
+  ja: `コンテナー A と B は別々のホストにいるが、どちらも 1 つのオーバーレイのセグメント 10.0.0.0/24（VNI ${String(RED)}）にいる。各ホストには VTEP がある。ホストのブリッジにつながった VXLAN のデバイス。ホスト同士は、ふつうの経路制御の IP ネットワーク（アンダーレイ。${HOST1_IP} と ${HOST2_IP}）でしかつながっていない。`,
+} as const
+
 const SETUP_TEXT = {
-  en: `Containers A and B are on two different hosts, but both are on one overlay segment, 10.0.0.0/24, VNI ${String(RED)}. Each host has a VTEP: a VXLAN device attached to the host’s bridge. The hosts can reach each other only over an ordinary routed IP network, the underlay (${HOST1_IP} and ${HOST2_IP}). The containers’ MTU is 1450, so that 50 bytes are left for the VXLAN headers.`,
-  ja: `コンテナー A と B は別々のホストにいるが、どちらも 1 つのオーバーレイのセグメント 10.0.0.0/24（VNI ${String(RED)}）にいる。各ホストには VTEP がある。ホストのブリッジにつながった VXLAN のデバイス。ホスト同士は、ふつうの経路制御の IP ネットワーク（アンダーレイ。${HOST1_IP} と ${HOST2_IP}）でしかつながっていない。コンテナーの MTU は 1450 で、VXLAN のヘッダーのために 50 バイトを残してある。`,
+  en: `${SETUP_BASE.en} The containers’ MTU is 1450, so that 50 bytes are left for the VXLAN headers.`,
+  ja: `${SETUP_BASE.ja}コンテナーの MTU は 1450 で、VXLAN のヘッダーのために 50 バイトを残してある。`,
 } as const
 
 const insideText = {
@@ -743,7 +753,7 @@ function firstContactSteps(): Step[] {
       title: { en: 'Two hosts, one overlay LAN', ja: '2 台のホスト、1 つのオーバーレイの LAN' },
       description: {
         en: `${SETUP_TEXT.en} Each VTEP has a flood list for VNI ${String(RED)}: the other VTEP’s address, written by the operator. Both forwarding tables are empty.`,
-        ja: `${SETUP_TEXT.ja} 各 VTEP は VNI ${String(RED)} の流す先の一覧（相手の VTEP のアドレス。運用者が書いた）を持つ。どちらの転送の表も空。`,
+        ja: `${SETUP_TEXT.ja}各 VTEP は VNI ${String(RED)} の流す先の一覧（相手の VTEP のアドレス。運用者が書いた）を持つ。どちらの転送の表も空。`,
       },
       events: baseSetup(1450, HEAD_END),
     },
@@ -854,10 +864,10 @@ function multicastSteps(): Step[] {
       },
       description: {
         en: `${SETUP_TEXT.en} Here the operator mapped VNI ${String(RED)} to the multicast group ${GROUP} instead of listing the other VTEPs. Both VTEPs have joined the group (with IGMP), and the underlay knows the members.`,
-        ja: `${SETUP_TEXT.ja} ここでは運用者は、相手の VTEP を並べる代わりに、VNI ${String(RED)} をマルチキャストグループ ${GROUP} に対応づけた。両方の VTEP は（IGMP で）グループに参加していて、アンダーレイは参加者を知っている。`,
+        ja: `${SETUP_TEXT.ja}ここでは運用者は、相手の VTEP を並べる代わりに、VNI ${String(RED)} をマルチキャストグループ ${GROUP} に対応づけた。両方の VTEP は（IGMP で）グループに参加していて、アンダーレイは参加者を知っている。`,
       },
       events: [
-        ...baseSetup(1450, flood),
+        ...baseSetup(1450, flood, `, group ${GROUP}, ttl 64`),
         set(U, GROUPS, table(GROUP_COLUMNS, [[GROUP, `${HOST1_IP}, ${HOST2_IP}`]])),
       ],
     },
@@ -938,10 +948,10 @@ function controlPlaneSteps(): Step[] {
       },
       description: {
         en: `${SETUP_TEXT.en} Here the VTEPs do not learn from the tunnel (nolearning). A control plane, for example EVPN routes carried by BGP (RFC 8365), has told each VTEP which MAC and IP addresses are behind the other one. VTEP 1 also knows B’s IP address, so it can answer ARP itself.`,
-        ja: `${SETUP_TEXT.ja} ここでは VTEP はトンネルから学習しない（nolearning）。コントロールプレーン（例えば BGP で運ぶ EVPN の経路。RFC 8365）が、相手の VTEP の先にどの MAC アドレスと IP アドレスがあるかを各 VTEP に伝えた。VTEP 1 は B の IP アドレスも知っているので、ARP に自分で答えられる。`,
+        ja: `${SETUP_TEXT.ja}ここでは VTEP はトンネルから学習しない（nolearning）。コントロールプレーン（例えば BGP で運ぶ EVPN の経路。RFC 8365）が、相手の VTEP の先にどの MAC アドレスと IP アドレスがあるかを各 VTEP に伝えた。VTEP 1 は B の IP アドレスも知っているので、ARP に自分で答えられる。`,
       },
       events: [
-        ...baseSetup(1450, HEAD_END, ', nolearning'),
+        ...baseSetup(1450, HEAD_END, ', nolearning, proxy'),
         ...model.setupEvents(),
         set(V1, NEIGH, table(ARP_COLUMNS, [[IP.b, MAC.b]])),
       ],
@@ -1038,7 +1048,7 @@ function tenantsSteps(): Step[] {
       title: { en: 'Two tenants share the hosts', ja: '2 つのテナントがホストを分け合う' },
       description: {
         en: `${SETUP_TEXT.en} A second tenant (blue) also runs containers on both hosts: C on host 1 and D on host 2, on VNI ${String(BLUE)}. It uses the same addresses, 10.0.0.0/24: C is also 10.0.0.1 and D is also 10.0.0.2. C and D are not drawn as lanes.`,
-        ja: `${SETUP_TEXT.ja} 2 つ目のテナント（青）も、両方のホストでコンテナーを動かしている。ホスト 1 の C とホスト 2 の D で、VNI は ${String(BLUE)}。同じアドレス 10.0.0.0/24 を使い、C も 10.0.0.1、D も 10.0.0.2。C と D はレーンとして描かない。`,
+        ja: `${SETUP_TEXT.ja}2 つ目のテナント（青）も、両方のホストでコンテナーを動かしている。ホスト 1 の C とホスト 2 の D で、VNI は ${String(BLUE)}。同じアドレス 10.0.0.0/24 を使い、C も 10.0.0.1、D も 10.0.0.2。C と D はレーンとして描かない。`,
       },
       events: [
         ...baseSetup(1450, flood),
@@ -1145,8 +1155,8 @@ function mtuSteps(): Step[] {
       id: 'setup',
       title: { en: 'The containers still use MTU 1500', ja: 'コンテナーの MTU が 1500 のまま' },
       description: {
-        en: `${SETUP_TEXT.en.replace('The containers’ MTU is 1450, so that 50 bytes are left for the VXLAN headers.', 'But here the containers were given MTU 1500, like ordinary hosts, and every underlay link also has MTU 1500.')} A has opened a TCP connection to B. The handshake packets were small, so they passed, and both sides agreed on MSS 1460.`,
-        ja: `${SETUP_TEXT.ja.replace('コンテナーの MTU は 1450 で、VXLAN のヘッダーのために 50 バイトを残してある。', 'しかしここでは、コンテナーの MTU をふつうのホストと同じ 1500 にしてしまい、アンダーレイのリンクもすべて MTU 1500。')} A は B に TCP の接続を開いた。ハンドシェイクのパケットは小さいので通り、両側は MSS 1460 で合意した。`,
+        en: `${SETUP_BASE.en} But here the containers were given MTU 1500, like ordinary hosts, and every underlay link also has MTU 1500. A has opened a TCP connection to B. The handshake packets were small, so they passed, and both sides announced MSS 1460.`,
+        ja: `${SETUP_BASE.ja}しかしここでは、コンテナーの MTU をふつうのホストと同じ 1500 にしてしまい、アンダーレイのリンクもすべて MTU 1500。A は B に TCP の接続を開いた。ハンドシェイクのパケットは小さいので通り、両側が MSS 1460 を通知した。`,
       },
       events: [
         ...baseSetup(1500, HEAD_END),
@@ -1193,8 +1203,8 @@ function mtuSteps(): Step[] {
       id: 'fix',
       title: { en: 'The fix: leave room for 50 bytes', ja: '直し方: 50 バイトの余裕を残す' },
       description: {
-        en: 'The operator sets the containers’ MTU to 1450, the underlay MTU minus 50, which is what Linux does by default for a VXLAN device. A new connection now agrees on MSS 1410. The other fix is to raise the underlay MTU to at least 1550, for example with 9000-byte jumbo frames, which RFC 7348 recommends.',
-        ja: '運用者はコンテナーの MTU を 1450（アンダーレイの MTU − 50。Linux が VXLAN のデバイスに既定で設定する値）にする。新しい接続は MSS 1410 で合意する。もう 1 つの直し方は、アンダーレイの MTU を 1550 以上（例えば 9000 バイトのジャンボフレーム）にすることで、RFC 7348 はこちらを推奨している。',
+        en: 'The operator sets the containers’ MTU to 1450, the underlay MTU minus 50. That is also the MTU Linux gives a VXLAN device created with a lower device (dev). On a new connection, both sides announce MSS 1410. The other fix is to raise the underlay MTU to at least 1550, for example with 9000-byte jumbo frames: RFC 7348 §4.3 recommends that the underlay MTU accommodate the encapsulated size.',
+        ja: '運用者はコンテナーの MTU を 1450（アンダーレイの MTU − 50）にする。Linux が下のデバイス（dev）を指定して作った VXLAN のデバイスに既定で設定するのも、この値。新しい接続では、両側が MSS 1410 を通知する。もう 1 つの直し方は、アンダーレイの MTU を 1550 以上（例えば 9000 バイトのジャンボフレーム）にすること。RFC 7348 §4.3 が推奨するのはこちら（アンダーレイの MTU を包んだ大きさに合わせること）。',
       },
       events: [
         set(A, IFACE, `eth0 ${IP.a}/24 mtu 1450`),
@@ -1216,7 +1226,7 @@ function mtuSteps(): Step[] {
 
 /** 外側の送信元ポートと等コストの経路 */
 function ecmpSteps(): Step[] {
-  const model = new VxlanModel({ ports: RED_PORTS, flood: HEAD_END })
+  const model = new VxlanModel({ ports: RED_PORTS, flood: HEAD_END, ecmp: true })
   model.preLearned()
   const flow1: FlowTuple = { proto: 'TCP', srcIp: IP.a, srcPort: 40001, dstIp: IP.b, dstPort: 443 }
   const flow2: FlowTuple = { proto: 'TCP', srcIp: IP.a, srcPort: 40002, dstIp: IP.b, dstPort: 5432 }
@@ -1241,10 +1251,18 @@ function ecmpSteps(): Step[] {
       },
       description: {
         en: `${SETUP_TEXT.en} The underlay has two equal-cost paths between the hosts (spine 1 and spine 2), and its routers choose between them with a hash of each packet’s headers. A has two TCP connections to B: to port 443 and to port 5432.`,
-        ja: `${SETUP_TEXT.ja} アンダーレイにはホストの間に 2 つの等コストの経路（spine 1 と spine 2）があり、ルーターはパケットのヘッダーのハッシュでどちらを使うかを選ぶ。A は B に 2 つの TCP の接続を持つ。ポート 443 と 5432。`,
+        ja: `${SETUP_TEXT.ja}アンダーレイにはホストの間に 2 つの等コストの経路（spine 1 と spine 2）があり、ルーターはパケットのヘッダーのハッシュでどちらを使うかを選ぶ。A は B に 2 つの TCP の接続を持つ。ポート 443 と 5432。`,
       },
       events: [
         ...baseSetup(1450, HEAD_END),
+        set(
+          U,
+          ROUTES,
+          table(ROUTE_COLUMNS, [
+            ['192.0.2.0/24', 'spine 1, spine 2'],
+            ['198.51.100.0/24', 'spine 1, spine 2'],
+          ]),
+        ),
         ...model.setupEvents(),
         model.containerLearns('a', IP.b, MAC.b),
         model.containerLearns('b', IP.a, MAC.a),
