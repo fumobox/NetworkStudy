@@ -375,4 +375,8 @@
 | broadcast address | ブロードキャストアドレス | |
 | network address | ネットワークアドレス | |
 | step | ステップ | UI |
+| learning path | 学習の道筋 | UI。対象者別に順番を付けたテーマの一覧 |
+| Web developers (path) | Web エンジニア向け | 道筋の名前 |
+| Infrastructure and operations (path) | インフラ運用向け | 道筋の名前 |
+| Theme n of m | m テーマ中 n 番目 | 道筋の中の位置。「ステップ」はステップ実行に使うので使わない |
 | What if… | もしも… | UI |
