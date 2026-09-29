@@ -35,8 +35,8 @@ export const csrfQuiz: Quiz = {
       ],
       answerId: 'withheld',
       explanation: {
-        en: 'For a cookie that is not SameSite=None, a cross-site request gets it only as a top-level navigation with a safe method such as GET (draft-22 §5.8.3). A form POST from another site is not safe, so the cookie is withheld and the bank sees no session. CORS is unrelated: it controls reading responses, not cookies.',
-        ja: 'SameSite=None でない Cookie は、サイトをまたぐ要求には、GET のような安全なメソッドのトップレベルのナビゲーションのときだけ付く（草案 -22 §5.8.3）。別のサイトからのフォームの POST は安全ではないので、Cookie は付かず、銀行にはセッションが見えない。CORS は関係しない。CORS が決めるのは応答を読めるかで、Cookie ではない。',
+        en: 'For a SameSite=Lax cookie, a cross-site request gets it only as a top-level navigation with a safe method such as GET (draft-22 §5.8.3). A form POST from another site is not safe, so the cookie is withheld and the bank sees no session. CORS is unrelated: it controls reading responses, not cookies.',
+        ja: 'SameSite=Lax の Cookie は、サイトをまたぐ要求には、GET のような安全なメソッドのトップレベルのナビゲーションのときだけ付く（草案 -22 §5.8.3）。別のサイトからのフォームの POST は安全ではないので、Cookie は付かず、銀行にはセッションが見えない。CORS は関係しない。CORS が決めるのは応答を読めるかで、Cookie ではない。',
       },
     },
     {
@@ -112,8 +112,8 @@ export const csrfQuiz: Quiz = {
     {
       id: 'cors-contrast',
       prompt: {
-        en: 'The cookie is SameSite=None; Secure. A script on evil.example calls fetch() with POST, credentials: "include" and Content-Type: text/plain. bank.example sends no CORS headers. What happens?',
-        ja: 'Cookie は SameSite=None; Secure。evil.example のスクリプトが、POST、credentials: "include"、Content-Type: text/plain で fetch() を呼ぶ。bank.example は CORS のヘッダーを付けない。どうなる？',
+        en: 'The cookie is SameSite=None; Secure. A script on evil.example calls fetch() with POST, credentials: "include" and Content-Type: text/plain. bank.example sends no CORS headers, and the browser allows third-party cookies. What happens?',
+        ja: 'Cookie は SameSite=None; Secure。evil.example のスクリプトが、POST、credentials: "include"、Content-Type: text/plain で fetch() を呼ぶ。bank.example は CORS のヘッダーを付けず、ブラウザーはサードパーティー Cookie を許している。どうなる？',
       },
       choices: [
         {
@@ -140,8 +140,8 @@ export const csrfQuiz: Quiz = {
       ],
       answerId: 'sent',
       explanation: {
-        en: 'POST with text/plain is a CORS-safelisted request, so no preflight is sent, and the request goes out with the cookie. Without CORS headers the browser hides the response from the script, but the bank may already have acted on the request. CORS protects reading, not sending, so it is not a CSRF defense.',
-        ja: 'text/plain の POST は CORS で許された形の要求なので、プリフライトは送られず、要求は Cookie 付きで出ていく。CORS のヘッダーがなければ、ブラウザーは応答をスクリプトから隠すが、銀行はもう要求を処理したかもしれない。CORS が守るのは読むことで、送ることではない。だから CSRF の対策にはならない。',
+        en: 'POST with text/plain is a CORS-safelisted request, so no preflight is sent, and the request goes out with the cookie. Without CORS headers the browser hides the response from the script, but the bank may already have acted on the request. CORS protects reading, not sending, so it is not a CSRF defense. (Many browsers block or partition third-party cookies, which would keep the cookie off this request, but a server cannot rely on that.)',
+        ja: 'text/plain の POST は CORS で許された形の要求なので、プリフライトは送られず、要求は Cookie 付きで出ていく。CORS のヘッダーがなければ、ブラウザーは応答をスクリプトから隠すが、銀行はもう要求を処理したかもしれない。CORS が守るのは読むことで、送ることではない。だから CSRF の対策にはならない（多くのブラウザーはサードパーティー Cookie を止めたり分けたりするので、この要求に Cookie が付かないこともあるが、サーバーはそれに頼れない）。',
       },
     },
   ],

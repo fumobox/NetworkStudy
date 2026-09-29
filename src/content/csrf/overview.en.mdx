@@ -4,7 +4,7 @@ After you log in, a site usually sends a **session cookie**: `Set-Cookie: sid=3f
 
 ## Cross-site request forgery
 
-The browser attaches the cookie based on where the request **goes**, not on which page **started** it. The cookie draft calls this *ambient authority*. So any page can make the browser send a request to your bank, and the bank sees your valid session:
+Unless SameSite restricts it, the browser attaches the cookie based on where the request **goes**, not on which page **started** it. The cookie draft calls this *ambient authority*. So any page can make the browser send a request to your bank, and the bank sees your valid session:
 
 1. Alice logs in to bank.example and gets a session cookie.
 2. Later she opens a page on evil.example. It contains a hidden form that posts `to=mallory&amount=1000` to bank.example/transfer, and a script that submits it at once.
@@ -36,14 +36,14 @@ The `SameSite` attribute tells the browser whether to attach a cookie to request
 
 `Lax` sends the cookie on another site's request only for a **top-level navigation** with a **safe method** such as GET. It does not send it for iframes, images or `fetch()`. A `None` cookie without `Secure` is not stored at all.
 
-SameSite is not in RFC 6265. It is defined in the draft that will replace it, draft-ietf-httpbis-rfc6265bis. As of September 2026 that draft is in the last stage before becoming an RFC, but it is not one yet.
+SameSite is not in RFC 6265. It is defined in the draft that will replace it, draft-ietf-httpbis-rfc6265bis. As of September 2026 that draft is in the RFC Editor queue, but it is not an RFC yet.
 
 ## What browsers do by default
 
-When a cookie has no `SameSite` attribute, the draft calls its value `Default` and leaves the details to browsers:
+When a cookie has no `SameSite` attribute, the draft gives it the value `Default` and enforces it like `Lax` (§4.1.2.7, §5.8.3). As a compatibility measure, it lets browsers also send such a cookie with a cross-site top-level POST for a short time after it is created ("Lax-allowing-unsafe", §5.6.7.2). Browsers still differ:
 
 - Chromium-based browsers have treated such cookies as `Lax` since 2020. Chrome also introduced an exception that lets such a cookie be sent with a top-level cross-site POST during its first two minutes ("Lax+POST"), and described it as temporary.
-- Not every browser does this. Firefox, for example, treats a missing attribute as `None`.
+- Not every browser does this. Firefox, for example, still treats a missing attribute as `None`, unlike the draft.
 
 So set `SameSite` explicitly, and do not count on it alone.
 
@@ -58,14 +58,14 @@ The draft itself says that SameSite is defense in depth: keep using CSRF tokens.
 ## Defenses on the server
 
 - **A CSRF token.** The site puts a random token, tied to the session, in its own forms, and rejects changes without it. The attacker's page cannot read the bank's pages, so it cannot copy the token.
-- **Checking `Origin`.** The browser adds `Origin` to requests other than GET and HEAD, including form submissions, and a page cannot change it. Reject changes whose Origin is not your own.
-- **Fetch Metadata.** `Sec-Fetch-Site` says whether a request came from the same origin, the same site, another site, or directly from the user (`none`). A common policy is to allow `same-origin` and `none`, allow other sites only for GET navigations such as links, and reject the rest. The policy is up to you; the specification does not prescribe one.
+- **Checking `Origin`.** The browser adds `Origin` to requests other than GET and HEAD, including form submissions, and a page cannot set it to another origin (at most it can make it `null`). Reject changes whose Origin is not your own.
+- **Fetch Metadata.** `Sec-Fetch-Site` says whether a request came from the same origin, the same site, another site, or directly from the user (`none`). One conservative policy is to allow `same-origin` and `none`, allow other sites only for GET navigations such as links, and reject the rest. The policy is up to you; the specification does not prescribe one.
 
 The OWASP CSRF Prevention Cheat Sheet recommends tokens or Fetch Metadata as the main defense, with SameSite as an extra layer.
 
 ## CSRF and CORS
 
-CORS decides whether a page may **read** a response from another origin. It does not stop the request from being **sent**. A form submission is a navigation, not a CORS request, so it never gets a preflight. Its three encodings, `application/x-www-form-urlencoded`, `multipart/form-data` and `text/plain`, are exactly the Content-Types that CORS allows without a preflight, because forms could always send them. Even a `fetch()` POST with `text/plain` and `credentials: "include"` reaches the bank with the cookie. The page just cannot read the answer. A JSON API that requires a preflight is harder to forge, but that is a side effect, not a defense. See the [CORS theme](/themes/cors).
+CORS decides whether a page may **read** a response from another origin. It does not stop the request from being **sent**. A form submission is a navigation, not a CORS request, so it never gets a preflight. Its three encodings, `application/x-www-form-urlencoded`, `multipart/form-data` and `text/plain`, are exactly the Content-Types that CORS allows without a preflight, because forms could always send them. Even a `fetch()` POST with `text/plain` and `credentials: "include"` is sent without a preflight. If the cookie is `SameSite=None` and the browser allows third-party cookies, it carries the cookie too. The page just cannot read the answer. A JSON API that requires a preflight is harder to forge, but that is a side effect, not a defense. See the [CORS theme](/themes/cors).
 
 ## What to look for in the walkthrough
 
