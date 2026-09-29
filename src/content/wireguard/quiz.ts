@@ -81,10 +81,16 @@ export const wireguardQuiz: Quiz = {
         ja: 'NAT の内側のノート PC が黙っている。しばらくすると、ノート PC からオフィスには届くのに、オフィスからトンネルでノート PC に届かなくなる。どの設定で直る？',
       },
       choices: [
-        { id: 'mtu', text: { en: 'MTU = 1280 on wg0', ja: 'wg0 の MTU = 1280' } },
+        {
+          id: 'mtu',
+          text: { en: 'MTU = 1280 on wg0 on both sides', ja: '両側の wg0 の MTU = 1280' },
+        },
         {
           id: 'port',
-          text: { en: 'ListenPort = 51820 on the laptop', ja: 'ノート PC の ListenPort = 51820' },
+          text: {
+            en: 'ListenPort = 51820 on the laptop’s wg0',
+            ja: 'ノート PC の wg0 の ListenPort = 51820',
+          },
         },
         {
           id: 'persistent',
