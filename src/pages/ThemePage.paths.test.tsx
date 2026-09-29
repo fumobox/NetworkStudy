@@ -63,9 +63,26 @@ describe('テーマのページの学習の道筋', () => {
     )
   })
 
-  it('最初のテーマには前がなく、最後のテーマでは道筋のページへ戻るリンクを出す', async () => {
+  it('最初のテーマには前がない', async () => {
     await renderAt('/en/themes/osi-model?path=web-developer')
-    expect(within(navOf(WEB.title.en)).queryByText(m.pathNav.previous)).toBeNull()
+    const nav = navOf(WEB.title.en)
+    expect(within(nav).queryByText(m.pathNav.previous)).toBeNull()
+    expect(
+      within(nav).getByRole('link', {
+        name: `${m.pathNav.next} ${titleOf(WEB.themeIds[1] ?? '')}`,
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('?path= がなくても、テーマを含む道筋が 1 つならその道筋を出す', async () => {
+    await renderAt('/en/themes/csrf')
+    expect(navOf(WEB.title.en)).toBeInTheDocument()
+    const position = m.pathNav.position({
+      current: WEB.themeIds.indexOf('csrf') + 1,
+      total: WEB.themeIds.length,
+    })
+    // 見出しの下と、ナビゲーションの中
+    expect(screen.getAllByText(position)).toHaveLength(2)
   })
 
   it('最後のテーマ', async () => {
@@ -118,6 +135,7 @@ describe('テーマのページの学習の道筋', () => {
   it('どの道筋にもないテーマでは出さない', async () => {
     await renderAt('/en/themes/tcp-sack')
     expect(screen.queryByRole('navigation', { name: m.pathNav.inPathsTitle })).toBeNull()
+    expect(screen.queryByRole('navigation', { name: /^Learning path: / })).toBeNull()
     expect(screen.queryByText(/^Theme \d+ of \d+$/)).toBeNull()
   })
 

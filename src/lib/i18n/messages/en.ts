@@ -147,6 +147,7 @@ export const en = {
       `Theme ${String(p.current)} of ${String(p.total)}`,
     previous: 'Previous theme',
     next: 'Next theme',
+    // 複数の道筋の行の中の短いリンク（1 つの道筋のときはカードで「Previous theme」と名前を分けて出す）
     previousTo: (p: { title: string }) => `Previous: ${p.title}`,
     nextTo: (p: { title: string }) => `Next: ${p.title}`,
     finished: 'This is the last theme in this path.',

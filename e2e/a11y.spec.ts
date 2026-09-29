@@ -103,6 +103,13 @@ for (const colorScheme of ['light', 'dark'] as const) {
       test(`axe: ${path}`, async ({ page }) => {
         await page.goto(path)
         await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
+        // 道筋のテーマの一覧は折りたたまれているので、開いてから確かめる
+        const showAll = page
+          .getByText(MESSAGES.en.pathNav.showAll)
+          .or(page.getByText(MESSAGES.ja.pathNav.showAll))
+        if (path.includes('?path=')) {
+          await showAll.click()
+        }
         await expectNoViolations(page)
       })
     }
