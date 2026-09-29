@@ -14,7 +14,7 @@ A VXLAN packet is the whole inner Ethernet frame, behind three headers:
 
 With IPv4 outside, that adds 50 bytes to the inner IP packet: the inner Ethernet header (14), VXLAN (8), UDP (8) and outer IP (20). With IPv6 outside, it adds 70 bytes. The 24-bit VNI allows about 16 million segments.
 
-RFC 7348 says the UDP checksum SHOULD be sent as zero.
+RFC 7348 says the UDP checksum SHOULD be sent as zero (with an IPv4 outer header; over IPv6, a zero UDP checksum is allowed only under the conditions of RFC 6935 and RFC 6936).
 
 ## The VTEP: a switch with a tunnel port
 
@@ -29,9 +29,9 @@ The device that wraps and unwraps is the **VTEP** (VXLAN Tunnel End Point). On L
 A broadcast such as the first ARP request, or a frame for a MAC address no VTEP has learned yet, must reach every host with that VNI. There are two ways:
 
 - **Multicast**: each VNI is mapped to an IP multicast group that every VTEP of the VNI joins. The sender sends one copy to the group, and the underlay replicates it (RFC 7348 §4.2). The underlay must then support multicast routing.
-- **Head-end replication**: each VTEP keeps a list of the other VTEPs of the VNI and sends a separate unicast copy to each one (RFC 8365 calls this ingress replication). It works on any IP network, and the sender does the work.
+- **Head-end replication**: each VTEP keeps a **flood list** of the other VTEPs of the VNI and sends a separate unicast copy to each one (RFC 8365 calls this ingress replication). It works on any IP network, and the sender does the work.
 
-Either way, the reply is unicast, because the replying VTEP has just learned where the sender is. A VTEP never floods a packet that came from the tunnel back into the tunnel.
+Either way, the reply is unicast, because the replying VTEP has just learned where the sender is. A VTEP never floods a packet that came from the tunnel back into the tunnel: every other VTEP has already received its own copy from the sender. This is split horizon, the same reason a switch never sends a frame back out of the port it arrived on.
 
 ## The VNI keeps tenants apart
 
@@ -44,7 +44,7 @@ VXLAN has no encryption or authentication of its own. Anyone who can reach the u
 A 1500-byte inner packet becomes a 1550-byte outer packet. RFC 7348 §4.3 says VTEPs MUST NOT fragment VXLAN packets, and recommends that the underlay MTU be large enough for the encapsulated frames. There are two ways to make it fit:
 
 - Raise the underlay MTU to at least 1550, for example with 9000-byte jumbo frames. Then the overlay can keep MTU 1500.
-- Lower the overlay MTU to 1450. Linux gives a VXLAN device this value when it is created on a lower device (`dev`), but the containers’ interfaces must use it too.
+- Lower the overlay MTU to 1450. Linux gives a VXLAN device this value (minus 70 over IPv6) when it is created on a lower device (`dev`), but the containers’ interfaces must use it too.
 
 If neither is done, small packets pass and full-sized ones vanish, as in the walkthrough. The TCP handshake succeeds, and then the connection hangs: the same black hole as in [path MTU discovery](/themes/pmtud).
 
@@ -64,7 +64,7 @@ Learning by flooding works, but it floods, and a VTEP learns only once traffic a
 
 - **VXLAN** (RFC 7348): Ethernet in UDP, port 4789, 24-bit VNI, 8-byte header. It is an Informational RFC describing a widely deployed protocol, not a Standards Track one.
 - **NVGRE** (RFC 7637, Informational): Ethernet in GRE, with a 24-bit VSID. Without UDP ports, routers have less to hash, so it adds an 8-bit FlowID for that.
-- **Geneve** (RFC 8926, Standards Track): Ethernet in UDP, port 6081, 24-bit VNI, and variable-length options. It was designed to be extensible where VXLAN is fixed.
+- **Geneve** (RFC 8926, Standards Track): UDP, port 6081, 24-bit VNI, a Protocol Type field (usually Ethernet, but not only), and variable-length options. It was designed to be extensible where VXLAN is fixed.
 
 ## Standard or implementation?
 
@@ -80,8 +80,8 @@ Learning by flooding works, but it floods, and a VTEP learns only once traffic a
 
 ## What to look for in the walkthrough
 
-- The **Forwarding table (FDB)** of each VTEP: local ports, and remote MAC addresses behind the other VTEP’s IP address.
-- The fields of the encapsulated packets: outer addresses, **TTL** (64, then 63 after the underlay), **Total Length** (the inner length plus 50), UDP port 4789, the 8 bytes of the **VXLAN** header, and the **VNI**.
+- The **Forwarding table (FDB)** of each VTEP: local ports, and remote MAC addresses behind the other VTEP’s IP address. Also the **Flood list** (head-end replication) and the **Neighbor table** (proxy ARP).
+- The fields of the encapsulated packets: outer addresses, **TTL** (64, then 63 after the underlay), **Total Length** (the inner length plus 50), **UDP Dst** 4789, the 8 bytes of the **VXLAN** header, and the **VNI**.
 - In the “What if…” options:
   - one copy to a multicast group, replicated by the underlay;
   - tables filled by a control plane, and an ARP request answered by the VTEP;
@@ -102,10 +102,10 @@ Learning by flooding works, but it floods, and a VTEP learns only once traffic a
 
 ## References
 
-- [RFC 7348: Virtual eXtensible Local Area Network (VXLAN)](https://www.rfc-editor.org/rfc/rfc7348) — §4, §4.1, §4.2, §4.3, §5
+- [RFC 7348: Virtual eXtensible Local Area Network (VXLAN)](https://www.rfc-editor.org/rfc/rfc7348) — §3, §4, §4.1, §4.2, §4.3, §5, §7
 - [RFC 8365: A Network Virtualization Overlay Solution Using EVPN](https://www.rfc-editor.org/rfc/rfc8365) — §4
 - [RFC 7432: BGP MPLS-Based Ethernet VPN](https://www.rfc-editor.org/rfc/rfc7432)
-- [RFC 9161: Operational Aspects of Proxy ARP/ND in EVPNs](https://www.rfc-editor.org/rfc/rfc9161)
+- [RFC 9161: Operational Aspects of Proxy ARP/ND in Ethernet Virtual Private Networks](https://www.rfc-editor.org/rfc/rfc9161)
 - [RFC 7637: NVGRE](https://www.rfc-editor.org/rfc/rfc7637) and [RFC 8926: Geneve](https://www.rfc-editor.org/rfc/rfc8926)
 - [RFC 1112](https://www.rfc-editor.org/rfc/rfc1112) — §6.4 (multicast MAC addresses), [RFC 5771](https://www.rfc-editor.org/rfc/rfc5771) — §9.2
 - [RFC 2992: Analysis of an Equal-Cost Multi-Path Algorithm](https://www.rfc-editor.org/rfc/rfc2992)

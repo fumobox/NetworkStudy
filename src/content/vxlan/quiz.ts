@@ -102,15 +102,15 @@ export const vxlanQuiz: Quiz = {
         {
           id: 'ecmp',
           text: {
-            en: 'So that routers hashing the outer headers spread flows over equal-cost paths',
-            ja: '外側のヘッダーをハッシュするルーターが、流れを等コストの経路に散らせるように',
+            en: 'So that routers can spread flows over equal-cost paths',
+            ja: 'ルーターが流れを等コストの経路に散らせるように',
           },
         },
         {
           id: 'nat',
           text: {
             en: 'Because a NAT between the hosts needs a new port for each packet',
-            ja: 'ホストの間の NAT が、パケットごとに新しいポートを要るから',
+            ja: 'ホストの間の NAT が、パケットごとに新しいポートを必要とするから',
           },
         },
       ],
