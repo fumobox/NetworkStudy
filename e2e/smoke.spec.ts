@@ -126,6 +126,25 @@ test('未知のパスは 404 のページを表示する', async ({ page }) => {
   await expect(page.getByRole('heading', { name: MESSAGES.en.notFound.title })).toBeVisible()
 })
 
+test('道筋のページから最初のテーマを開き、次のテーマへ進める', async ({ page }) => {
+  const m = MESSAGES.en
+  const path = LEARNING_PATHS[0]
+  if (path === undefined) throw new Error('no paths')
+  const [first, second] = path.themeIds
+  const title = (id: string | undefined) =>
+    THEME_META.find((meta) => meta.id === id)?.title.en ?? ''
+  await page.goto(`en/paths/${path.id}`)
+  await page.getByRole('link', { name: m.paths.start }).click()
+  await expect(page.getByRole('heading', { level: 1, name: title(first) })).toBeVisible()
+  const nav = page.getByRole('navigation', { name: m.pathNav.label({ path: path.title.en }) })
+  await expect(
+    nav.getByText(m.pathNav.position({ current: 1, total: path.themeIds.length })),
+  ).toBeVisible()
+  await nav.getByRole('link', { name: `${m.pathNav.next} ${title(second)}` }).click()
+  await expect(page.getByRole('heading', { level: 1, name: title(second) })).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(`/themes/${second ?? ''}\\?path=${path.id}$`))
+})
+
 test('知らない道筋は 404 のページを表示し、ロケールのない道筋のパスはロケール付きへ移る', async ({
   page,
 }) => {
@@ -191,6 +210,20 @@ test.describe('スマホの幅（390px）', () => {
     test(`道筋 ${path.id} のページは横にはみ出さない`, async ({ page }) => {
       await page.goto(`ja/paths/${path.id}`)
       await expect(page.getByRole('heading', { level: 1, name: path.title.ja })).toBeVisible()
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      )
+      expect(overflow).toBe(0)
+    })
+  }
+
+  for (const path of LEARNING_PATHS) {
+    const middle = path.themeIds[Math.floor(path.themeIds.length / 2)] ?? ''
+    test(`道筋 ${path.id} の途中のテーマ（${middle}）は横にはみ出さない`, async ({ page }) => {
+      await page.goto(`ja/themes/${middle}?path=${path.id}`)
+      await expect(
+        page.getByRole('navigation', { name: MESSAGES.ja.pathNav.label({ path: path.title.ja }) }),
+      ).toBeVisible()
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       )
