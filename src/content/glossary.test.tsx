@@ -28,6 +28,7 @@ const FORBIDDEN: readonly { readonly pattern: RegExp; readonly use: string }[] =
   { pattern: /ユーザ(?!ー)/, use: 'ユーザー' },
   { pattern: /コンピュータ(?!ー)/, use: 'コンピューター' },
   { pattern: /ロードバランサ(?!ー)/, use: 'ロードバランサー' },
+  { pattern: /コンテナ(?!ー)/, use: 'コンテナー' },
   { pattern: /ハンドシェーク/, use: 'ハンドシェイク' },
   { pattern: /アクノリッジ/, use: '確認応答' },
   { pattern: /[Ａ-Ｚａ-ｚ０-９]/, use: '半角英数字' },
