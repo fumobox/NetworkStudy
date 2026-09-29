@@ -24,6 +24,31 @@ Every record comes with a **TTL** (time to live). The resolver keeps records unt
 
 Records on this page are written as `NAME TYPE RDATA TTL` to match the cache table. Tools like `dig` show them as `NAME TTL CLASS TYPE RDATA`.
 
+## Try it yourself
+
+`dig +trace` follows the delegation from the root, one server at a time, as a resolver does:
+
+```sh
+dig +trace www.example.com A
+```
+
+Trimmed output (macOS 26, 2026-09-29; your results will differ):
+
+```
+.                 486140 IN NS a.root-servers.net.
+;; Received 945 bytes from 192.0.2.1#53(192.0.2.1)
+com.              172800 IN NS a.gtld-servers.net.
+;; Received 840 bytes from 2001:500:2f::f#53(f.root-servers.net)
+example.com.      172800 IN NS hera.ns.cloudflare.com.
+;; Received 363 bytes from 192.12.94.30#53(e.gtld-servers.net)
+www.example.com.  300    IN A  104.20.23.154
+;; Received 76 bytes from 2a06:98c1:50::ac40:20a2#53(hera.ns.cloudflare.com)
+```
+
+- Each block ends with the server that answered. The first is your own resolver (its address is replaced with 192.0.2.1 here), which only tells dig where the root servers are. Then come a root server, a .com server and example.com’s own name server: the same chain as in the walkthrough.
+- With `+trace`, dig asks every server itself, iteratively, from your computer. Without it, `dig www.example.com` asks your resolver once; run it twice and the TTL has counted down, because the second answer comes from the cache.
+- The same command works on Linux. In Wireshark, the display filter `dns` shows the queries and responses.
+
 ## References
 
 - [RFC 1034: Domain Names — Concepts and Facilities](https://www.rfc-editor.org/rfc/rfc1034)

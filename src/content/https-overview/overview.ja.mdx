@@ -19,6 +19,40 @@
 
 このページでは短くするため、「もしも…」のオプションは省いている。それぞれのテーマで試してほしい。
 
+## 手元で試す
+
+`curl -v` は、ページを開くまでの各段階を表示する。
+
+```sh
+curl -v -o /dev/null https://example.com/
+```
+
+出力の一部（macOS 26 の curl 8.7.1、2026-09-29）:
+
+```
+* Host example.com:443 was resolved.
+*   Trying [2606:4700:10::6814:179a]:443...
+* Connected to example.com (2606:4700:10::6814:179a) port 443
+* ALPN: curl offers h2,http/1.1
+* SSL connection using TLSv1.3 / AEAD-CHACHA20-POLY1305-SHA256
+* ALPN: server accepted h2
+> GET / HTTP/2
+< HTTP/2 200
+```
+
+- 行の順はステップ実行と同じ。名前を解決し（DNS）、TCP の接続を作り、TLS のハンドシェイクで TLS 1.3 と、ALPN で HTTP/2 に合意し、暗号化した接続で要求と応答が行き来する。
+- 往復がどう積み重なるかは、curl に時間を出させるとわかる（始めからの秒数）。
+
+```sh
+curl -o /dev/null -s -w 'dns %{time_namelookup}  tcp %{time_connect}  tls %{time_appconnect}  first byte %{time_starttransfer}\n' https://example.com/
+```
+
+```
+dns 0.001950  tcp 0.034158  tls 0.072933  first byte 0.131620
+```
+
+- ここでは名前はキャッシュから来た（2 ms）。TCP のハンドシェイクに約 1 往復（32 ms）、TLS にもう約 1 往復（39 ms）、要求の後、応答の最初のバイトまでにさらに 1 往復かかった。Linux の curl も同じオプションを使える。
+
 ## 参考
 
 - [RFC 1034](https://www.rfc-editor.org/rfc/rfc1034)、[RFC 1035](https://www.rfc-editor.org/rfc/rfc1035): ドメイン名

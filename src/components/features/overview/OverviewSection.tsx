@@ -16,6 +16,8 @@ const MDX_COMPONENTS = {
   h2: (props: ComponentProps<'h2'>) => <h3 {...props} />,
   h3: (props: ComponentProps<'h3'>) => <h4 {...props} />,
   h4: (props: ComponentProps<'h4'>) => <h5 {...props} />,
+  // コマンドの出力は長い行が横にスクロールするので、キーボードでもスクロールできるようフォーカスできるようにする
+  pre: (props: ComponentProps<'pre'>) => <pre tabIndex={0} {...props} />,
 }
 
 /** テーマの概要（MDX）を表示する。読み込み中はその旨を表示する */
