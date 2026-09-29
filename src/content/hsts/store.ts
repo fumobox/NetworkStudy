@@ -18,8 +18,13 @@ export interface KnownHost {
   readonly source: 'header' | 'preload'
 }
 
+/** Date で表せる最も遠い時刻（ミリ秒）。とても大きな max-age はここで止める */
+const MAX_TIME_MS = 8.64e15
+
 export const addSeconds = (iso: string, seconds: number): string =>
-  new Date(Date.parse(iso) + seconds * 1000).toISOString().replace('.000Z', 'Z')
+  new Date(Math.min(Date.parse(iso) + seconds * 1000, MAX_TIME_MS))
+    .toISOString()
+    .replace('.000Z', 'Z')
 
 /** 期限が過去なら期限切れ（ちょうど今は、まだ期限切れではない） */
 export const isExpired = (entry: KnownHost, now: string): boolean =>
@@ -80,11 +85,12 @@ export function noteHeader(store: readonly KnownHost[], input: NoteInput): Known
   if (!parsed.ok) {
     return [...store]
   }
-  // 変えるのはこのホスト自身の記録だけ。上位ドメインとして一致した記録（example.com など）は変えない（§8.1.1）
-  const others = store.filter((entry) => entry.host.toLowerCase() !== input.host.toLowerCase())
-  const own = store.find((entry) => entry.host.toLowerCase() === input.host.toLowerCase())
+  // 変えるのはこのホスト自身のヘッダーの記録だけ。上位ドメインとして一致した記録（example.com など）と、
+  // プリロードリストの項目は変えない（§8.1.1。プリロードの項目を別の行として持つのはこのページの模型）
+  const sameHost = (entry: KnownHost) => entry.host.toLowerCase() === input.host.toLowerCase()
+  const kept = store.filter((entry) => !(sameHost(entry) && entry.source === 'header'))
   if (parsed.maxAge === 0) {
-    return own?.source === 'preload' ? [...store] : others
+    return kept
   }
   const noted: KnownHost = {
     host: input.host.toLowerCase(),
@@ -92,8 +98,7 @@ export function noteHeader(store: readonly KnownHost[], input: NoteInput): Known
     expires: addSeconds(input.now, parsed.maxAge),
     source: 'header',
   }
-  // プリロードリストの項目は残し、ヘッダーで知った項目を別の行として持つ（このページの模型）
-  return own?.source === 'preload' ? [...store, noted] : [...others, noted]
+  return [...kept, noted]
 }
 
 /** http の URI を https に書き換える（§8.3 手順 5） */

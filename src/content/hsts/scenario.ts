@@ -9,9 +9,10 @@
  *   §8.1.1（IP アドレスは記録しない、上位ドメインの記録は変えない、期限切れは消す）、§8.2（ラベルごとの照合）、
  *   §8.3（https への書き換えとポート 80 → 443）、§8.4（安全な接続の誤りでは必ず打ち切る）、§11.2、§11.4.2、
  *   §12.1（利用者に先へ進む手段を与えない。非規範）、§12.3（プリロードリスト。非規範）、§14.4、§14.6（初回の中間者攻撃）
- * - RFC 9110 §4.2.2（https）、§15.4.2（301）、§15.4.4（303）、§15.4.9（308）（RFC 7538 と RFC 2818 は RFC 9110 に置き換えられた）
+ * - RFC 9110 §4.2.2（https）、§15.4.2（301）、§15.4.4（303）（RFC 7538 と RFC 2818 は RFC 9110 に置き換えられた）
+ * - draft-ietf-httpbis-rfc6265bis-22 §5.7 手順 16（http の応答で、同じ名前の既存の Secure の Cookie を上書きしない）
  * - RFC 6265 §3.1（SID と lang の例）、§4.1.2.5（Secure）、§5.3 / §5.4（ホストだけ、secure-only）、§8.3
- * - RFC 9846 §6.2（unknown_ca）、RFC 5280 §6、RFC 5737、RFC 2606
+ * - RFC 9846 §2（TLS 1.3 で読めるのは ClientHello と ServerHello だけ）、§6.2（unknown_ca）、RFC 5280 §6、RFC 5737、RFC 2606
  * - RFC ではないもの: Moxie Marlinspike「New Tricks for Defeating SSL in Practice」（Black Hat DC 2009、sslstrip）、
  *   HSTS プリロードリスト（https://hstspreload.org/ 、Chrome の運営。2026-09-29 に確認した要件）
  *
@@ -37,7 +38,7 @@ import type {
 } from '@/engine/types'
 import type { LocalizedText } from '@/lib/i18n/locale'
 import { cookieHeader, cookiesToSend, type StoredCookie } from './cookies'
-import { matchKnownHost, noteHeader, upgradeUri, type KnownHost } from './store'
+import { evictExpired, matchKnownHost, noteHeader, upgradeUri, type KnownHost } from './store'
 
 const SITUATIONS = ['noHsts', 'known', 'expired', 'badCert', 'subdomain', 'preload'] as const
 type Situation = (typeof SITUATIONS)[number]
@@ -218,12 +219,20 @@ const FIELD_TEXT = {
     ja: 'SID は Secure なので http では送られない（RFC 6265 §5.4）。lang には Secure がないので、リダイレクトの前にここで漏れる',
   },
   location: {
-    en: 'The site redirects http to https correctly (RFC 6797 §7.2), but the redirect only reaches the attacker',
-    ja: 'サイトは http を https へ正しくリダイレクトする（RFC 6797 §7.2）が、リダイレクトは攻撃者にしか届かない',
+    en: 'The site redirects http to https correctly (as RFC 6797 §7.2 recommends for HSTS hosts), but the redirect only reaches the attacker',
+    ja: 'サイトは http を https へ正しくリダイレクトする（RFC 6797 §7.2 が HSTS ホストに勧めるとおり）が、リダイレクトは攻撃者にしか届かない',
   },
   rewritten: {
     en: 'The attacker changed every https link to http, so the browser stays on http',
     ja: '攻撃者が https のリンクをすべて http に書き換えたので、ブラウザーは http のまま',
+  },
+  locationRewritten: {
+    en: 'The attacker rewrote the redirect’s https Location to http, so the browser stays on http',
+    ja: '攻撃者がリダイレクトの https の Location を http に書き換えたので、ブラウザーは http のまま',
+  },
+  certEncrypted: {
+    en: 'In TLS 1.3 only ClientHello and ServerHello are readable; EncryptedExtensions, Certificate, CertificateVerify and Finished are encrypted with the handshake keys (RFC 9846 §2)',
+    ja: 'TLS 1.3 で読めるのは ClientHello と ServerHello だけ。EncryptedExtensions、Certificate、CertificateVerify、Finished はハンドシェイクの鍵で暗号化される（RFC 9846 §2）',
   },
   secureRemoved: {
     en: 'The attacker removed Secure; otherwise the browser would never send this cookie over http',
@@ -271,7 +280,7 @@ const inSection = (section: LocalizedText, steps: readonly StepBody[]): Step[] =
 
 function checkValue(situation: Situation, host: string): string {
   const store = INITIAL_STORE[situation]
-  if (situation === 'expired') {
+  if (evictExpired(store, NOW).length < store.length) {
     return 'expired (evicted)'
   }
   const match = matchKnownHost(store, host, NOW)
@@ -289,7 +298,7 @@ function checkValue(situation: Situation, host: string): string {
 function typedStep(situation: Situation, host: string): Step {
   const store = INITIAL_STORE[situation]
   const jar = situation === 'preload' ? [] : JAR
-  const evicted = situation === 'expired' ? [] : store
+  const evicted = evictExpired(store, NOW)
   const descriptions: Record<Situation, LocalizedText> = {
     noHsts: {
       en: 'Alice is in a café and joins its Wi-Fi. She types example.com without a scheme, so the browser starts with http. It has no HSTS record for example.com. An attacker is on the same Wi-Fi and on the path of every packet.',
@@ -300,8 +309,8 @@ function typedStep(situation: Situation, host: string): Step {
       ja: 'アリスは以前 https で example.com を訪れ、サイトは Strict-Transport-Security を送った。そのため、example.com はブラウザーの既知の HSTS ホストになっている。アリスが example.com と入力すると、ブラウザーは何かを送る前に記録を調べる。',
     },
     expired: {
-      en: 'Alice last visited a year ago, and the record’s max-age has run out. An expired Known HSTS Host must be evicted (§8.1.1), so the browser knows nothing about example.com: exactly like a first visit (§14.6). It starts with http.',
-      ja: 'アリスが最後に訪れたのは 1 年前で、記録の max-age は切れている。期限切れの既知の HSTS ホストは消さなければならない（§8.1.1）ので、ブラウザーは example.com について何も知らない。初めての訪問とまったく同じ（§14.6）。http で始める。',
+      en: 'Alice last visited over a year ago, and the record’s max-age has run out. An expired Known HSTS Host must be evicted (§8.1.1), so the browser knows nothing about example.com: exactly like a first visit (§14.6). It starts with http.',
+      ja: 'アリスが最後に訪れたのは 1 年以上前で、記録の max-age は切れている。期限切れの既知の HSTS ホストは消さなければならない（§8.1.1）ので、ブラウザーは example.com について何も知らない。初めての訪問とまったく同じ（§14.6）。http で始める。',
     },
     badCert: {
       en: 'As before, example.com is a Known HSTS Host. This time the attacker tries a different trick: it answers the TLS connection itself.',
@@ -596,6 +605,7 @@ function strippedSteps(situation: 'noHsts' | 'expired'): Step[] {
               encrypted: true,
               fields: [
                 { name: 'Status line', value: 'HTTP/1.1 303 See Other' },
+                { name: 'Location', value: 'https://example.com/' },
                 { name: 'Set-Cookie', value: `SID=${NEW_SID}; Path=/; Secure; HttpOnly` },
                 ...stsFields(false),
               ],
@@ -617,8 +627,8 @@ function strippedSteps(situation: 'noHsts' | 'expired'): Step[] {
         id: 'relay-303',
         title: { en: 'Secure is removed, too', ja: 'Secure も外される' },
         description: {
-          en: 'The attacker passes the redirect to Alice over http, after removing Secure from the cookie. From now on the new session cookie also travels over http, where the attacker can read it.',
-          ja: '攻撃者はリダイレクトを http でアリスに渡す。Cookie から Secure を外してある。以後、新しいセッションの Cookie も http で流れ、攻撃者に読まれる。',
+          en: 'The attacker passes the redirect to Alice over http, with its Location rewritten to http and Secure removed from the cookie, as sslstrip does. Current browsers ignore it anyway: an http response must not overwrite an existing Secure cookie of the same name (draft-ietf-httpbis-rfc6265bis-22 §5.7 step 16), so Alice’s browser keeps its old SID. It makes no difference to the attack: the attacker already holds the new session, which it read on its own TLS connection.',
+          ja: '攻撃者はリダイレクトを http でアリスに渡す。sslstrip と同じく、Location を http に書き換え、Cookie から Secure を外してある。ただし今のブラウザーはこれを無視する。http の応答で、同じ名前の既存の Secure の Cookie を上書きしてはならない（draft-ietf-httpbis-rfc6265bis-22 §5.7 手順 16）ので、アリスのブラウザーは古い SID のまま。攻撃には関係ない。攻撃者は、自分の TLS の接続で読んだ新しいセッションをもう持っている。',
         },
         events: [
           send(
@@ -630,6 +640,12 @@ function strippedSteps(situation: 'noHsts' | 'expired'): Step[] {
               fields: [
                 { name: 'Status line', value: 'HTTP/1.1 303 See Other' },
                 {
+                  name: 'Location',
+                  value: 'http://example.com/',
+                  highlight: true,
+                  description: FIELD_TEXT.locationRewritten,
+                },
+                {
                   name: 'Set-Cookie',
                   value: `SID=${NEW_SID}; Path=/; HttpOnly`,
                   highlight: true,
@@ -639,15 +655,7 @@ function strippedSteps(situation: 'noHsts' | 'expired'): Step[] {
               ],
             }),
           ),
-          set(
-            BROWSER,
-            COOKIES,
-            // 攻撃者が Secure を外したので、新しい SID は secure-only ではない Cookie として保存される
-            cookieTable([
-              { name: 'SID', value: NEW_SID, domain: 'example.com', hostOnly: true, secure: false },
-              ...JAR.filter((cookie) => cookie.name !== 'SID'),
-            ]),
-          ),
+          // 既存の Secure の SID があるので、http で届いた Secure のない SID は無視される（Cookie の表は変わらない）
           set(ATTACKER, MODE, 'holding alice’s session'),
         ],
       },
@@ -700,7 +708,14 @@ function tlsHops(host: string): StepEvent[] {
         from: SITE,
         to: ATTACKER,
         label: 'ServerHello … Finished',
-        fields: [{ name: 'Certificate', value: 'example.com, www.example.com (trusted CA)' }],
+        fields: [
+          { name: 'Certificate', value: 'example.com, www.example.com (trusted CA)' },
+          {
+            name: 'Visible to the attacker',
+            value: 'ClientHello / ServerHello only',
+            description: FIELD_TEXT.certEncrypted,
+          },
+        ],
       }),
     ),
     send(
@@ -709,7 +724,14 @@ function tlsHops(host: string): StepEvent[] {
         from: ATTACKER,
         to: BROWSER,
         label: 'ServerHello … Finished',
-        fields: [{ name: 'Certificate', value: 'example.com, www.example.com (trusted CA)' }],
+        fields: [
+          { name: 'Certificate', value: 'example.com, www.example.com (trusted CA)' },
+          {
+            name: 'Visible to the attacker',
+            value: 'ClientHello / ServerHello only',
+            description: FIELD_TEXT.certEncrypted,
+          },
+        ],
       }),
     ),
     set(ATTACKER, MODE, 'relaying TLS (ciphertext only)'),
@@ -735,14 +757,19 @@ function protectedSteps(situation: 'known' | 'subdomain' | 'preload'): Step[] {
     now: NOW,
   })
   const upgraded = upgradeUri(`http://${host}/`)
+  const RESPONSE_TITLE: Record<typeof situation, LocalizedText> = {
+    known: { en: 'The HSTS record is renewed', ja: 'HSTS の記録が新しくなる' },
+    subdomain: { en: 'www.example.com gets its own record', ja: 'www.example.com の記録が加わる' },
+    preload: { en: 'The header is noted too', ja: 'ヘッダーの記録も加わる' },
+  }
   const responseText: Record<typeof situation, LocalizedText> = {
     known: {
       en: 'The response carries Strict-Transport-Security again, received over a secure connection, so the browser updates the record: the expiry moves to one year from now (§8.1, §11.2). A site that sends the header on every response keeps the record from expiring.',
       ja: '応答にはまた Strict-Transport-Security が付き、安全な接続で受けたので、ブラウザーは記録を新しくする。期限は今から 1 年後に延びる（§8.1、§11.2）。すべての応答にヘッダーを付けるサイトなら、記録は切れない。',
     },
     subdomain: {
-      en: 'www.example.com sends its own header, so the browser adds a record for it. The example.com record is left unchanged: a superdomain match must not be modified (§8.1.1). Without includeSubDomains on example.com, www would not have matched, and the first request would have gone out over http, leaking the domain cookie lang (§14.4).',
-      ja: 'www.example.com も自分のヘッダーを送るので、ブラウザーはその記録を足す。example.com の記録は変えない。上位ドメインとして一致した記録は変えてはならない（§8.1.1）。example.com に includeSubDomains がなければ www は一致せず、最初の要求は http で出ていき、ドメインの Cookie の lang が漏れていた（§14.4）。',
+      en: 'www.example.com sends its own header, so the browser adds a record for it. The example.com record is left unchanged: a superdomain match must not be modified (§8.1.1). Without includeSubDomains on example.com, www would not have matched, and the first request would have gone out over http, leaking the domain cookie lang. Even a Secure domain cookie is not safe without includeSubDomains (§14.4).',
+      ja: 'www.example.com も自分のヘッダーを送るので、ブラウザーはその記録を足す。example.com の記録は変えない。上位ドメインとして一致した記録は変えてはならない（§8.1.1）。example.com に includeSubDomains がなければ www は一致せず、最初の要求は http で出ていき、ドメインの Cookie の lang が漏れていた。Secure のドメインの Cookie でも、includeSubDomains がなければ安全ではない（§14.4）。',
     },
     preload: {
       en: 'The header also says preload. RFC 6797 does not define it, so the browser ignores it (§6.1 rule 5); it is only a signal for the preload list’s submission form. The browser notes the header next to the built-in entry. The list protects the first visit (§12.3). It is a browser programme, not an RFC, and removal takes months; its operators now write that while HSTS is recommended, preloading is not, because browsers increasingly upgrade to https on their own (checked 2026-09-29).',
@@ -780,8 +807,8 @@ function protectedSteps(situation: 'known' | 'subdomain' | 'preload'): Step[] {
           ja: '本物のサイトとの暗号化された接続',
         },
         description: {
-          en: 'The handshake completes between the browser and the site. From here on, the attacker sees only ciphertext.',
-          ja: 'ハンドシェイクはブラウザーとサイトの間で終わる。ここから先、攻撃者に見えるのは暗号文だけ。',
+          en: 'The handshake completes between the browser and the site. Apart from the two hellos, everything was already ciphertext to the attacker, and now the application data is too.',
+          ja: 'ハンドシェイクはブラウザーとサイトの間で終わる。2 つの Hello のほかは、攻撃者にはもともと暗号文だった。これからのアプリケーションのデータも暗号文になる。',
         },
         events: [
           send(
@@ -865,7 +892,7 @@ function protectedSteps(situation: 'known' | 'subdomain' | 'preload'): Step[] {
       },
       {
         id: 'response',
-        title: { en: 'The HSTS record is renewed', ja: 'HSTS の記録が新しくなる' },
+        title: RESPONSE_TITLE[situation],
         description: responseText[situation],
         events: [
           send(

@@ -192,11 +192,21 @@ describe('hstsScenario', () => {
       }
     })
 
-    it('ストリッピングでは Secure が外され、サイトはセッションを攻撃者のアドレスに渡す', () => {
+    it('ストリッピングでは Location と Secure が書き換えられ、サイトはセッションを攻撃者のアドレスに渡す', () => {
       const steps = build()
       expect(field(byId(steps, 'session'), 'Set-Cookie')).toContain('Secure')
+      expect(field(byId(steps, 'session'), 'Location')).toBe('https://example.com/')
       expect(field(byId(steps, 'relay-303'), 'Set-Cookie')).not.toContain('Secure')
+      expect(field(byId(steps, 'relay-303'), 'Location')).toBe('http://example.com/')
       expect(final(steps).site?.values.login).toBe('alice (from 198.51.100.66)')
+      // http で届いた Secure のない SID は、既存の Secure の SID を上書きできない（rfc6265bis §5.7 手順 16）
+      expect(final(steps).browser?.values.cookies).toEqual({
+        columns: ['Name', 'Value', 'Secure'],
+        rows: [
+          ['SID', '31d4d96e407aad42', 'yes'],
+          ['lang', 'en-US', 'no'],
+        ],
+      })
     })
   })
 })

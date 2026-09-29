@@ -17,9 +17,15 @@ export interface StoredCookie {
 const domainMatches = (host: string, domain: string) =>
   host === domain || host.endsWith(`.${domain}`)
 
+export interface CookieRequest {
+  readonly host: string
+  /** https の要求か */
+  readonly secure: boolean
+}
+
 export function cookiesToSend(
   jar: readonly StoredCookie[],
-  request: { readonly host: string; readonly secure: boolean },
+  request: CookieRequest,
 ): StoredCookie[] {
   const host = request.host.toLowerCase()
   return jar.filter(

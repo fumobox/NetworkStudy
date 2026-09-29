@@ -97,6 +97,28 @@ describe('記録（§8.1、§8.1.1）', () => {
     expect(noteHeader([], { ...secure, host: 'example.com', headers: ['max-age=0'] })).toEqual([])
   })
 
+  it('プリロードの項目は変えず、ヘッダーの記録だけを差し替える・消す', () => {
+    const preload = entry('example.com', true, null)
+    const once = noteHeader([preload], { ...secure, host: 'example.com', headers: ['max-age=60'] })
+    const twice = noteHeader(once, { ...secure, host: 'example.com', headers: ['max-age=120'] })
+    expect(twice).toEqual([
+      preload,
+      {
+        host: 'example.com',
+        includeSubDomains: false,
+        expires: '2026-10-01T09:02:00Z',
+        source: 'header',
+      },
+    ])
+    expect(noteHeader(twice, { ...secure, host: 'example.com', headers: ['max-age=0'] })).toEqual([
+      preload,
+    ])
+  })
+
+  it('とても大きな max-age でも壊れない', () => {
+    expect(() => addSeconds(NOW, Number.MAX_SAFE_INTEGER)).not.toThrow()
+  })
+
   it('IP アドレスは記録しない。上位ドメインの記録は変えずに、自分の記録を足す', () => {
     expect(noteHeader([], { ...secure, host: '192.0.2.10', headers: ['max-age=1'] })).toEqual([])
     const parent = entry('example.com', true)
