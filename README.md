@@ -5,8 +5,8 @@ An interactive portal for learning how network protocols work, one packet at a t
 
 ## Learning paths / 学習の道筋
 
-Not sure where to start? Follow a path: Web developers (14 themes) or Infrastructure and operations (18 themes).
-どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（14 テーマ）、インフラ運用向け（18 テーマ）。
+Not sure where to start? Follow a path: Web developers (14 themes) or Infrastructure and operations (19 themes).
+どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（14 テーマ）、インフラ運用向け（19 テーマ）。
 
 ## Topics / テーマ
 
@@ -62,6 +62,7 @@ HTTP for web developers / Web 開発で出会う HTTP
 Network security / ネットワークのセキュリティ
 
 - Stateful firewall: letting replies in, keeping strangers out / ステートフルファイアウォール: 返事は通し、見知らぬ相手は止める
+- WireGuard: a remote-access VPN built on public keys / WireGuard: 公開鍵で結ぶリモートアクセス VPN
 - DNSSEC: a chain of trust for DNS answers / DNSSEC: DNS の答えをたどる信頼の連鎖
 - Email authentication: SPF, DKIM and DMARC / メールの送信ドメイン認証: SPF、DKIM、DMARC
 - HSTS and SSL stripping / HSTS と SSL ストリッピング
