@@ -17,6 +17,7 @@ import type {
   Actor,
   ActorId,
   Message,
+  PacketField,
   Scenario,
   StateKey,
   StateTable,
@@ -24,6 +25,22 @@ import type {
   StepEvent,
 } from '@/engine/types'
 import type { LocalizedText } from '@/lib/i18n/locale'
+
+const ETH_FIELDS = new Set(['Eth Dst', 'Eth Src', 'EtherType'])
+const ARP_FIELDS = new Set(['HTYPE', 'PTYPE', 'HLEN', 'PLEN', 'OPER', 'SHA', 'SPA', 'THA', 'TPA'])
+const SUMMARY_FIELDS = new Set(['Eth Dst', 'Eth Src', 'OPER', 'TPA', 'IP Src', 'IP Dst'])
+
+/**
+ * パケットの詳細の層（Ethernet II と ARP、または Ethernet II と IPv4）。フィールドの名前から層を決める。
+ * 要約は宛先・送信元の MAC アドレス、ARP の操作と対象、IP の送信元と宛先
+ */
+function arpLayers(fields: readonly PacketField[]): PacketField[] {
+  return fields.map((field) => ({
+    ...field,
+    layer: ETH_FIELDS.has(field.name) ? 'eth' : ARP_FIELDS.has(field.name) ? 'arp' : 'ipv4',
+    ...(SUMMARY_FIELDS.has(field.name) ? { inLayerSummary: true } : {}),
+  }))
+}
 
 const optionsSchema = z.object({
   destination: z.enum(['internet', 'local']).catch('internet'),
@@ -146,7 +163,7 @@ function requestMessage(id: string, to: ActorId, target: Host, status: Message['
       en: `An ARP request: “Who has ${target.ip}? Tell ${ADDRESSES.pc.ip}.” It is broadcast, so every device on the LAN receives it.`,
       ja: `ARP の要求。「${target.ip} を持っているのは誰？ ${ADDRESSES.pc.ip} に教えて」。ブロードキャストなので、LAN のすべての機器に届く。`,
     },
-    fields: [
+    fields: arpLayers([
       { name: 'Eth Dst', value: BROADCAST_MAC, highlight: true, description: FIELD_TEXT.ethDst },
       { name: 'Eth Src', value: ADDRESSES.pc.mac, description: FIELD_TEXT.ethSrc },
       { name: 'EtherType', value: '0x0806', description: FIELD_TEXT.ethType },
@@ -164,7 +181,7 @@ function requestMessage(id: string, to: ActorId, target: Host, status: Message['
       { name: 'SPA', value: ADDRESSES.pc.ip, description: FIELD_TEXT.spa },
       { name: 'THA', value: UNKNOWN_MAC, description: FIELD_TEXT.thaUnknown },
       { name: 'TPA', value: target.ip, highlight: true, description: FIELD_TEXT.tpa },
-    ],
+    ]),
   }
 }
 
@@ -179,7 +196,7 @@ function replyMessage(target: Host): Message {
       en: `The ARP reply: “${target.ip} is at ${target.mac}.” It goes only to the PC that asked (unicast), because the replying device already knows the PC’s MAC address from the request (SHA).`,
       ja: `ARP の応答。「${target.ip} は ${target.mac}」。要求の SHA で尋ねた PC の MAC アドレスがわかっているので、その PC にだけ送る（ユニキャスト）。`,
     },
-    fields: [
+    fields: arpLayers([
       { name: 'Eth Dst', value: ADDRESSES.pc.mac, highlight: true, description: FIELD_TEXT.ethDst },
       { name: 'Eth Src', value: target.mac, description: FIELD_TEXT.ethSrc },
       { name: 'EtherType', value: '0x0806', description: FIELD_TEXT.ethType },
@@ -212,7 +229,7 @@ function replyMessage(target: Host): Message {
           ja: '対象の IP アドレス。尋ねた PC',
         },
       },
-    ],
+    ]),
   }
 }
 
@@ -227,7 +244,7 @@ function ipMessage(target: Host, destinationIp: string): Message {
       en: 'The waiting IP packet, now in an Ethernet frame addressed to the MAC address that ARP found.',
       ja: '待たせていた IP パケット。ARP で調べた MAC アドレス宛ての Ethernet のフレームに入れて送る。',
     },
-    fields: [
+    fields: arpLayers([
       {
         name: 'Eth Dst',
         value: target.mac,
@@ -265,7 +282,7 @@ function ipMessage(target: Host, destinationIp: string): Message {
         value: '64',
         description: { en: 'Time to live', ja: '生存時間（TTL）' },
       },
-    ],
+    ]),
   }
 }
 

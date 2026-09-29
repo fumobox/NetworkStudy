@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { deriveState } from '@/engine/derive'
+import { groupFieldsByLayer } from '@/engine/layers'
 import { toScenarioHandle } from '@/engine/scenario'
 import type { Message, Step } from '@/engine/types'
 import { validateScenario } from '@/engine/validate'
@@ -174,5 +175,20 @@ describe('arpScenario', () => {
       router: [],
       elapsedMs: 3000,
     })
+  })
+})
+
+describe('パケットの詳細の層', () => {
+  it('ARP は Ethernet II と ARP、IP のパケットは Ethernet II と IPv4', () => {
+    for (const message of messages(build())) {
+      const layers = groupFieldsByLayer(message.fields)?.map((layer) => layer.layer)
+      expect(layers).toEqual(message.label.startsWith('ARP') ? ['eth', 'arp'] : ['eth', 'ipv4'])
+    }
+  })
+
+  it('要求はブロードキャストで、Eth Src は SHA と同じ', () => {
+    const request = messages(build()).find((m) => m.label.startsWith('ARP who-has'))
+    const [eth] = groupFieldsByLayer(request?.fields ?? []) ?? []
+    expect(eth?.summary).toBe(`Eth Dst: ff:ff:ff:ff:ff:ff, Eth Src: ${fields(request).SHA ?? ''}`)
   })
 })

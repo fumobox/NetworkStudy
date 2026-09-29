@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { deriveState } from '@/engine/derive'
+import { groupFieldsByLayer } from '@/engine/layers'
 import { toScenarioHandle } from '@/engine/scenario'
 import type { Message, Step } from '@/engine/types'
 import { validateScenario } from '@/engine/validate'
@@ -108,7 +109,7 @@ describe('dnsResolutionScenario', () => {
           ),
         )
       }
-      expect(field(all[0], 'Transport')).toBe('UDP → 198.51.100.53:53')
+      expect([field(all[0], 'IP Dst'), field(all[0], 'UDP Dst')]).toEqual(['198.51.100.53', '53'])
       expect(field(all.at(-1), 'Flags')).toBe('QR RD RA')
     })
 
@@ -229,10 +230,13 @@ describe('dnsResolutionScenario', () => {
     it('タイムアウトの後、2 台目のサーバーに問い合わせる', () => {
       const steps = build({ serverDown: true })
       const auth = messages(steps).filter((m) => m.to === 'auth')
-      expect(auth.map((m) => [m.status, field(m, 'Transport')])).toEqual([
-        ['lost', 'UDP → 192.0.2.53:53'],
-        ['delivered', 'UDP → 192.0.2.54:53'],
+      expect(auth.map((m) => [m.status, field(m, 'IP Dst')])).toEqual([
+        ['lost', '192.0.2.53'],
+        ['delivered', '192.0.2.54'],
       ])
+      // 答えるのは問い合わせた ns2
+      const answer = messages(steps).find((m) => m.from === 'auth')
+      expect(field(answer, 'IP Src')).toBe('192.0.2.54')
       expect(final(steps).elapsedMs).toBe(1500)
       expect(final(steps).result).toBe('192.0.2.10')
       expect(
@@ -242,5 +246,47 @@ describe('dnsResolutionScenario', () => {
         ),
       ).toBe('0x7e04')
     })
+  })
+})
+
+describe('パケットの詳細の層', () => {
+  const combos = [
+    build(),
+    build({ serverDown: true }),
+    build({ name: 'missing' }),
+    build({ name: 'alias' }),
+  ]
+
+  it('どのメッセージも IPv4、UDP、DNS の順', () => {
+    for (const steps of combos) {
+      for (const message of messages(steps)) {
+        expect(groupFieldsByLayer(message.fields)?.map((layer) => layer.layer)).toEqual([
+          'ipv4',
+          'udp',
+          'dns',
+        ])
+      }
+    }
+  })
+
+  it('応答の送信元は、同じ ID の問い合わせの宛先（RFC 5452: 問い合わせたアドレスからの応答だけを受け入れる）', () => {
+    for (const steps of combos) {
+      const all = messages(steps)
+      for (const answer of all.filter((m) => field(m, 'IP Src') !== undefined)) {
+        const queries = all.filter(
+          (m) => field(m, 'IP Dst') !== undefined && field(m, 'ID') === field(answer, 'ID'),
+        )
+        expect(queries.map((q) => field(q, 'IP Dst'))).toContain(field(answer, 'IP Src'))
+      }
+    }
+  })
+
+  it('要約', () => {
+    const [first] = messages(build())
+    expect(groupFieldsByLayer(first?.fields ?? [])?.map((layer) => layer.summary)).toEqual([
+      'IP Dst: 198.51.100.53',
+      'UDP Dst: 53',
+      `ID: ${field(first, 'ID') ?? ''}, Question: www.example.com. IN A`,
+    ])
   })
 })

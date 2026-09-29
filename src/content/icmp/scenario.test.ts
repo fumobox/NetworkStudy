@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
 import { deriveState } from '@/engine/derive'
+import { groupFieldsByLayer } from '@/engine/layers'
 import { toScenarioHandle } from '@/engine/scenario'
 import type { Message, Step } from '@/engine/types'
 import { validateScenario } from '@/engine/validate'
@@ -337,5 +338,31 @@ describe('icmpScenario', () => {
       expect(messages(steps).some((m) => m.to === 'server')).toBe(false)
       expect(final(steps).results.at(-1)).toEqual(['3', '203.0.113.1', 'Host Unreachable (3/1)'])
     })
+  })
+})
+
+describe('パケットの詳細の層', () => {
+  it('IPv4 の次は ICMP か UDP で、Protocol の値と一致する', () => {
+    for (const tool of ['ping', 'traceroute'] as const) {
+      for (const outcome of ['reply', 'hostUnreachable', 'noReply'] as const) {
+        for (const probe of ['icmp', 'udp'] as const) {
+          for (const message of messages(build({ tool, outcome, probe }))) {
+            const layers = groupFieldsByLayer(message.fields)?.map((layer) => layer.layer)
+            const protocol = field(message, 'Protocol')
+            expect(layers).toEqual(['ipv4', protocol === '17 (UDP)' ? 'udp' : 'icmp'])
+          }
+        }
+      }
+    }
+  })
+
+  it('エラーは、元のパケットを少なくとも 8 バイト運ぶ（RFC 792、RFC 1812 §4.3.2.3）', () => {
+    const errors = messages(build({ tool: 'traceroute' })).filter(
+      (m) => field(m, 'Original datagram') !== undefined,
+    )
+    expect(errors.length).toBeGreaterThan(0)
+    for (const error of errors) {
+      expect(field(error, 'Original datagram')).toBe('IP header + at least 8 bytes')
+    }
   })
 })
