@@ -5,6 +5,7 @@ import { dhcpQuiz } from './dhcp/quiz'
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
 import { dnssecQuiz } from './dnssec/quiz'
 import { firewallQuiz } from './firewall/quiz'
+import { hstsQuiz } from './hsts/quiz'
 import { httpCachingQuiz } from './http-caching/quiz'
 import { http2Quiz } from './http2/quiz'
 import { httpsOverviewQuiz } from './https-overview/quiz'
@@ -34,6 +35,7 @@ import {
   DNS_RESOLUTION_META,
   DNSSEC_META,
   FIREWALL_META,
+  HSTS_META,
   HTTP_CACHING_META,
   HTTP2_META,
   HTTPS_OVERVIEW_META,
@@ -103,5 +105,6 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: FIREWALL_META, quiz: firewallQuiz },
   { meta: DNSSEC_META, quiz: dnssecQuiz },
   { meta: MAIL_AUTH_META, quiz: mailAuthQuiz },
+  { meta: HSTS_META, quiz: hstsQuiz },
   { meta: CSRF_META, quiz: csrfQuiz },
 ]
