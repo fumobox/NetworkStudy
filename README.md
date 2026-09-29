@@ -5,8 +5,8 @@ An interactive portal for learning how network protocols work, one packet at a t
 
 ## Learning paths / 学習の道筋
 
-Not sure where to start? Follow a path: Web developers (14 themes) or Infrastructure and operations (17 themes).
-どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（14 テーマ）、インフラ運用向け（17 テーマ）。
+Not sure where to start? Follow a path: Web developers (14 themes) or Infrastructure and operations (18 themes).
+どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（14 テーマ）、インフラ運用向け（18 テーマ）。
 
 ## Topics / テーマ
 
@@ -31,6 +31,7 @@ Inside the LAN / LAN の中
 - Switching: how a switch learns MAC addresses / スイッチ: MAC アドレスを学習する
 - VLAN: one switch, separate networks / VLAN: 1 台のスイッチを別々のネットワークに分ける
 - Container networking: veth, bridge and NAT / コンテナーのネットワーク: veth、ブリッジ、NAT
+- VXLAN: stretching a LAN over an IP network / VXLAN: IP ネットワークの上に LAN を延ばす
 - Wi-Fi: joining a wireless network / Wi-Fi: 無線 LAN につながる
 - IPv6 on the LAN: SLAAC and Neighbor Discovery / IPv6 で LAN につながる: SLAAC と近隣探索
 
