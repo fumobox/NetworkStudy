@@ -58,6 +58,8 @@
 | — | NAT 越え（STUN・TURN・ICE） | シーケンス図 | Phase 10 で追加 |
 | — | Wi-Fi（無線 LAN への参加、4 ウェイハンドシェイク、CSMA/CA） | シーケンス図 | Phase 11 で追加 |
 | — | リバースプロキシとロードバランサー | シーケンス図 | Phase 12 で追加 |
+| — | Cookie と CSRF（SameSite、トークン、Fetch Metadata） | シーケンス図 | Phase 13 で追加 |
+| — | HSTS と SSL ストリッピング | シーケンス図 | Phase 14 で追加 |
 
 ## 3. 技術スタック
 
@@ -700,6 +702,53 @@ Issue は #224〜#226 に分けて起票した。
 | TCP | L4 の場合だけ 3 ウェイハンドシェイクを描く | L4 では接続が振り分けの単位になる |
 | Content-Length | HTTP/1.1 の本文のある要求と応答に付ける。本文は「…」で縮め、示した本文のバイト数とする | 持続する接続では、メッセージの終わりを知るのに要る（RFC 9112 §6.3） |
 | 扱わないもの | 重み付け・最小接続数・ハッシュ、Vary の詳細、stale-while-revalidate、要求の集約、バックエンドへの TLS、PROXY protocol の版 2、DSR の図、HTTP/3、WebSocket の中継 | 主題がぼやける。一部は概要で触れる |
+
+### Phase 13: Cookie と CSRF
+
+**完了条件**: 「ネットワークのセキュリティ」（`security`）に Cookie と CSRF のテーマがあり、根拠（rfc6265bis の草案 -22、RFC 6265、HTML・URL・Fetch Standard、Fetch Metadata、RFC 6454 / 9110）、クイズ、en／ja の概要がある。
+
+**完了**（#244〜#246）: テーマは 31 → 32。オリジンと同じサイトの判定（`site.ts`。PSL はごく一部）、SameSite の解析と Cookie を付けるかどうか（`cookies.ts`。草案 §5.8.3、Lax-allowing-unsafe）、Origin と Sec-Fetch-Site（`requestHeaders.ts`）の純関数を足した。
+
+| # | タスク | ラベル |
+|---|---|---|
+| 13-1 | Cookie と CSRF のシナリオ（ログインと Set-Cookie、evil.example の隠しフォームの自動送信、Origin・Sec-Fetch-Site・Initiator。もしも: Lax、Strict、Lax でも GET で送金、CSRF トークン、Fetch Metadata と Origin の確認）とテスト | content |
+| 13-2 | Cookie と CSRF のページ（概要、クイズ、登録） | content |
+| 13-3 | PLAN、CLAUDE.md、README の仕上げ | content |
+
+#### Phase 13 の判断
+
+| 項目 | 判断 | 理由 |
+|---|---|---|
+| 根拠の版 | draft-ietf-httpbis-rfc6265bis-22 を草案だと明記して節番号で引く（2026-09-29 に datatracker で RFC Ed Queue を確認）。RFC 6265 を添える | RFC 6265 には SameSite がない。RFC になったら引用を直す |
+| 規格の置き場所 | same site は HTML、registrable domain は URL、Origin は Fetch、Sec-Fetch-* は W3C の Fetch Metadata（Working Draft） | Living Standard は節番号が動くので、名前とアンカーで引く |
+| レーン | ブラウザー、bank.example、evil.example の 3 本。利用者のレーンは作らない | 利用者の操作はネットワークのメッセージではない。誰が始めた要求かは Initiator のフィールドと section の帯で示す |
+| 既定の Cookie | `SameSite=None; Secure` を明示する | 属性のない Cookie は、草案では Lax と同じだが、ブラウザーの動きが揃っていない（Firefox は None）。どのブラウザーでも攻撃が再現できる |
+| フォームの送り方 | トップレベルのナビゲーション | Lax の例外と一致する。サードパーティー Cookie の制限と混ざらない。CORS の対比（fetch）は、サードパーティー Cookie を許すブラウザーだと断る |
+| 扱わないもの | 同じサイトの攻撃者の図（アクターを増やす）、ログイン CSRF、`__Host-`、XSS、CHIPS、ダブルサブミット Cookie | 主題がぼやける。一部は概要で触れる |
+
+### Phase 14: HSTS と SSL ストリッピング
+
+**完了条件**: `security` に HSTS と SSL ストリッピングのテーマがあり、根拠の RFC（6797 / 9110 / 6265 / 9846 / 9460、rfc6265bis の草案）、クイズ、en／ja の概要がある。
+
+**完了**（#249〜#251）: テーマは 32 → 33。Strict-Transport-Security の解析（`sts.ts`。§6.1 の癖と §6.2 の例）、既知の HSTS ホストの記録と照合と書き換え（`store.ts`。§8.1〜§8.3）、Cookie の送信（`cookies.ts`。RFC 6265 §5.4）の純関数を足した。SYN フラッドのテーマも設計したが、見送った（#253〜#255）。
+
+| # | タスク | ラベル |
+|---|---|---|
+| 14-1 | HSTS のシナリオ（HSTS なしのストリッピング。もしも: 既知の HSTS ホスト、期限切れ、攻撃者の証明書、includeSubDomains、プリロードリスト）とテスト | content |
+| 14-2 | HSTS のページ（概要、クイズ、登録） | content |
+| 14-3 | PLAN、CLAUDE.md、README の仕上げ | content |
+
+#### Phase 14 の判断
+
+| 項目 | 判断 | 理由 |
+|---|---|---|
+| 分類と位置 | `security` のメールの送信ドメイン認証の次、Cookie と CSRF の前 | TLS の知識を使う。トランスポートの守りから Cookie の守りへ |
+| レーン | ブラウザー、攻撃者（経路上。`router`）、サイト（example.com と www）の 3 本。DNS は描かない | 攻撃に要るのは経路だけ。すべてのメッセージを攻撃者を経由して区間ごとに描き、http は読めて TLS は読めないことを見せる |
+| HSTS ホスト | 頂点の example.com。www は includeSubDomains の例 | 記録はホストごと（§5.3）。プリロードは頂点のドメインに要る |
+| 初めての訪問 | 期限切れの選択肢と同じ流れとして説明し、プリロードの選択肢で答えを示す | 通信の上では同じ |
+| Cookie の上書き | 攻撃者が Secure を外した Set-Cookie は、既存の Secure の Cookie を上書きできない（rfc6265bis §5.7 手順 16）として、Cookie の表は変えない | 今のブラウザーの動き。攻撃者はセッションを自分の TLS の接続で読んでいるので、攻撃は成り立つ |
+| RFC でないもの | sslstrip（Black Hat DC 2009）、プリロードリスト（hstspreload.org）、Chrome の自動の格上げ（Google のブログ）は、確認した日付を添える | 変わりやすい |
+| 扱わないもの | 攻撃者が経路に入る手段、TCP と NAT、301 のキャッシュ、IDNA、`<meta>` | 主題がぼやける。一部は概要で触れる |
 
 ## 9. リスクと対策
 
