@@ -11,6 +11,20 @@ import { cn } from '@/lib/utils'
 export function HomePage() {
   const m = useMessages()
   useDocumentDescription(m.common.tagline)
+  // 表示のたびに localStorage を読む（他のタブの回答は、ホームを開き直すまで反映しない）
+  const scores = new Map(
+    THEME_QUIZZES.map((theme) => [
+      theme.meta.id,
+      scoreQuiz(theme.quiz, readQuizAnswers(theme.quiz)),
+    ]),
+  )
+  const all = [...scores.values()]
+  const overall = {
+    finished: all.filter((score) => score.answered === score.total).length,
+    themes: all.length,
+    correct: all.reduce((sum, score) => sum + score.correct, 0),
+    questions: all.reduce((sum, score) => sum + score.total, 0),
+  }
 
   return (
     <>
@@ -20,6 +34,16 @@ export function HomePage() {
           <h1 className="font-heading text-3xl font-bold tracking-tight">{m.common.siteName}</h1>
           <p className="text-lg text-muted-foreground">{m.common.tagline}</p>
         </section>
+
+        {/* 初めての訪問では「0 / N」を出さない。1 問でも答えたら出す */}
+        {all.some((score) => score.answered > 0) && (
+          <section aria-labelledby="home-progress" className="space-y-1">
+            <h2 id="home-progress" className="font-heading text-xl font-semibold">
+              {m.home.overallTitle}
+            </h2>
+            <p className="text-sm text-muted-foreground">{m.home.overall(overall)}</p>
+          </section>
+        )}
 
         <section aria-labelledby="home-order" className="space-y-4">
           <div className="space-y-1">
@@ -50,15 +74,13 @@ export function HomePage() {
                 */}
                 <ol role="list" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {group.themes.map((theme, i) => {
-                    // 表示のたびに localStorage を読む（他のタブの回答は、ホームを開き直すまで反映しない）
-                    const answers = readQuizAnswers(theme.quiz)
-                    const score = scoreQuiz(theme.quiz, answers)
+                    const score = scores.get(theme.meta.id)
                     return (
                       <li key={theme.meta.id}>
                         <ThemeCard
                           theme={theme.meta}
                           order={i + 1}
-                          progress={score.answered === 0 ? null : score}
+                          progress={score === undefined || score.answered === 0 ? null : score}
                         />
                       </li>
                     )

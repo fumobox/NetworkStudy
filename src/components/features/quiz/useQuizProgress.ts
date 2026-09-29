@@ -31,6 +31,25 @@ function sanitize(quiz: Quiz, answers: Readonly<Record<string, string>>): QuizAn
   )
 }
 
+/** 正解した回答だけを残す（間違えた問題を解き直すため） */
+export function keepCorrect(quiz: Quiz, answers: QuizAnswers): QuizAnswers {
+  return Object.fromEntries(
+    quiz.questions.flatMap((question) =>
+      answers[question.id] === question.answerId ? [[question.id, question.answerId]] : [],
+    ),
+  )
+}
+
+/** 間違えた問題（回答したが正解でないもの）の id */
+export function incorrectQuestionIds(quiz: Quiz, answers: QuizAnswers): string[] {
+  return quiz.questions
+    .filter((question) => {
+      const answer = answers[question.id]
+      return answer !== undefined && answer !== question.answerId
+    })
+    .map((question) => question.id)
+}
+
 export function scoreQuiz(quiz: Quiz, answers: QuizAnswers): QuizScore {
   return {
     correct: quiz.questions.filter((question) => answers[question.id] === question.answerId).length,
@@ -68,6 +87,10 @@ export function useQuizProgress(quiz: Quiz) {
     },
     reset: () => {
       save({})
+    },
+    /** 間違えた問題の回答だけを消す。正解した問題の回答は残す */
+    retryIncorrect: () => {
+      save(keepCorrect(quiz, answers))
     },
   }
 }
