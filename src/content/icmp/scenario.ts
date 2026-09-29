@@ -143,6 +143,21 @@ function labelOf(packet: PacketKind): string {
   }
 }
 
+const IPV4_FIELDS = new Set(['IP Src → Dst', 'TTL', 'Protocol'])
+const SUMMARY_FIELDS = new Set(['IP Src → Dst', 'ICMP type / code', 'UDP port'])
+
+/**
+ * パケットの詳細の層（IPv4 と ICMP、または IPv4 と UDP）。エラーのメッセージが運ぶ元のパケットは、
+ * 1 つのフィールド（Original datagram）として ICMP の層に置き、中の IP と UDP の層は描かない
+ */
+function icmpLayers(fields: readonly PacketField[]): PacketField[] {
+  return fields.map((field) => ({
+    ...field,
+    layer: IPV4_FIELDS.has(field.name) ? 'ipv4' : field.name === 'UDP port' ? 'udp' : 'icmp',
+    ...(SUMMARY_FIELDS.has(field.name) ? { inLayerSummary: true } : {}),
+  }))
+}
+
 function packetFields(packet: PacketKind): PacketField[] {
   const typeCode = (type: number, code: number, meaning: LocalizedText): PacketField[] => [
     {
@@ -164,10 +179,10 @@ function packetFields(packet: PacketKind): PacketField[] {
   ]
   const original: PacketField = {
     name: 'Original datagram',
-    value: 'IP header + first 8 bytes',
+    value: 'IP header + at least 8 bytes',
     description: {
-      en: 'The start of the packet that caused the error, so the sender can tell which one it was',
-      ja: 'エラーの原因になったパケットの先頭。送った側が、どのパケットのことかわかるようにする',
+      en: 'The start of the packet that caused the error, so the sender can tell which one it was. RFC 792 requires the IP header and the first 8 bytes; RFC 1812 asks routers to include as much as fits in a 576-byte ICMP message',
+      ja: 'エラーの原因になったパケットの先頭。送った側が、どのパケットのことかわかるようにする。RFC 792 は IP のヘッダーと先頭の 8 バイトを求め、RFC 1812 はルーターに、576 バイトの ICMP のメッセージに収まるだけ入れるよう求める',
     },
   }
   switch (packet.kind) {
@@ -245,7 +260,7 @@ function hopMessage(spec: HopSpec): Message {
     description: isRequest
       ? { en: 'The probe on its way to the server.', ja: 'サーバーへ向かうプローブ。' }
       : { en: 'The answer on its way back to the PC.', ja: 'PC へ戻る答え。' },
-    fields: [
+    fields: icmpLayers([
       {
         name: 'IP Src → Dst',
         value: `${ADDRESSES[spec.source]} → ${ADDRESSES[spec.destination]}`,
@@ -269,7 +284,7 @@ function hopMessage(spec: HopSpec): Message {
         description: { en: 'What the IP packet carries', ja: 'IP パケットが運んでいるもの' },
       },
       ...packetFields(spec.packet),
-    ],
+    ]),
   }
 }
 

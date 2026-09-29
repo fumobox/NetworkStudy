@@ -21,6 +21,7 @@ import type {
   Step,
   StepEvent,
 } from '@/engine/types'
+import { inLayer } from '@/engine/layers'
 import type { LocalizedText } from '@/lib/i18n/locale'
 
 const optionsSchema = z.object({
@@ -141,6 +142,11 @@ const AUTHORITATIVE_FLAGS: LocalizedText = {
 
 const TEXT = {
   transport: { en: 'DNS usually uses UDP port 53', ja: 'DNS はふつう UDP の 53 番ポートを使う' },
+  ipDst: { en: 'The address of the server being asked', ja: '問い合わせるサーバーのアドレス' },
+  ipSrc: {
+    en: 'The address of the server that answers. The resolver accepts a response only from the address it asked',
+    ja: '答えるサーバーのアドレス。リゾルバーは、問い合わせたアドレスからの応答だけを受け入れる',
+  },
   id: {
     en: 'Chosen by the sender. The response carries the same ID so the sender can match it. Real resolvers pick hard-to-guess random IDs; this page uses readable values.',
     ja: '送信側が選ぶ番号。応答にも同じ ID が入り、送信側はそれで問い合わせと対応づける。実際のリゾルバーは推測されにくい乱数にするが、ここでは読みやすい値にしている。',
@@ -157,6 +163,19 @@ const set = (actorId: ActorId, key: StateKey, value: string | StateTable): StepE
 const send = (message: Message): StepEvent => ({ kind: 'message', message })
 const cacheOf = (rows: readonly Row[]): StateTable => ({ columns: CACHE_COLUMNS, rows })
 
+const DNS_SUMMARY = new Set(['ID', 'Question'])
+
+/**
+ * DNS の層に入れる（パケットの詳細の層）。要約は ID と Question。
+ * IP と UDP の層には、このページが知っている値（サーバーのアドレスとポート 53）だけを置く。スタブのアドレス、
+ * 送信元の一時的なポート（RFC 5452 では推測されにくい乱数）、リゾルバーが問い合わせるときの送信元のアドレスは描かない
+ */
+function dnsLayer(fields: readonly PacketField[]): PacketField[] {
+  return inLayer('dns', fields).map((field) =>
+    DNS_SUMMARY.has(field.name) ? { ...field, inLayerSummary: true } : field,
+  )
+}
+
 function query(options: {
   id: string
   from: ActorId
@@ -168,28 +187,43 @@ function query(options: {
   destination: string
 }): Message {
   const fields: PacketField[] = [
-    { name: 'Transport', value: `UDP → ${options.destination}:53`, description: TEXT.transport },
-    { name: 'ID', value: options.dnsId, description: TEXT.id },
     {
-      name: 'Flags',
-      value: options.recursive ? 'RD' : '(none)',
-      highlight: true,
-      description: options.recursive
-        ? {
-            en: 'RD (recursion desired): “please resolve it all the way for me”',
-            ja: 'RD（再帰要求）: 「最後まで解決してほしい」という依頼',
-          }
-        : {
-            en: 'No RD: the resolver asks iteratively and follows referrals itself',
-            ja: 'RD なし: リゾルバーは反復問い合わせをし、委任を自分でたどる',
-          },
+      name: 'IP Dst',
+      value: options.destination,
+      description: TEXT.ipDst,
+      layer: 'ipv4',
+      inLayerSummary: true,
     },
     {
-      name: 'Question',
-      value: `${options.qname} IN A`,
-      highlight: true,
-      description: TEXT.question,
+      name: 'UDP Dst',
+      value: '53',
+      description: TEXT.transport,
+      layer: 'udp',
+      inLayerSummary: true,
     },
+    ...dnsLayer([
+      { name: 'ID', value: options.dnsId, description: TEXT.id },
+      {
+        name: 'Flags',
+        value: options.recursive ? 'RD' : '(none)',
+        highlight: true,
+        description: options.recursive
+          ? {
+              en: 'RD (recursion desired): “please resolve it all the way for me”',
+              ja: 'RD（再帰要求）: 「最後まで解決してほしい」という依頼',
+            }
+          : {
+              en: 'No RD: the resolver asks iteratively and follows referrals itself',
+              ja: 'RD なし: リゾルバーは反復問い合わせをし、委任を自分でたどる',
+            },
+      },
+      {
+        name: 'Question',
+        value: `${options.qname} IN A`,
+        highlight: true,
+        description: TEXT.question,
+      },
+    ]),
   ]
   return {
     id: options.id,
@@ -218,6 +252,8 @@ function response(options: {
   additional?: readonly Row[]
   description: LocalizedText
   flagsDescription: LocalizedText
+  /** 答えるサーバーのアドレス */
+  source: string
 }): Message {
   const records = (rows: readonly Row[] | undefined) =>
     rows === undefined || rows.length === 0
@@ -231,49 +267,65 @@ function response(options: {
     status: 'delivered',
     description: options.description,
     fields: [
-      { name: 'ID', value: options.dnsId, description: TEXT.id },
       {
-        name: 'Flags',
-        value: options.flags,
-        highlight: true,
-        description: options.flagsDescription,
+        name: 'IP Src',
+        value: options.source,
+        description: TEXT.ipSrc,
+        layer: 'ipv4',
+        inLayerSummary: true,
       },
       {
-        name: 'RCODE',
-        value: options.rcode,
-        highlight: options.rcode === 'NXDOMAIN',
-        description:
-          options.rcode === 'NXDOMAIN'
-            ? {
-                en: 'Name error: the name does not exist',
-                ja: '名前のエラー: その名前は存在しない',
-              }
-            : { en: 'No error', ja: 'エラーなし' },
+        name: 'UDP Src',
+        value: '53',
+        description: TEXT.transport,
+        layer: 'udp',
+        inLayerSummary: true,
       },
-      { name: 'Question', value: `${options.qname} IN A`, description: TEXT.question },
-      {
-        name: 'Answer',
-        value: records(options.answer),
-        highlight: options.answer !== undefined && options.answer.length > 0,
-        description: { en: 'Records that answer the question', ja: '質問への答えになるレコード' },
-      },
-      {
-        name: 'Authority',
-        value: records(options.authority),
-        highlight: options.answer === undefined || options.answer.length === 0,
-        description: {
-          en: 'Name servers to ask next (a referral), or the SOA for a negative answer',
-          ja: '次に聞くべきネームサーバー（委任）、または否定応答のための SOA',
+      ...dnsLayer([
+        { name: 'ID', value: options.dnsId, description: TEXT.id },
+        {
+          name: 'Flags',
+          value: options.flags,
+          highlight: true,
+          description: options.flagsDescription,
         },
-      },
-      {
-        name: 'Additional',
-        value: records(options.additional),
-        description: {
-          en: 'Extra records such as the addresses of those name servers (glue)',
-          ja: 'それらのネームサーバーのアドレス（glue）などの補足のレコード',
+        {
+          name: 'RCODE',
+          value: options.rcode,
+          highlight: options.rcode === 'NXDOMAIN',
+          description:
+            options.rcode === 'NXDOMAIN'
+              ? {
+                  en: 'Name error: the name does not exist',
+                  ja: '名前のエラー: その名前は存在しない',
+                }
+              : { en: 'No error', ja: 'エラーなし' },
         },
-      },
+        { name: 'Question', value: `${options.qname} IN A`, description: TEXT.question },
+        {
+          name: 'Answer',
+          value: records(options.answer),
+          highlight: options.answer !== undefined && options.answer.length > 0,
+          description: { en: 'Records that answer the question', ja: '質問への答えになるレコード' },
+        },
+        {
+          name: 'Authority',
+          value: records(options.authority),
+          highlight: options.answer === undefined || options.answer.length === 0,
+          description: {
+            en: 'Name servers to ask next (a referral), or the SOA for a negative answer',
+            ja: '次に聞くべきネームサーバー（委任）、または否定応答のための SOA',
+          },
+        },
+        {
+          name: 'Additional',
+          value: records(options.additional),
+          description: {
+            en: 'Extra records such as the addresses of those name servers (glue)',
+            ja: 'それらのネームサーバーのアドレス（glue）などの補足のレコード',
+          },
+        },
+      ]),
     ],
   }
 }
@@ -384,6 +436,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
               response({
                 id: 'root-referral',
                 from: ROOT,
+                source: ROOT_ADDRESS,
                 to: RESOLVER,
                 dnsId: '0x7e01',
                 label: 'Referral: com. NS',
@@ -444,6 +497,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
               response({
                 id: 'tld-referral',
                 from: TLD,
+                source: TLD_ADDRESS,
                 to: RESOLVER,
                 dnsId: '0x7e02',
                 label: 'Referral: example.com. NS',
@@ -576,6 +630,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
             response({
               id: 'auth-answer',
               from: AUTH,
+              source: options.serverDown ? NS2_ADDRESS : NS1_ADDRESS,
               to: RESOLVER,
               dnsId: authDnsId,
               label: 'NXDOMAIN',
@@ -616,6 +671,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
             response({
               id: 'auth-answer',
               from: AUTH,
+              source: options.serverDown ? NS2_ADDRESS : NS1_ADDRESS,
               to: RESOLVER,
               dnsId: authDnsId,
               label: options.name === 'alias' ? `Answer: CNAME ${WWW}` : `Answer: A ${WWW_ADDRESS}`,
@@ -669,6 +725,7 @@ function buildSteps(options: DnsOptions): readonly Step[] {
         response({
           id: 'stub-answer',
           from: RESOLVER,
+          source: RESOLVER_ADDRESS,
           to: STUB,
           dnsId: '0x2c1a',
           label:
