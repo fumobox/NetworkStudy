@@ -56,6 +56,7 @@
 | Server-Sent Events | Server-Sent Events、SSE、EventSource、text/event-stream、data、event、id、retry、message、open、error、Last-Event-ID、lastEventId、readyState、CONNECTING、OPEN、CLOSED、close()、onmessage、onerror、withCredentials、Accept、Cache-Control、no-cache、no-store、Pragma、Content-Type、Content-Length、Transfer-Encoding、chunked、200 OK、204 No Content、text/html、application/json、HEADERS、DATA、SETTINGS、MAX_CONCURRENT_STREAMS、END_STREAM、:status、:path、:method、FIN、BOM、LF、CR、CRLF（状態の値 UA default、5000 ms、""、waiting、streaming、queued、idle、closed、open、live、ended と、表の列 type、data、lastEventId、id、event、Conn、Request、State、イベントの種類 price、news、フィールド名 On connection、Request line、Status line、Chunk size、Lines、Body、Stream ID、Flags、Host、accept、content-type、SETTINGS_MAX_CONCURRENT_STREAMS も翻訳しない） |
 | コンテナーのネットワーク | veth、eth0、docker0、br-7c3f9e2a1d4b、vethA、vethB、netns、MASQUERADE、masquerade、SNAT、DNAT、conntrack、prerouting、postrouting、ip_forward、iptables、nftables、docker-proxy、userland-proxy、-p、--publish、docker run、docker network create、127.0.0.11、nameserver、db、FDB、SYN_SENT、SYN_RECV、ESTABLISHED、CLOSE、LISTEN、SYN-RECEIVED、OPER、SPA、SHA、TPA、who-has、is-at（状態の値 local、learned、on-link、default、flood、forward、filter、local: up to the host、masquerade: src →、dnat: dst →、conntrack: dst →、no rule: for the host itself、RST: nothing listens on port 80、ARP: … is mine、conntrack: src →、recomputed、LISTEN 0.0.0.0:80、SYN-RECEIVED from …、ESTABLISHED with …、from …、to …、eth0 ⇄ … (veth pair)、… (bridge interface)、eth0 (host)、1 (request)、2 (reply)、db → … (via 127.0.0.11)、eth0 172.17.0.2/16 などのインターフェースの値と、表の列 Destination、Gateway、Dev、IP、MAC、Port、Type、Hook、Match、Action、Proto、Original、Reply、State、フィールド名 Link、Eth Dst、Eth Src、Src、Dst、TTL、Flags、Translation、Checksums も翻訳しない。conntrack の状態は Linux の名前（SYN_SENT）で、RFC の名前（SYN-SENT）と区別する） |
 | VXLAN | VXLAN、VTEP、VNI、NVE、EVPN、BGP、Geneve、NVGRE、GRE、IGMP、PIM、ECMP、BUM、4789、8472、vxlan100、vethA〜vethD、dstport、srcport、nolearning、proxy、group、dev、df、ttl、spine 1、spine 2、Echo Request、Echo Reply、MSS、RTO（状態の値 encap: …、decap: …、flood: …、drop: …、route: …、multicast: …、ECMP: via …、proxy ARP: …、local、learned、static、connected と、表の列 VNI、MAC、Where、Type、Send to、Ports、Group、Members、Outer src port、Path、Destination、Next hop、フィールド名 Outer Eth Dst、Outer Eth Src、Outer IP Src、Outer IP Dst、TTL、Total Length、UDP Src、UDP Dst、UDP Checksum、VXLAN、VNI、Path、Inner … も翻訳しない。EVPN の DF（Designated Forwarder）は DF ビットと関係がないので書かない） |
+| WireGuard | WireGuard、wg、wg0、wlan0、wg-quick、Noise、IKpsk2、X25519、Curve25519、ChaCha20-Poly1305、XChaCha20-Poly1305、Poly1305、BLAKE2s、HKDF、AEAD、XAEAD、TAI64N、AllowedIPs、Endpoint、ListenPort、PersistentKeepalive、pub:laptop などの鍵の名前、E_pub(…)、Handshake Initiation、Handshake Response、Cookie Reply、Transport Data、keepalive、mac1、mac2、R_m、REKEY_AFTER_TIME、REJECT_AFTER_TIME、REKEY_TIMEOUT、KEEPALIVE_TIMEOUT、51820、IPsec、IKEv2、ESP、Destination Unreachable（状態の値 out: …、in: …、drop: …、rekey: …、endpoint → …、under load (cookie required)、not under load、previous、current、next、#1、#2、greatest … と、表の列 Peer、Endpoint、AllowedIPs、Latest handshake、Keepalive、Slot、Keypair、Packet、Captured from、フィールド名 Outer Src、Outer Dst、IP Length、UDP Length、Type、Sender、Receiver、Ephemeral、Static、Timestamp、Empty、Counter、Inner …、Padding、Tag、Nonce、Cookie も翻訳しない。cookie は HTTP の Cookie とは別物で、小文字で書く） |
 
 ## 3. 訳語の対応表
 
@@ -193,6 +194,18 @@
 | split horizon | スプリットホライズン | |
 | proxy ARP | 代理 ARP | |
 | jumbo frame | ジャンボフレーム | |
+| cryptokey routing | 暗号鍵ルーティング | WireGuard |
+| peer | ピア | |
+| roaming | ローミング | |
+| keypair (session keys) | 鍵の組 | WireGuard の previous・current・next の枠 |
+| rekey | 鍵の更新 | |
+| initiator / responder | 始めた側／応じた側 | |
+| ephemeral / static key | 一時的な鍵／静的な鍵 | |
+| authenticated encryption (AEAD) | 認証付き暗号 | |
+| replay window | リプレイの窓 | |
+| under load | 負荷が高い | |
+| perfect forward secrecy | 前方秘匿性 | |
+| remote-access VPN | リモートアクセス VPN | |
 | forwarding table (FDB, VTEP) | 転送の表（FDB） | VTEP の表。スイッチの MAC アドレステーブルとは行き先（相手の VTEP）を持つ点が違う |
 | neighbor table (VTEP) | 近隣の表 | 代理 ARP に使う IP と MAC の対応。IPv6 の近隣キャッシュとは別 |
 | switch | スイッチ | |
