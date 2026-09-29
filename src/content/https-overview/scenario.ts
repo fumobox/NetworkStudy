@@ -1,7 +1,7 @@
 /**
  * HTTPS の全体像: ブラウザーが https://www.example.com/ を開くまで（DNS → TCP → TLS → HTTP）。
  * 既存のテーマのシナリオを composeScenarios でつなげる。各パートの根拠は、それぞれのシナリオを参照
- * （DNS: RFC 1034 / 1035、TCP: RFC 9293、TLS 1.3: RFC 8446、証明書: RFC 5280、HTTP/2: RFC 9113）。
+ * （DNS: RFC 1034 / 1035、TCP: RFC 9293、TLS 1.3: RFC 9846、証明書: RFC 5280、HTTP/2: RFC 9113）。
  *
  * - DNS のスタブリゾルバー（stub）は、ブラウザーの動いている PC なので client に寄せる
  * - What-if は出さない（出すと組み合わせが各パートの積になる。分岐はそれぞれのテーマで試す）

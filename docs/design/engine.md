@@ -265,7 +265,7 @@ export type PlayerAction =
 - 状態はアクターごとの `Record<StateKey, StateValue>`。キーの枠（key / label / initial）は `Actor.stateSlots` で宣言する
   - TCP: `{ key: 'state', label: { en: 'TCP state', ja: 'TCP 状態' }, initial: 'CLOSED' }`
   - DNS リゾルバ: `{ key: 'cache', initial: { columns: ['NAME', 'TYPE', 'RDATA', 'TTL'], rows: [] } }`
-  - TLS クライアント: `{ key: 'certChain', initial: { columns: ['subject', 'issuer', 'notAfter', 'subjectAltName', 'signature', 'validity', 'name', 'trust'], rows: [] } }`（検証の結果は ✓ / ✗ / ?（確かめられない）/ -）と `{ key: 'alert', initial: '-' }`（値は RFC 8446 のアラート名）
+  - TLS クライアント: `{ key: 'certChain', initial: { columns: ['subject', 'issuer', 'notAfter', 'subjectAltName', 'signature', 'validity', 'name', 'trust'], rows: [] } }`（検証の結果は ✓ / ✗ / ?（確かめられない）/ -）と `{ key: 'alert', initial: '-' }`（値は RFC 9846 のアラート名）
 - `stateChange` は 1 キーを置き換える。表に行を足すときも、content 側で新しい表全体を作って渡す（行の追加イベントは作らない）
 - スカラー値は ProtocolTerm のみ（RFC の用語で書ける。LocalizedText は許さない）
 - ActorStatePanel: アクターごとのカード。`stateSlots` の順に表示し、スカラーは `<code>`、表は小さな `<table>`。`changedKeys` のキーは、背景の強調に加えて色以外の手段（記号と `sr-only` のテキスト）でも示す。表は前のステップにない行を強調する。前の値も見せたいときは `deriveState(…, stepIndex - 1)` をもう一度呼ぶ
