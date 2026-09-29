@@ -83,6 +83,8 @@ export const en = {
     empty: 'No message to show yet.',
     route: (p: { from: string; to: string }) => `${p.from} → ${p.to}`,
     highlighted: 'Key field in this step',
+    layers: 'Fields by protocol layer',
+    layerHighlighted: 'Contains a key field in this step',
     retransmitOf: (p: { label: string }) => `Retransmission of ${p.label}`,
     encrypted:
       'In reality this message is encrypted. Its contents are shown here for learning purposes.',

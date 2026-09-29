@@ -58,11 +58,32 @@ export interface Actor {
 export const MESSAGE_STATUSES = ['delivered', 'lost', 'rejected'] as const
 export type MessageStatus = (typeof MESSAGE_STATUSES)[number]
 
+/** パケットの層（Wireshark の表示名。翻訳しない）。depth はカプセル化の深さで、1 つのメッセージの中で層は深くなる順に並ぶ */
+export interface PacketLayerDef {
+  readonly name: ProtocolTerm
+  readonly depth: number
+}
+
+export const PACKET_LAYERS = {
+  eth: { name: 'Ethernet II', depth: 0 },
+  arp: { name: 'Address Resolution Protocol', depth: 1 },
+  ipv4: { name: 'Internet Protocol Version 4', depth: 1 },
+  icmp: { name: 'Internet Control Message Protocol', depth: 2 },
+  udp: { name: 'User Datagram Protocol', depth: 2 },
+  tcp: { name: 'Transmission Control Protocol', depth: 2 },
+  dns: { name: 'Domain Name System', depth: 3 },
+} as const satisfies Record<string, PacketLayerDef>
+export type PacketLayer = keyof typeof PACKET_LAYERS
+
 export interface PacketField {
   readonly name: ProtocolTerm
   readonly value: ProtocolTerm
   readonly description?: LocalizedText
   readonly highlight?: boolean
+  /** プロトコルの層。層ごとに折りたたんで表示する。1 つのメッセージでは、すべてのフィールドが持つか、どれも持たない */
+  readonly layer?: PacketLayer
+  /** 層の 1 行の要約に `名前: 値` を入れる */
+  readonly inLayerSummary?: boolean
 }
 
 export interface Message {

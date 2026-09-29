@@ -3,6 +3,7 @@ import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_META, themeMetaOfKind } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { LOCALE_NAMES, MESSAGES } from '@/lib/i18n/messages'
+import { openAllDetails } from './details'
 
 // スモークテスト: 本番と同じビルドで、各ページが開いて最後まで操作できることだけを確かめる（挙動の詳細は Vitest で確かめる）
 
@@ -237,6 +238,7 @@ test.describe('スマホの幅（390px）', () => {
       await page.goto(`ja/themes/${meta.id}?step=99`)
       await expect(page.getByRole('heading', { level: 1, name: meta.title.ja })).toBeVisible()
       await expect(page.getByRole('region', { name: MESSAGES.ja.quiz.title })).toBeVisible()
+      await openAllDetails(page)
       const overflow = await page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       )

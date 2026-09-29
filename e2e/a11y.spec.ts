@@ -4,6 +4,7 @@ import { LEARNING_PATHS } from '@/content/learningPaths'
 import { THEME_META, type ThemeMeta } from '@/content/themeMeta'
 import { LOCALES } from '@/lib/i18n/locale'
 import { MESSAGES } from '@/lib/i18n/messages'
+import { openAllDetails } from './details'
 
 // アクセシビリティの自動チェック（axe）。WCAG 2.1 の A / AA の違反がないことを、明暗の両方の配色で確かめる
 
@@ -110,6 +111,7 @@ for (const colorScheme of ['light', 'dark'] as const) {
         if (path.includes('?path=')) {
           await showAll.click()
         }
+        await openAllDetails(page)
         await expectNoViolations(page)
       })
     }

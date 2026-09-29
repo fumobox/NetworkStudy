@@ -68,6 +68,8 @@ export const ja = {
     empty: 'まだ表示するメッセージはありません。',
     route: (p) => `${p.from} → ${p.to}`,
     highlighted: 'このステップで注目するフィールド',
+    layers: 'プロトコルの層ごとのフィールド',
+    layerHighlighted: 'このステップで注目するフィールドを含む',
     retransmitOf: (p) => `${p.label} の再送`,
     encrypted: '実際にはこのメッセージは暗号化されています。学習のために中身を表示しています。',
   },

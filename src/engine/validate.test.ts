@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 import { toScenarioHandle } from './scenario'
-import type { Actor, Scenario, ScenarioHandle, Step } from './types'
+import type { Actor, PacketField, Scenario, ScenarioHandle, Step } from './types'
 import { collectLocalizedTexts, enumerateOptionCombinations, validateScenario } from './validate'
 
 const text = (en: string) => ({ en, ja: `${en}（ja）` })
@@ -224,6 +224,71 @@ describe('validateScenario', () => {
         'retransmitOf "d" does not refer to an earlier message',
       ]),
     )
+  })
+
+  it('フィールドの層（すべてかどれもないか、深さの順、要約）を検査する', () => {
+    const message = (id: string, fields: readonly PacketField[]) => ({
+      kind: 'message' as const,
+      message: {
+        id,
+        from: 'client',
+        to: 'server',
+        label: 'X',
+        status: 'delivered' as const,
+        fields,
+      },
+    })
+    const handle = withSteps(() => [
+      {
+        id: 's',
+        title: text('s'),
+        description: text('s'),
+        events: [
+          message('ok', [
+            { name: 'IP Src', value: '192.0.2.1', layer: 'ipv4', inLayerSummary: true },
+            { name: 'Seq', value: '1', layer: 'tcp' },
+          ]),
+          message('mixed', [
+            { name: 'Seq', value: '1', layer: 'tcp' },
+            { name: 'Note', value: 'x' },
+          ]),
+          message('order', [
+            { name: 'Seq', value: '1', layer: 'tcp' },
+            { name: 'IP Src', value: '192.0.2.1', layer: 'ipv4' },
+          ]),
+          message('split', [
+            { name: 'IP Src', value: '192.0.2.1', layer: 'ipv4' },
+            { name: 'Seq', value: '1', layer: 'tcp' },
+            { name: 'IP Dst', value: '192.0.2.2', layer: 'ipv4' },
+          ]),
+          message('summary', [{ name: 'Note', value: 'x', inLayerSummary: true }]),
+          message('multiline', [
+            { name: 'Answer', value: 'a\nb', layer: 'dns', inLayerSummary: true },
+          ]),
+        ],
+      },
+    ])
+    // 正しい層のメッセージ（events[0]）には問題がない
+    expect(
+      validateScenario(handle).filter((problem) => problem.path.includes('.events[0]')),
+    ).toEqual([])
+    const found = messagesOf(validateScenario(handle))
+    expect(found).toEqual(
+      expect.arrayContaining([
+        'field "Note" has no layer but other fields do',
+        'layer "ipv4" comes after a deeper layer or is split',
+        'inLayerSummary is set on field "Note" without a layer',
+        'summary field "Answer" has a multi-line value',
+      ]),
+    )
+    // 並びの誤り（order）と分かれた層（split）の 2 つ。オプションの組み合わせごとに同じものが出るので、場所で数える
+    expect(
+      new Set(
+        validateScenario(handle)
+          .filter((problem) => problem.message.includes('comes after'))
+          .map((problem) => /\.events\[\d+\]/.exec(problem.path)?.[0]),
+      ).size,
+    ).toBe(2)
   })
 
   it('状態の変更（未宣言のキー、スカラーと表の不一致、表の形）を検査する', () => {
