@@ -1056,7 +1056,7 @@ function buildSteps({ situation }: SseOptions): readonly Step[] {
 export const sseScenario: Scenario<SseOptions> = {
   id: 'server-sent-events',
   title: {
-    en: 'Server-Sent Events: a response that never ends',
+    en: 'Server-Sent Events: a response that never ends, and reconnecting on its own',
     ja: 'Server-Sent Events: 終わらない応答と自動の再接続',
   },
   actors,

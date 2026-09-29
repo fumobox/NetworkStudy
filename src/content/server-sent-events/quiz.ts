@@ -74,15 +74,15 @@ export const sseQuiz: Quiz = {
     {
       id: 'parse',
       prompt: {
-        en: 'Which data does the page get from these three lines: “data:  hello”, “data:world”, and a blank line?',
-        ja: '「data:  hello」「data:world」と空行の 3 行から、ページが受け取る data は？',
+        en: 'Which data does the page get from these three lines: “data:” followed by two spaces and “hello”, then “data:world”, then a blank line?',
+        ja: '「data:」の後に空白 2 つと「hello」、「data:world」、空行の 3 行から、ページが受け取る data は？',
       },
       choices: [
         { id: 'joined', text: { en: '"hello world"', ja: '"hello world"' } },
-        { id: 'correct', text: { en: '" hello\\nworld"', ja: '" hello\\nworld"' } },
+        { id: 'space-kept', text: { en: '" hello\\nworld"', ja: '" hello\\nworld"' } },
         { id: 'trailing', text: { en: '"hello\\nworld\\n"', ja: '"hello\\nworld\\n"' } },
       ],
-      answerId: 'correct',
+      answerId: 'space-kept',
       explanation: {
         en: 'Only one space after the colon is removed, so the first value is " hello" with one space left. data lines are joined with a line feed, and the final line feed is removed.',
         ja: 'コロンの後の空白は 1 つだけ除くので、1 つ目の値は空白が 1 つ残った " hello"。data の行は改行でつなぎ、最後の改行を除く。',

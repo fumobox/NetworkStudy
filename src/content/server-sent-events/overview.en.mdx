@@ -1,4 +1,4 @@
-## Server push over plain HTTP
+## Events from the server over plain HTTP
 
 Some pages need to hear from the server without asking again and again: prices, notifications, a build log. **Server-Sent Events** (SSE) do this with one ordinary HTTP request whose response never ends. The page writes:
 
@@ -21,7 +21,7 @@ The response is UTF-8 text made of lines. Each event is a few lines ended by a b
 | `id: 42` | The last event ID, used when reconnecting |
 | `retry: 5000` | How long to wait before reconnecting, in ms |
 | `: anything` | A comment, ignored |
-| (blank line) | Ends the event and fires it |
+| (blank line) | Ends the event and fires it (if it has data) |
 
 Lines can end with CRLF, LF or CR.
 
@@ -48,7 +48,7 @@ The second event's data is `" third event"`, with one space left.
 
 ## A response that does not end
 
-The server answers `200` with `Content-Type: text/event-stream` and no `Content-Length`, because the length is not known. In HTTP/1.1 the body is sent with **chunked** transfer coding: each chunk starts with its size in hexadecimal, and a chunk of size `0` ends the response (RFC 9112 §7.1). A response that stops without that last chunk is incomplete (§8). In HTTP/2 the body travels in DATA frames on a stream that simply does not end; chunked does not exist there.
+The server answers `200` with `Content-Type: text/event-stream` and no `Content-Length`, because the length is not known. In HTTP/1.1 the body is usually sent with **chunked** transfer coding: each chunk starts with its size in hexadecimal, and a chunk of size `0` ends the response (RFC 9112 §7.1). A response that stops without that last chunk is incomplete (§8). Without chunked and without `Content-Length`, the body simply runs until the connection closes (§6.3). In HTTP/2 the body travels in DATA frames on a stream that simply does not end; chunked does not exist there.
 
 The HTML Standard warns that chunking can hurt the reliability of the stream if it is done by a layer that does not know the timing of the events (it can then be turned off), and suggests a comment line every 15 seconds or so, because some older proxies drop connections that stay idle.
 
@@ -60,21 +60,22 @@ The HTML Standard warns that chunking can hurt the reliability of the stream if 
 | `OPEN` (1) | Receiving events |
 | `CLOSED` (2) | Given up, or closed by the page |
 
-When the connection drops, or even when the server ends the response normally, the browser **reconnects on its own**. It sets readyState to `CONNECTING`, fires `error`, waits the reconnection time (from `retry:`, or a default of a few seconds; it may wait longer), and sends the GET again. If it has received an `id`, it adds a `Last-Event-ID` header with it. What the server does with that header is up to the application: a server that keeps recent events can send everything after that ID, so the page misses nothing.
+When the connection drops, or even when the server ends the response normally, the browser **reconnects on its own**. It sets readyState to `CONNECTING`, fires `error`, waits the reconnection time (from `retry:`, or a default of a few seconds; it may wait longer), and sends the GET again. If the last event ID is not empty, it adds a `Last-Event-ID` header with it. What the server does with that header is up to the application: a server that keeps recent events can send everything after that ID, so the page misses nothing.
 
 ## When the browser gives up
 
 The browser **fails** the connection, sets readyState to `CLOSED`, fires `error`, and never reconnects when:
 
 - the status is anything other than 200. `204 No Content` is the standard way for a server to say "stop";
-- the `Content-Type` is not `text/event-stream`, for example when a misconfigured route returns an HTML page;
-- the page calls `source.close()`.
+- the `Content-Type` is not `text/event-stream`, for example when a misconfigured route returns an HTML page.
+
+The page can also stop it with `source.close()`: readyState becomes `CLOSED` at once, no `error` fires, and the browser does not reconnect.
 
 A network error or the end of the response only makes it reconnect. In `onerror`, check `readyState`: `CONNECTING` means the browser is retrying, `CLOSED` means the page has to create a new `EventSource` if it wants one.
 
 ## Six tabs, HTTP/1.1 and HTTP/2
 
-Over HTTP/1.1 each open `EventSource` keeps one connection busy for as long as it lives. Browsers typically allow about six HTTP/1.1 connections at a time to one server, shared by all tabs. That is browser behaviour, not a standard: RFC 9112 §9.4 sets no number, though the older RFC 2616 said 2. With six tabs of the same site open, every connection is taken, and the next request, even for an image, has to wait. The HTML Standard warns about this and suggests a separate domain name per connection, letting each page turn its stream on and off, or sharing one `EventSource` through a shared worker.
+Over HTTP/1.1 each open `EventSource` keeps one connection busy for as long as it lives. Browsers typically allow about six HTTP/1.1 connections at a time to one server, shared by all tabs. That is browser behaviour, not a standard: RFC 9112 §9.4 sets no number, though the older RFC 2616 said 2. With six tabs of the same site open, every connection is taken, and the next request, even for an image, has to wait. The HTML Standard warns about this and suggests a separate domain name per connection, letting the user turn the stream on or off on each page, or sharing one `EventSource` through a shared worker.
 
 HTTP/2 avoids the problem: each `EventSource` is just one stream on a single connection, and servers commonly allow 100 or more streams at once (RFC 9113 §6.5.2 recommends at least 100).
 
@@ -88,7 +89,7 @@ SSE is ordinary HTTP, so it passes through proxies that would block a WebSocket'
 |---|---|---|
 | Direction | Server → browser | Both ways |
 | Data | UTF-8 text | Text or binary |
-| On the wire | One long HTTP response | Upgrade (101), then frames |
+| On the wire | One long HTTP response | Upgrade (101, HTTP/1.1), then frames |
 | Reconnect | Built in (`retry`, `Last-Event-ID`) | Up to the page |
 | Proxies | Plain HTTP (may buffer) | Must pass the Upgrade |
 
@@ -108,6 +109,7 @@ SSE is ordinary HTTP, so it passes through proxies that would block a WebSocket'
 - Each chunk is drawn as one message, and chunks line up with events. In practice they need not; the parser handles that.
 - `retry: 5000` is an example value sent by the server, and the browser's extra wait (backoff) is not drawn.
 - The server keeps its recent events so that it can send them again. Six tabs are shown as rows of a table.
+- Headers such as User-Agent and Cookie are left out. The 100 streams and the 15 seconds are example values.
 - In HTTP/2, the connection preface, SETTINGS ACK, WINDOW_UPDATE and HPACK are left out.
 
 ## References
@@ -115,6 +117,7 @@ SSE is ordinary HTTP, so it passes through proxies that would block a WebSocket'
 - [HTML Standard: Server-sent events](https://html.spec.whatwg.org/multipage/server-sent-events.html) (WHATWG, checked 2026-09-29)
 - [Fetch Standard](https://fetch.spec.whatwg.org/) — HTTP-network-or-cache fetch
 - [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — §8.3, §15.3.5
-- [RFC 9112: HTTP/1.1](https://www.rfc-editor.org/rfc/rfc9112) — §7.1, §8, §9.3, §9.4
+- [RFC 9112: HTTP/1.1](https://www.rfc-editor.org/rfc/rfc9112) — §6.3, §7.1, §8, §9.3, §9.4
 - [RFC 9113: HTTP/2](https://www.rfc-editor.org/rfc/rfc9113) — §5.1.1, §6.5.2, §8.1
+- [RFC 2616: HTTP/1.1](https://www.rfc-editor.org/rfc/rfc2616) — §8.1.4 (obsoleted)
 - [nginx: proxy_buffering](https://nginx.org/en/docs/http/ngx_http_proxy_module.html#proxy_buffering)

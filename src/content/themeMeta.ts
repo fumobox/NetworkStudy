@@ -266,12 +266,12 @@ export const SERVER_SENT_EVENTS_META = {
   kind: 'sequence',
   category: 'http',
   title: {
-    en: 'Server-Sent Events: a response that never ends',
+    en: 'Server-Sent Events: a response that never ends, and reconnecting on its own',
     ja: 'Server-Sent Events: 終わらない応答と自動の再接続',
   },
   summary: {
     en: 'How a server sends events to a page over one HTTP response that never ends (text/event-stream), how the browser parses the stream, reconnects on its own with Last-Event-ID and gives up on 204 or a wrong Content-Type, and why six tabs over HTTP/1.1 run out of connections while HTTP/2 does not.',
-    ja: 'サーバーが終わらない 1 つの HTTP の応答（text/event-stream）でページにイベントを送るしくみ、ブラウザーがストリームを読み、Last-Event-ID を付けて自分で接続し直し、204 や誤った Content-Type ではあきらめるまで、そして 6 つのタブで HTTP/1.1 の接続が足りなくなり、HTTP/2 ではそうならない理由。',
+    ja: 'サーバーが、終わらない 1 つの HTTP の応答（text/event-stream）でページにイベントを送るしくみ、ブラウザーがストリームを読み、Last-Event-ID を付けて自分で接続し直し、204 や誤った Content-Type ではあきらめるまで、そして 6 つのタブで HTTP/1.1 の接続が足りなくなり、HTTP/2 ではそうならない理由。',
   },
   difficulty: 'intermediate',
   minutes: 10,
