@@ -54,6 +54,7 @@
 | Cookie と CSRF | SameSite、Strict、Lax、None、Default、Lax-allowing-unsafe、Lax+POST、Set-Cookie、Cookie、Secure、HttpOnly、Path、Domain、__Host-、__Secure-、Sec-Fetch-Site、Sec-Fetch-Mode、Sec-Fetch-Dest、Sec-Fetch-User、same-origin、same-site、cross-site、none、navigate、document、?1、Origin、303 See Other、403 Forbidden、200 OK、application/x-www-form-urlencoded、multipart/form-data、text/plain、form.submit()、location、PSL、OWASP、ambient authority（状態の値 sid sent、sid withheld (Lax)、sid withheld (Strict)、no cookie for evil.example、transferred (to mallory)、403 (no session)、403 (csrf missing)、403 (cross-site)、(not sent)、(none)、(missing)、bank.example (host-only)、yes、1000 USD、0 USD と、表の列 Name、Value、Domain、Path、SameSite、Secure、HttpOnly、Session、User、CSRF token、Initiator の値 bank.example page、redirect from /login、user (link in an email app)、evil.example page (form.submit())、evil.example page (location = …)、link on evil.example (click)、フィールド名 Initiator、Request line、Status line、Location、Host、Content-Type、Body、csrf も翻訳しない） |
 | HSTS | HSTS、Strict-Transport-Security、max-age、includeSubDomains、preload、sslstrip、Known HSTS Host、301 Moved Permanently、303 See Other、308 Permanent Redirect、Location、Set-Cookie、Cookie、Secure、HttpOnly、Domain、Path、SID、lang、unknown_ca、SNI、HTTPS RR、HTTPS-First、HTTPS-Only、TOFU（状態の値 no match、expired (evicted)、congruent: …、superdomain: … (includeSubDomains)、(built in)、header、preload list、yes、no、waiting for http、stripping、relaying TLS (ciphertext only)、posing as example.com、holding alice’s session、(removed)、(ciphertext only)、http from …、https from …、none (http)、TLS 1.3, cert OK、aborted: unknown_ca、error page (no proceed)、http://example.com/ (not secure)、https://… (HSTS upgrade)、alice (from …)、https from … (alice’s session)、ClientHello / ServerHello only と、表の列 Host、Subdomains、Expires、Source、Name、Value、Secure、Field、TLS records、フィールド名 TCP、Request line、Status line、Body、Handshake、Certificate、server_name、AlertDescription、Visible to the attacker も翻訳しない） |
 | Server-Sent Events | Server-Sent Events、SSE、EventSource、text/event-stream、data、event、id、retry、message、open、error、Last-Event-ID、lastEventId、readyState、CONNECTING、OPEN、CLOSED、close()、onmessage、onerror、withCredentials、Accept、Cache-Control、no-cache、no-store、Pragma、Content-Type、Content-Length、Transfer-Encoding、chunked、200 OK、204 No Content、text/html、application/json、HEADERS、DATA、SETTINGS、MAX_CONCURRENT_STREAMS、END_STREAM、:status、:path、:method、FIN、BOM、LF、CR、CRLF（状態の値 UA default、5000 ms、""、waiting、streaming、queued、idle、closed、open、live、ended と、表の列 type、data、lastEventId、id、event、Conn、Request、State、イベントの種類 price、news、フィールド名 On connection、Request line、Status line、Chunk size、Lines、Body、Stream ID、Flags、Host、accept、content-type、SETTINGS_MAX_CONCURRENT_STREAMS も翻訳しない） |
+| コンテナーのネットワーク | veth、eth0、docker0、br-7c3f9e2a1d4b、vethA、vethB、netns、MASQUERADE、masquerade、SNAT、DNAT、conntrack、prerouting、postrouting、ip_forward、iptables、nftables、docker-proxy、userland-proxy、-p、--publish、docker run、docker network create、127.0.0.11、nameserver、db、FDB、SYN_SENT、SYN_RECV、ESTABLISHED、CLOSE、LISTEN、SYN-RECEIVED、OPER、SPA、SHA、TPA、who-has、is-at（状態の値 local、learned、on-link、default、flood、forward、filter、local: up to the host、masquerade: src →、dnat: dst →、conntrack: dst →、no rule: for the host itself、RST: nothing listens on port 80、ARP: … is mine、conntrack: src →、recomputed、LISTEN 0.0.0.0:80、SYN-RECEIVED from …、ESTABLISHED with …、from …、to …、eth0 ⇄ … (veth pair)、… (bridge interface)、eth0 (host)、1 (request)、2 (reply)、db → … (via 127.0.0.11)、eth0 172.17.0.2/16 などのインターフェースの値と、表の列 Destination、Gateway、Dev、IP、MAC、Port、Type、Hook、Match、Action、Proto、Original、Reply、State、フィールド名 Link、Eth Dst、Eth Src、Src、Dst、TTL、Flags、Translation、Checksums も翻訳しない。conntrack の状態は Linux の名前（SYN_SENT）で、RFC の名前（SYN-SENT）と区別する） |
 
 ## 3. 訳語の対応表
 
@@ -168,6 +169,15 @@
 | port forwarding | ポートフォワーディング | |
 | carrier-grade NAT | キャリアグレード NAT | |
 | hairpinning | ヘアピン | |
+| container | コンテナー | 長音を付ける（用語集のテストで検査する） |
+| network namespace | ネットワーク名前空間 | |
+| veth pair | veth ペア | |
+| bridge (Linux) | ブリッジ | スイッチと同じ働きをする、ホストの中の仮想のスイッチ |
+| publish a port / published port | ポートを公開する／公開したポート | Docker の -p |
+| masquerade | マスカレードする | 送信元を、出ていくインターフェースのアドレスに書き換えること |
+| embedded DNS server | 組み込みの DNS サーバー | Docker の 127.0.0.11 |
+| user-defined network / default bridge network | ユーザー定義のネットワーク／既定のブリッジネットワーク | |
+| IP forwarding | IP 転送 | |
 | switch | スイッチ | |
 | MAC address table | MAC アドレステーブル | |
 | learning | 学習 | スイッチが送信元の MAC アドレスとポートを記録すること |
