@@ -54,11 +54,11 @@ A handshake costs the server several Curve25519 computations. An attacker could 
 
 ## MTU: 60 or 80 bytes
 
-A data message adds 32 bytes, plus UDP (8) and the outer IP header: 60 bytes over IPv4, 80 over IPv6, plus up to 15 bytes of padding. Linux gives a WireGuard interface MTU 1420 by default (1500 − 80), and wg-quick sets it from the route’s MTU minus 80. Linux sends the outer packet without the Don’t Fragment bit, so an oversized packet is fragmented on the way instead of vanishing; see [path MTU discovery](/themes/pmtud) and [VXLAN](/themes/vxlan) for why the overhead matters.
+A data message adds 32 bytes, plus UDP (8) and the outer IP header: 60 bytes over IPv4, 80 over IPv6. The padding to a multiple of 16 never takes a packet past the interface MTU, so 80 bytes is enough. Linux gives a WireGuard interface MTU 1420 by default (1500 − 80), and wg-quick sets it from the route’s MTU minus 80. Linux sends the outer packet without the Don’t Fragment bit, so an oversized packet is fragmented on the way instead of vanishing; see [path MTU discovery](/themes/pmtud) and [VXLAN](/themes/vxlan) for why the overhead matters.
 
 ## Compared with IPsec
 
-IPsec is the standard VPN of the IETF: IKEv2 (RFC 7296) sets up the keys in at least four messages, with a choice of algorithms and several ways to authenticate, and ESP (RFC 4303) carries the packets, with a replay window of 64 by default. It runs over UDP 500 and 4500 through NATs. WireGuard does less on purpose: one fixed set of algorithms, only public keys, and a much smaller implementation, which is easier to review.
+IPsec is the standard VPN of the IETF: IKEv2 (RFC 7296) sets up the keys in at least four messages, with a choice of algorithms and several ways to authenticate, and ESP (RFC 4303) carries the packets, with a replay window of 64 by default. IKE uses UDP 500; when a NAT is detected, IKE and ESP move to UDP 4500. WireGuard does less on purpose: one fixed set of algorithms, only public keys, and a much smaller implementation, which is easier to review.
 
 ## What WireGuard leaves to you
 
@@ -82,9 +82,9 @@ IPsec is the standard VPN of the IETF: IKEv2 (RFC 7296) sets up the keys in at l
 
 ## Whitepaper, wg(8) or Linux?
 
-- **Whitepaper:** the messages and their sizes, the handshake, cryptokey routing, roaming, the timers, cookies.
+- **Whitepaper:** the messages and their sizes, the handshake, cryptokey routing (including an ICMP “no route to host” for a destination with no peer), roaming, the timers, cookies.
 - **wg(8) and wg-quick(8):** PersistentKeepalive, a random ListenPort when none is set, setting the MTU from routes.
-- **Linux:** the replay window of 8128, the default MTU 1420, when the server counts as under load, no Don’t Fragment bit, the ICMP Destination Unreachable for a destination with no peer, and sending a keepalive at once when PersistentKeepalive is set.
+- **Linux:** the replay window of 8128, the default MTU 1420, when the server counts as under load, no Don’t Fragment bit, and sending a keepalive at once when PersistentKeepalive is set.
 
 ## About this page
 
