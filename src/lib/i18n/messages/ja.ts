@@ -118,6 +118,18 @@ export const ja = {
     start: '最初のテーマから始める',
     continue: (p) => `続きから: ${p.title}`,
   },
+  pathNav: {
+    label: (p) => `学習の道筋: ${p.path}`,
+    position: (p) => `${String(p.total)} テーマ中 ${String(p.current)} 番目`,
+    previous: '前のテーマ',
+    next: '次のテーマ',
+    previousTo: (p) => `前: ${p.title}`,
+    nextTo: (p) => `次: ${p.title}`,
+    finished: 'この道筋の最後のテーマです。',
+    backToPath: 'この道筋のテーマの一覧',
+    showAll: 'この道筋のテーマをすべて表示',
+    inPathsTitle: 'このテーマを含む学習の道筋',
+  },
   categories: {
     basics: {
       title: 'ネットワークの基礎',

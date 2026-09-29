@@ -1,8 +1,13 @@
 import { Suspense, useId, type ReactNode } from 'react'
-import { useParams } from 'react-router'
+import { useParams, useSearchParams } from 'react-router'
+import {
+  LearningPathNav,
+  PathPositionLine,
+} from '@/components/features/learning-path/LearningPathNav'
 import { OverviewSection } from '@/components/features/overview/OverviewSection'
 import { QuizPanel } from '@/components/features/quiz/QuizPanel'
 import { DifficultyBadge } from '@/components/features/theme-card/DifficultyBadge'
+import { readPathParam, resolvePathContext } from '@/content/learningPathNav'
 import { findTheme } from '@/content/registry'
 import { CATEGORY_TONE } from '@/content/themeTone'
 import type { CustomThemeModule, SequenceThemeModule, ThemeModule } from '@/content/types'
@@ -29,6 +34,9 @@ function ThemeView({ theme }: { theme: ThemeModule }) {
   const locale = useLocale()
   const title = t(theme.meta.title)
   useDocumentDescription(t(theme.meta.summary))
+  // ?path= の道筋、なければテーマを含む道筋（ステップの URL の同期は他のクエリを残すので、?path= は消えない）
+  const [searchParams] = useSearchParams()
+  const pathContext = resolvePathContext(theme.meta.id, readPathParam(searchParams))
 
   return (
     <>
@@ -43,9 +51,10 @@ function ThemeView({ theme }: { theme: ThemeModule }) {
         >
           <h1 className="font-heading text-3xl font-bold tracking-tight">{title}</h1>
           <p className="text-muted-foreground">{t(theme.meta.summary)}</p>
-          <p className="flex items-center gap-3 text-xs text-muted-foreground">
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
             <DifficultyBadge difficulty={theme.meta.difficulty} />
             <span>{m.theme.minutes({ minutes: theme.meta.minutes })}</span>
+            {pathContext.kind === 'single' && <PathPositionLine position={pathContext.position} />}
           </p>
         </header>
         <ThemeSection title={m.theme.overview} divider={false}>
@@ -68,6 +77,12 @@ function ThemeView({ theme }: { theme: ThemeModule }) {
         <Divider>
           <QuizPanel quiz={theme.quiz} />
         </Divider>
+        {/* クイズを終えたところで「次に何を読むか」を示す */}
+        {pathContext.kind !== 'none' && (
+          <Divider>
+            <LearningPathNav context={pathContext} />
+          </Divider>
+        )}
       </article>
     </>
   )

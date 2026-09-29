@@ -140,6 +140,21 @@ export const en = {
     start: 'Start with the first theme',
     continue: (p: { title: string }) => `Continue with: ${p.title}`,
   },
+  pathNav: {
+    label: (p: { path: string }) => `Learning path: ${p.path}`,
+    // 「Step n of m」はステップ実行の表示と紛れる（e2e もその文言で探す）ので使わない
+    position: (p: { current: number; total: number }) =>
+      `Theme ${String(p.current)} of ${String(p.total)}`,
+    previous: 'Previous theme',
+    next: 'Next theme',
+    // 複数の道筋の行の中の短いリンク（1 つの道筋のときはカードで「Previous theme」と名前を分けて出す）
+    previousTo: (p: { title: string }) => `Previous: ${p.title}`,
+    nextTo: (p: { title: string }) => `Next: ${p.title}`,
+    finished: 'This is the last theme in this path.',
+    backToPath: 'All themes in this path',
+    showAll: 'Show all themes in this path',
+    inPathsTitle: 'Learning paths with this theme',
+  },
   categories: {
     basics: {
       title: 'Network basics',

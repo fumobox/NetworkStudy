@@ -79,7 +79,8 @@ describe('ThemePage', () => {
       within(screen.getByRole('main'))
         .getAllByRole('heading', { level: 2 })
         .map((heading) => heading.textContent),
-    ).toEqual(['概要', 'ステップ実行', '理解度チェック'])
+      // tcp-handshake は 2 つの道筋にあるので、最後に道筋のナビゲーション（h2）が付く
+    ).toEqual(['概要', 'ステップ実行', '理解度チェック', 'このテーマを含む学習の道筋'])
     expect(screen.getByRole('region', { name: '概要' })).toBeInTheDocument()
     expect(screen.getByRole('region', { name: 'ステップ実行' })).toBeInTheDocument()
     // タイトルの下の線は分類の色（web は blue）

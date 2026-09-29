@@ -28,10 +28,17 @@ interface PageCase {
 
 const pages: readonly PageCase[] = LOCALES.flatMap((locale) => [
   { path: `${locale}/`, heading: MESSAGES[locale].common.siteName },
-  ...LEARNING_PATHS.map((path) => ({
-    path: `${locale}/paths/${path.id}`,
-    heading: path.title[locale],
-  })),
+  ...LEARNING_PATHS.flatMap((path) => {
+    // 道筋の途中のテーマ（前後のリンクの両方がある）も、?path= 付きで確かめる
+    const middle = path.themeIds[Math.floor(path.themeIds.length / 2)]
+    const meta = THEME_METAS.find((candidate) => candidate.id === middle)
+    return [
+      { path: `${locale}/paths/${path.id}`, heading: path.title[locale] },
+      ...(meta === undefined
+        ? []
+        : [{ path: `${locale}/themes/${meta.id}?path=${path.id}`, heading: meta.title[locale] }]),
+    ]
+  }),
   ...THEME_METAS.flatMap((meta) => {
     const heading = meta.title[locale]
     const base = `${locale}/themes/${meta.id}`
@@ -96,6 +103,13 @@ for (const colorScheme of ['light', 'dark'] as const) {
       test(`axe: ${path}`, async ({ page }) => {
         await page.goto(path)
         await expect(page.getByRole('heading', { level: 1, name: heading })).toBeVisible()
+        // 道筋のテーマの一覧は折りたたまれているので、開いてから確かめる
+        const showAll = page
+          .getByText(MESSAGES.en.pathNav.showAll)
+          .or(page.getByText(MESSAGES.ja.pathNav.showAll))
+        if (path.includes('?path=')) {
+          await showAll.click()
+        }
         await expectNoViolations(page)
       })
     }
