@@ -1,0 +1,94 @@
+## The first request is plain http
+
+When you type `example.com` without a scheme, or follow an old `http://` link, the browser's first request goes out over plain http. A careful site answers with a permanent redirect to https (301 or 308), and from then on everything is encrypted. But the redirect itself travels over http. Anyone on the path can read it, change it, or never pass it on.
+
+## SSL stripping
+
+In 2009 Moxie Marlinspike presented **sslstrip**, a tool for an attacker on the same network, such as a café's Wi-Fi:
+
+1. The attacker receives the browser's http request and forwards it to the site.
+2. The site answers with a redirect to https. The attacker rewrites it to http (or simply keeps it) and fetches the https page itself, over its own TLS connection.
+3. The attacker sends the page back to the browser over http, with every `https://` link and redirect rewritten to `http://`.
+4. When the user logs in, the password goes over http to the attacker, who passes it on over https.
+
+The site sees a perfectly valid https login, only from the attacker's address. The browser sees the right page; only the address bar shows that it is not secure.
+
+## Cookies and the Secure attribute
+
+A cookie with the `Secure` attribute is sent only over https (RFC 6265 §4.1.2.5). It is not sent with the stripped http request, which is good. But a stripped login creates a new session that the attacker reads on its own TLS connection anyway. Cookies without `Secure`, like a language setting, leak with the very first http request.
+
+sslstrip also removes `Secure` from the cookies it passes on. Current browsers ignore an http response that tries to overwrite an existing `Secure` cookie of the same name (draft-ietf-httpbis-rfc6265bis §5.7), but that does not help once the attacker holds the session.
+
+## Strict-Transport-Security
+
+**HSTS** (RFC 6797) lets a site tell the browser: "for this long, use only https for me."
+
+```
+Strict-Transport-Security: max-age=31536000; includeSubDomains
+```
+
+- `max-age` is the time in seconds, here one year. `max-age=0` removes the record.
+- `includeSubDomains` extends the rule to every subdomain.
+- The browser records the host as a **Known HSTS Host** only if the header arrived over a secure connection without errors. A header received over http must be ignored (§8.1): otherwise an attacker could set or remove HSTS for any site whose traffic it can see. A site must not send it over http either (§7.2).
+- Each response that carries the header restarts `max-age` (§8.1), so the record lasts as long as the user keeps visiting.
+
+## What the browser does with it
+
+- **Before sending**, it rewrites every `http://` URL for a Known HSTS Host to `https://`, and an explicit port 80 to 443 (§8.3). Nothing is sent over http, so there is nothing to strip.
+- **No click-through.** If anything is wrong with the secure connection, such as a self-signed certificate, the browser must end the connection (§8.4) and should not offer a way to proceed anyway (§12.1). Without HSTS, browsers usually show a warning that the user can click through.
+
+## includeSubDomains
+
+HSTS records are kept per host. A record for `example.com` without `includeSubDomains` does not cover `www.example.com`, so a link to `http://www.example.com/` goes out over http and can be stripped. With `includeSubDomains`, the parent record covers it (§8.2, §8.3). This matters for cookies too: a cookie with `Domain=example.com` is sent to every subdomain. A cookie without `Secure` leaks over http from any subdomain that is not covered. Even a `Secure` one can leak: an attacker can lure the browser to an unprotected subdomain it controls, where the user may click through a certificate warning (§14.4). Before enabling `includeSubDomains`, make sure every subdomain works over https.
+
+## The first visit and the preload list
+
+HSTS only works after the browser has received the header once over https. On the very first visit, or after the record has expired, the browser starts with http like any other site, and an attacker can strip that visit (§14.6, "trust on first use").
+
+The **HSTS preload list** closes that gap: it is a list of hosts built into the browser, so they are Known HSTS Hosts from the start (§12.3). It is run by Chrome and used by other browsers, and it is not part of any RFC. At [hstspreload.org](https://hstspreload.org/) a site can submit itself if it serves a valid certificate, redirects http to https, serves all subdomains over https, and sends `max-age` of at least one year with `includeSubDomains` and `preload`. The `preload` token is not defined in RFC 6797; browsers ignore it, and it only signals consent to the list.
+
+Getting off the list takes months, because the list ships with browser updates. As of September 2026, the site also says that while HSTS is recommended, preloading is not, because browsers increasingly upgrade to https on their own.
+
+## What HSTS does not do
+
+- It cannot stop an attacker from **blocking** the connection; it only turns an attack into an error.
+- It does not help against phishing sites with their own valid certificates, or against malware on the device.
+- It depends on the device's clock, since records expire by time (§14.7).
+
+## Related mechanisms
+
+- **Automatic upgrades.** Browsers increasingly try https first for every site ("HTTPS-First", "HTTPS-Only"). Unlike HSTS, such modes may fall back to http, or warn and then let the user continue, when https fails. That is why an active attacker can still matter. Chrome announced in October 2025 that Chrome 154 (October 2026) turns on “Always Use Secure Connections” by default, asking for the user’s permission before the first visit to a public site without https.
+- **HTTPS DNS records** (RFC 9460). A site can publish an HTTPS record in DNS, and a browser that finds one treats an http URL as if it had been redirected to https. But the signal comes over DNS, which is often not secured (see [DNSSEC](/themes/dnssec)).
+
+## What to look for in the walkthrough
+
+- The browser's **Known HSTS hosts** table and the **HSTS check** result before anything is sent.
+- Without a record (the default, and an expired record):
+  - the `http` hops through the attacker;
+  - the rewritten links and redirect;
+  - the password in **What it can read**.
+- With a record (known from an earlier visit, `www.example.com` through `includeSubDomains`, and the preload list):
+  - the upgrade in the address bar;
+  - the attacker relaying only ciphertext;
+  - the record being updated.
+- With the attacker's own certificate: the `unknown_ca` alert, and no way to proceed.
+
+## About this page
+
+- A name typed without a scheme opens over http; the browser's automatic https upgrades are not used.
+- The attacker keeps the site's 301 and follows it itself; sslstrip actually rewrites it to http and fetches the https page when the browser follows it. Only the result is shown.
+- The attacker is on the same Wi-Fi and receives every packet. How it got on the path (a rogue hotspot, ARP spoofing) is not shown; see the [Wi-Fi](/themes/wifi) and [ARP](/themes/arp) themes.
+- The TLS handshake is shown as 3 messages (see the [TLS 1.3 theme](/themes/tls-handshake)). TCP and NAT are not drawn, and HTTP inside TLS is shown as HTTP/1.1.
+- Times are UTC, and this visit is at 2026-10-01T09:00:00Z. The browser's cache of the 301 is not drawn.
+- The page keeps the built-in preload entry and a header entry as separate rows; that is this page's model.
+
+## References
+
+- [RFC 6797: HTTP Strict Transport Security (HSTS)](https://www.rfc-editor.org/rfc/rfc6797) — §2.3.2, §6.1, §7, §8.1–§8.4, §12.1, §12.3, §14.4, §14.6, §14.7
+- [RFC 6265: HTTP State Management Mechanism](https://www.rfc-editor.org/rfc/rfc6265) — §4.1.2.5, §5.4
+- [draft-ietf-httpbis-rfc6265bis-22](https://datatracker.ietf.org/doc/draft-ietf-httpbis-rfc6265bis/) — §5.7 (Internet-Draft)
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — §15.4.2 (301), §15.4.9 (308)
+- [RFC 9460: Service Binding and Parameter Specification via the DNS (SVCB and HTTPS Resource Records)](https://www.rfc-editor.org/rfc/rfc9460) — §9.5
+- Moxie Marlinspike, “New Tricks for Defeating SSL in Practice”, Black Hat DC 2009
+- [HSTS Preload List Submission](https://hstspreload.org/) (checked 2026-09-29)
+- [Google Online Security Blog: HTTPS by default](https://security.googleblog.com/2025/10/https-by-default.html) (October 2025)
