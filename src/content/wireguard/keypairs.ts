@@ -15,7 +15,10 @@ export interface KeypairSlots {
 export const EMPTY_SLOTS: KeypairSlots = { previous: null, current: null, next: null }
 
 export function initiatorAdds(slots: KeypairSlots, keypair: string): KeypairSlots {
-  return { previous: slots.current, current: keypair, next: null }
+  // 確認を待つ next があれば、それを previous にし、current は捨てる（Linux の add_new_keypair）
+  return slots.next !== null
+    ? { previous: slots.next, current: keypair, next: null }
+    : { previous: slots.current, current: keypair, next: null }
 }
 
 export function responderAdds(slots: KeypairSlots, keypair: string): KeypairSlots {

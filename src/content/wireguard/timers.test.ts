@@ -8,7 +8,7 @@ import {
   rekeyOnSend,
   retryTimes,
   usable,
-  zeroAt,
+  zeroAllKeysAt,
 } from './timers'
 
 describe('WireGuard のタイマー', () => {
@@ -23,10 +23,10 @@ describe('WireGuard のタイマー', () => {
     expect(rekeyOnReceive({ createdAt: 0, initiator: true }, 165)).toBe(true)
   })
 
-  it('180 秒で使えなくなり、540 秒で鍵を消す', () => {
+  it('180 秒で使えなくなり、最後のセッションから 540 秒で鍵をすべて消す', () => {
     expect(usable({ createdAt: 0, initiator: true }, 179)).toBe(true)
     expect(usable({ createdAt: 0, initiator: true }, 180)).toBe(false)
-    expect(zeroAt(0)).toBe(540)
+    expect(zeroAllKeysAt(120)).toBe(660)
   })
 
   it('キープアライブと新しいハンドシェイクの時刻', () => {

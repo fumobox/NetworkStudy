@@ -21,6 +21,14 @@ describe('鍵の組の入れ替え', () => {
     expect(receivedWith(server, '#2')).toEqual({ previous: '#1', current: '#2', next: null })
   })
 
+  it('確認を待つ next があるときに自分で始めると、next を previous にする', () => {
+    expect(initiatorAdds({ previous: '#0', current: '#1', next: '#2' }, '#3')).toEqual({
+      previous: '#2',
+      current: '#3',
+      next: null,
+    })
+  })
+
   it('current の鍵の組で受け取っても変わらない', () => {
     const slots = { previous: null, current: '#1', next: null }
     expect(receivedWith(slots, '#1')).toBe(slots)

@@ -278,8 +278,8 @@ const FIELD_TEXT = {
     ja: '新しい一時的な公開鍵（X25519）。暗号化せずに送る。ハンドシェイクのたびに新しくする',
   },
   static: {
-    en: 'The laptop’s static public key, encrypted with a key only the server can compute (from DH of the ephemeral key and the server’s static key). Observers cannot tell who is connecting',
-    ja: 'ノート PC の静的な公開鍵。サーバーだけが計算できる鍵（一時的な鍵とサーバーの静的な鍵の DH から）で暗号化する。見ている者には、誰がつないでいるかわからない',
+    en: 'The laptop’s static public key, encrypted with a key only the laptop and the server can compute (from DH of the ephemeral key and the server’s static key). Observers cannot tell who is connecting',
+    ja: 'ノート PC の静的な公開鍵。ノート PC とサーバーだけが計算できる鍵（一時的な鍵とサーバーの静的な鍵の DH から）で暗号化する。見ている者には、誰がつないでいるかわからない',
   },
   timestamp: {
     en: 'An encrypted TAI64N timestamp. The server accepts an initiation only if it is newer than the last one, so a recorded initiation cannot be replayed',
@@ -816,8 +816,12 @@ function rejectedSteps(): Step[] {
     }
   }
   const home = `${ADDR.homePublic}:40001`
-  const attackerSend = (id: string, message: WgMessage, status: Message['status']) =>
-    send(packet(id, ATTACKER, SERVER, home, SERVER_ENDPOINT, message, status))
+  const attackerSend = (
+    id: string,
+    message: WgMessage,
+    status: Message['status'],
+    src: string = home,
+  ) => send(packet(id, ATTACKER, SERVER, src, SERVER_ENDPOINT, message, status))
   return [
     {
       id: 'setup',
@@ -871,8 +875,8 @@ function rejectedSteps(): Step[] {
       id: 'replayed-data',
       title: { en: 'A replayed data message is rejected', ja: '送り直したデータは捨てられる' },
       description: {
-        en: 'The attacker replays the data message with counter 5. The index finds keypair #1 and the tag is genuine, but counter 5 has already been received: the replay window rejects it. Because the check happens before the endpoint is updated, the server does not start sending to the attacker.',
-        ja: '攻撃者はカウンター 5 のデータを送り直す。インデックスで鍵の組 #1 が見つかり、タグも本物だが、カウンター 5 はもう受け取っている。リプレイの窓が捨てる。エンドポイントを変える前に確かめるので、サーバーが攻撃者へ送り始めることはない。',
+        en: 'The attacker replays the data message with counter 5, this time from its own address, hoping the server will take it as the laptop’s new endpoint. The index finds keypair #1 and the tag is genuine, but counter 5 has already been received: the replay window rejects it. Because the check happens before the endpoint is updated, the server does not start sending to the attacker.',
+        ja: '攻撃者はカウンター 5 のデータを、今度は自分のアドレスから送り直す。サーバーがノート PC の新しいエンドポイントだと思うことをねらっている。インデックスで鍵の組 #1 が見つかり、タグも本物だが、カウンター 5 はもう受け取っている。リプレイの窓が捨てる。エンドポイントを変える前に確かめるので、サーバーが攻撃者へ送り始めることはない。',
       },
       events: [
         attackerSend(
@@ -886,6 +890,7 @@ function rejectedSteps(): Step[] {
             ' (replayed)',
           ),
           'rejected',
+          `${ADDR.attacker}:61000`,
         ),
         set(
           SERVER,
@@ -1182,8 +1187,14 @@ function rekeySteps(): Step[] {
   const model = new WgModel()
   establish(model, 0)
   const now = REKEY_AFTER_TIME
-  // 描かない通信が続いていたので、NAT の対応は生きている
+  // 描かない通信が続いていたので、NAT の対応は生きていて、サーバーはカウンター 0〜41 を受け取っている
   model.nat = outbound(model.nat, LAPTOP_HOME, SERVER_ENDPOINT, now - 5).nat
+  for (let counter = 0; counter <= 41; counter++) {
+    const result = checkCounter(model.replay['#1'] ?? INITIAL_REPLAY, counter)
+    if (result.accepted) {
+      model.replay = { ...model.replay, '#1': result.next }
+    }
+  }
   const ping = echoRequest(ADDR.laptopTunnel, ADDR.internal)
   const pong = echoReply(ADDR.internal, ADDR.laptopTunnel)
   const rekeySection = { en: 'Handshake for keypair #2', ja: '鍵の組 #2 のハンドシェイク' }
@@ -1195,7 +1206,11 @@ function rekeySteps(): Step[] {
         en: `${SETUP_TEXT.en} The laptop started keypair #1 at t = 0 s, and traffic has flowed since (not drawn). WireGuard never uses a keypair for long: after 120 seconds, the side that started it makes a new one.`,
         ja: `${SETUP_TEXT.ja}ノート PC が t = 0 s に鍵の組 #1 を始め、その後も通信が続いた（描かない）。WireGuard は 1 つの鍵の組を長く使わない。120 秒たつと、始めた側が新しい鍵の組を作る。`,
       },
-      events: [...baseSetup(model), model.natEvent(0), set(SERVER, REPLAY, '#1 greatest 41')],
+      events: [
+        ...baseSetup(model),
+        model.natEvent(0),
+        set(SERVER, REPLAY, `#1 ${describeReplay(model.replay['#1'] ?? INITIAL_REPLAY)}`),
+      ],
     },
     {
       id: 'send-and-rekey',
@@ -1209,7 +1224,6 @@ function rekeySteps(): Step[] {
         ja: 'ノート PC は鍵の組 #1 で ping を送る。送るとき、#1 ができて 120 秒たっていて、自分が始めた側だとわかるので、新しい一時的な鍵と新しいインデックスで Handshake Initiation も送る。120 秒になった瞬間に何かが起きるのではなく、データを送るときに確かめる。',
       },
       events: [
-        timer(LAPTOP, 'REKEY_AFTER_TIME', REKEY_AFTER_TIME * 1000),
         ...model.up('ping', data('#1', INDEX.server1, 42, ping, insideText), now),
         ...model.serverReceives('#1', 42),
         send(plain('forward', SERVER, INTERNAL, ping)),
@@ -1292,8 +1306,8 @@ function rekeySteps(): Step[] {
       id: 'on-2',
       title: { en: 'Traffic continues on #2', ja: '#2 で通信が続く' },
       description: {
-        en: 'The next ping uses keypair #2 with counter 1. Keypair #1 will stop being accepted at 180 seconds and its keys are erased at 540 seconds. A keypair is also replaced after 2^60 messages, far more than a connection sends in practice.',
-        ja: '次の ping は鍵の組 #2 のカウンター 1 を使う。鍵の組 #1 は 180 秒で受け入れられなくなり、540 秒で鍵が消される。鍵の組は 2^60 個のメッセージの後にも取り替えるが、実際の接続はそこまで送らない。',
+        en: 'The next ping uses keypair #2 with counter 1. Keypair #1 will stop being accepted at 180 seconds, and it is discarded when the next handshake pushes it out of the previous slot. If no new handshake happens for 540 seconds, all keys are erased. A keypair is also replaced after 2^60 messages, far more than a connection sends in practice.',
+        ja: '次の ping は鍵の組 #2 のカウンター 1 を使う。鍵の組 #1 は 180 秒で受け入れられなくなり、次のハンドシェイクで previous の枠から押し出されると捨てられる。新しいハンドシェイクが 540 秒のあいだなければ、すべての鍵が消される。鍵の組は 2^60 個のメッセージの後にも取り替えるが、実際の接続はそこまで送らない。',
       },
       events: [
         ...model.up('ping-2', data('#2', INDEX.server2, 1, ping, insideText), now + 5),
@@ -1411,7 +1425,7 @@ function underLoadSteps(): Step[] {
           'retry',
           initiation(
             INDEX.laptopRetry,
-            'E_pub(laptop #1)',
+            'E_pub(laptop, retry)',
             't = 5 s',
             'MAC(cookie, …)',
             {
