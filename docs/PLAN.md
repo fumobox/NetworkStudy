@@ -60,6 +60,7 @@
 | — | リバースプロキシとロードバランサー | シーケンス図 | Phase 12 で追加 |
 | — | Cookie と CSRF（SameSite、トークン、Fetch Metadata） | シーケンス図 | Phase 13 で追加 |
 | — | HSTS と SSL ストリッピング | シーケンス図 | Phase 14 で追加 |
+| — | Server-Sent Events | シーケンス図 | Phase 15 で追加 |
 
 ## 3. 技術スタック
 
@@ -756,6 +757,32 @@ Issue は #249〜#251 に分けて起票した。
 | Cookie の上書き | 攻撃者が Secure を外した Set-Cookie は、既存の Secure の Cookie を上書きできない（rfc6265bis §5.7 手順 16）として、Cookie の表は変えない | 今のブラウザーの動き。攻撃者はセッションを自分の TLS の接続で読んでいるので、攻撃は成り立つ |
 | RFC でないもの | sslstrip（Black Hat DC 2009）、プリロードリスト（hstspreload.org、2026-09-29 に確認）、Chrome の自動の https への書き換え（Google のブログ、2025 年 10 月の発表）は、日付を添える | 変わりやすい |
 | 扱わないもの | 攻撃者が経路に入る手段、TCP と NAT、301 のキャッシュ、IDNA、`<meta>` | 主題がぼやける。一部は概要で触れる |
+
+### Phase 15: Server-Sent Events
+
+**完了条件**: 「Web 開発で出会う HTTP」（`http`）に Server-Sent Events のテーマがあり、根拠（HTML Standard の Server-sent events、Fetch Standard、RFC 9110 / 9112 / 9113）、クイズ、en／ja の概要がある。
+
+**完了**（#239、#258、#259）: テーマは 33 → 34（Server-Sent Events）。エンジンの変更はない。text/event-stream の解析（`eventStream.ts`。HTML Standard の手順と例）、応答の検査と再接続（`reconnect.ts`）、チャンクのサイズ（`chunked.ts`）の純関数を足した。
+
+| # | タスク | ラベル |
+|---|---|---|
+| 15-1 | SSE のシナリオ（イベントの受信。もしも: 切れた接続と Last-Event-ID、204、誤った Content-Type、HTTP/1.1 の 6 つのタブ、HTTP/2）とテスト | content |
+| 15-2 | SSE のページ（概要、クイズ、登録） | content |
+| 15-3 | PLAN、CLAUDE.md、README の仕上げ | content |
+
+Issue は、利用者が起票した #239 をシナリオに使い、#258 と #259 を足した。
+
+#### Phase 15 の判断
+
+| 項目 | 判断 | 理由 |
+|---|---|---|
+| 分類と位置 | `http` の WebSocket の次、リバースプロキシの前 | WebSocket と比べて読む。プロキシのバッファリングは概要で触れる |
+| アクター | ブラウザーとサーバーの 2 つ。プロキシは描かない | 線の上のやりとりは変わらない |
+| オプション | `situation`（normal / reconnect / stop204 / wrongType / http1Limit / http2）の 1 つの選択 | 2 つの軸にすると、意味のない組み合わせができる（Phase 11〜14 と同じ） |
+| 解析 | HTML Standard の手順を純関数にし、仕様の例をテストで再現する。チャンクとイベントの区切りをそろえて描く | 手で書いた data の値の誤りを防ぐ。区切りがずれる場合は関数とテストが扱う |
+| 状態の値 | readyState は HTML の CONNECTING / OPEN / CLOSED | 画面の文言と重ならない |
+| 標準でないもの | HTTP/1.1 の約 6 本の上限（ブラウザーの動き。RFC 9112 §9.4 は数を決めない）、Last-Event-ID の後の送り直し（アプリケーションの仕事）、nginx のバッファリング | そう断って書く |
+| 扱わないもの | TCP と TLS、ヘッダーの多く、バックオフ、HTTP/2 の序文と HPACK、`fetch()` で読むストリーム | 主題がぼやける。`fetch()` とプロキシは概要で触れる |
 
 ## 9. リスクと対策
 
