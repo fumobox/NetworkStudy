@@ -189,8 +189,6 @@ describe('パケットの詳細の層', () => {
   it('要求はブロードキャストで、Eth Src は SHA と同じ', () => {
     const request = messages(build()).find((m) => m.label.startsWith('ARP who-has'))
     const [eth] = groupFieldsByLayer(request?.fields ?? []) ?? []
-    expect(eth?.summary).toBe(
-      `Eth Dst: ff:ff:ff:ff:ff:ff, Eth Src: ${fields(request).SHA ?? ''}`,
-    )
+    expect(eth?.summary).toBe(`Eth Dst: ff:ff:ff:ff:ff:ff, Eth Src: ${fields(request).SHA ?? ''}`)
   })
 })

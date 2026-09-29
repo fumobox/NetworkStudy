@@ -5,7 +5,7 @@
  * - RFC 1034 §4.3.1（再帰と反復の問い合わせ）, §4.3.2（権威サーバーの動作。委任・CNAME）, §5.3.3（リゾルバーの動作）
  * - RFC 1035 §4.1（メッセージの形式: ID、QR / AA / RD / RA、RCODE、各セクション）
  * - RFC 1034 §4.2.1（glue）, RFC 2308 §2.1, §3, §5（否定応答の形と、その TTL = min(SOA の TTL, SOA の MINIMUM)）
- * - RFC 5452（ID と送信元ポートは推測されにくい値にする。このページの ID は読みやすさのための値）
+ * - RFC 5452（ID と送信元ポートは推測されにくい値にする。このページの ID は読みやすさのための値）。§3: 応答は、問い合わせの宛先のアドレス・ID・質問が一致するものだけを受け入れる
  * - RFC 9156（QNAME minimisation。多くのリゾルバーはルートや TLD に名前の一部しか送らない）
  * IP アドレスは RFC 5737 の文書用アドレス（192.0.2.0/24）を使う（ルートと .com のサーバーは実在のアドレス）
  */
@@ -141,11 +141,11 @@ const AUTHORITATIVE_FLAGS: LocalizedText = {
 }
 
 const TEXT = {
-  transport: { en: 'DNS usually uses UDP port 53', ja: 'DNS はふつう UDP の 53 番ポートを使う' },
+  udpPort: { en: 'DNS usually uses UDP port 53', ja: 'DNS はふつう UDP の 53 番ポートを使う' },
   ipDst: { en: 'The address of the server being asked', ja: '問い合わせるサーバーのアドレス' },
   ipSrc: {
-    en: 'The address of the server that answers. The resolver accepts a response only from the address it asked',
-    ja: '答えるサーバーのアドレス。リゾルバーは、問い合わせたアドレスからの応答だけを受け入れる',
+    en: 'The address of the server that answers. The receiver accepts a response only from the address it sent the query to',
+    ja: '答えるサーバーのアドレス。受け取る側は、問い合わせを送ったアドレスからの応答だけを受け入れる',
   },
   id: {
     en: 'Chosen by the sender. The response carries the same ID so the sender can match it. Real resolvers pick hard-to-guess random IDs; this page uses readable values.',
@@ -197,7 +197,7 @@ function query(options: {
     {
       name: 'UDP Dst',
       value: '53',
-      description: TEXT.transport,
+      description: TEXT.udpPort,
       layer: 'udp',
       inLayerSummary: true,
     },
@@ -277,7 +277,7 @@ function response(options: {
       {
         name: 'UDP Src',
         value: '53',
-        description: TEXT.transport,
+        description: TEXT.udpPort,
         layer: 'udp',
         inLayerSummary: true,
       },

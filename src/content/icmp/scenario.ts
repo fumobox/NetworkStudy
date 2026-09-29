@@ -9,6 +9,7 @@
  * - RFC 1122 §3.2.2.6: Echo Reply はデータを Echo Request と同じにして返す
  * - RFC 1122 §4.1.3.1: 待ち受けていない UDP のポートへのデータには、Port Unreachable を返すべき
  * - RFC 1812 §5.3.1: ルーターは転送のたびに TTL を 1 減らし、0 になったら捨てて Time Exceeded を返さなければならない
+ * - RFC 1812 §4.3.2.3: エラーには元のデータグラムを、ICMP のデータグラムが 576 バイトを超えない範囲でできるだけ入れる（RFC 792 では IP のヘッダー + データの先頭 8 バイト）
  * - RFC 1812 §4.3.2.4: ICMP のエラーの送信元アドレスは、そのルーターのインターフェースのアドレス
  * - RFC 1812 §4.3.2.8: ICMP のエラーを送る量は制限してよい（traceroute の * の原因になる）
  * - RFC 1812 §4.3.3.1: 宛先のホストに届けられないときの Destination Unreachable（code 1）
@@ -181,8 +182,8 @@ function packetFields(packet: PacketKind): PacketField[] {
     name: 'Original datagram',
     value: 'IP header + at least 8 bytes',
     description: {
-      en: 'The start of the packet that caused the error, so the sender can tell which one it was. RFC 792 requires the IP header and the first 8 bytes; RFC 1812 asks routers to include as much as fits in a 576-byte ICMP message',
-      ja: 'エラーの原因になったパケットの先頭。送った側が、どのパケットのことかわかるようにする。RFC 792 は IP のヘッダーと先頭の 8 バイトを求め、RFC 1812 はルーターに、576 バイトの ICMP のメッセージに収まるだけ入れるよう求める',
+      en: 'The start of the packet that caused the error, so the sender can tell which one it was. RFC 792 requires the IP header and the first 8 bytes of its data; RFC 1812 asks routers to include as much as fits without the whole ICMP datagram (including its IP header) exceeding 576 bytes',
+      ja: 'エラーの原因になったパケットの先頭。送った側が、どのパケットのことかわかるようにする。RFC 792 は IP のヘッダーと、データの先頭の 8 バイトを求める。RFC 1812 はルーターに、IP のヘッダーを含めた ICMP のデータグラムが 576 バイトを超えない範囲で、できるだけ多く入れるよう求める',
     },
   }
   switch (packet.kind) {
