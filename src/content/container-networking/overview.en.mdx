@@ -34,7 +34,7 @@ By default, a published port is reachable on all of the host’s addresses (`0.0
 
 Containers on the same bridge talk directly. A container asks for the other container’s MAC address, and the bridge switches the frames between the two veth ports. Nothing is routed or translated, and the TTL does not change. Publishing is not needed for this.
 
-On a **user-defined network** (`docker network create`), Docker also gives each container its **embedded DNS server** at `127.0.0.11`. It answers the names of containers on the same network (such as `db`) and forwards other names to the DNS servers configured on the host. On the default bridge there is no such lookup, and containers reach each other only by IP address (apart from the legacy `--link` option). Each user-defined network has its own bridge, named `br-` plus the start of the network ID, and its own address range (the next one is `172.18.0.0/16`). Containers on different networks cannot reach each other.
+On a **user-defined network** (`docker network create`), Docker also gives each container its **embedded DNS server** at `127.0.0.11`. It answers the names of containers on the same network (such as `db`) and forwards other names to the DNS servers configured on the host. On the default bridge there is no such lookup, and containers reach each other only by IP address (apart from the legacy `--link` option). Each user-defined network has its own bridge, named `br-` plus the start of the network ID, and its own address range (the next one is `172.18.0.0/16`). Containers on different networks cannot reach each other directly, only through ports published on the host.
 
 ## Standard or implementation?
 
@@ -47,7 +47,7 @@ On a **user-defined network** (`docker network create`), Docker also gives each 
 - Docker writes its rules with iptables by default and can use nftables. The chain names differ, and the result is the same.
 - Connections to a published port from the host itself (such as `localhost:8080`), and in some setups from other containers, can be handled by Docker’s `docker-proxy` process instead of NAT.
 - Before Engine 28, a container’s MAC address was derived from its IP address (`02:42:ac:11:00:02` for 172.17.0.2). Since then it is random.
-- If the `br_netfilter` module is loaded, bridged packets also pass the host’s netfilter hooks, and connection tracking records them too.
+- If the `br_netfilter` module is loaded, bridged packets also pass the host’s netfilter hooks (with `bridge-nf-call-iptables` on), and connection tracking records them too.
 - Docker Desktop on macOS and Windows runs all of this inside a Linux VM, so there is no `docker0` on the host you see.
 
 ## What to look for in the walkthrough
@@ -85,3 +85,4 @@ On a **user-defined network** (`docker network create`), Docker also gives each 
 - [Linux kernel: Ethernet Bridging](https://docs.kernel.org/networking/bridge.html)
 - [nftables wiki: Performing Network Address Translation (NAT)](https://wiki.nftables.org/wiki-nftables/index.php/Performing_Network_Address_Translation_(NAT))
 - Docker documentation (checked 2026-09-29): [Networking overview](https://docs.docker.com/engine/network/), [Bridge network driver](https://docs.docker.com/engine/network/drivers/bridge/), [Port publishing and mapping](https://docs.docker.com/engine/network/port-publishing/), [Packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/)
+- [Docker Engine 28 release notes](https://docs.docker.com/engine/release-notes/28/)

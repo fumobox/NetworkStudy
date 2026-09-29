@@ -2,7 +2,7 @@ import type { Quiz } from '@/components/features/quiz/types'
 
 /**
  * コンテナーのネットワークの理解度クイズ（根拠: RFC 826、RFC 1122 §3.3.1、RFC 3022 §2.2、IEEE Std 802.1Q-2022 clause 8.6、
- * nftables wiki の NAT、Docker のドキュメント「Networking overview」「Bridge network driver」「Port publishing and mapping」）
+ * nftables wiki の NAT、Docker のドキュメント「Networking overview」「Bridge network driver」「Port publishing and mapping」、Engine 28 のリリースノート）
  */
 export const containerNetworkingQuiz: Quiz = {
   id: 'container-networking',
@@ -15,8 +15,8 @@ export const containerNetworkingQuiz: Quiz = {
       },
       choices: [
         { id: 'container', text: { en: '172.17.0.2', ja: '172.17.0.2' } },
-        { id: 'bridge', text: { en: '172.17.0.1', ja: '172.17.0.1' } },
         { id: 'host', text: { en: '198.51.100.10', ja: '198.51.100.10' } },
+        { id: 'bridge', text: { en: '172.17.0.1', ja: '172.17.0.1' } },
       ],
       answerId: 'host',
       explanation: {
@@ -87,6 +87,13 @@ export const containerNetworkingQuiz: Quiz = {
       },
       choices: [
         {
+          id: 'bridged',
+          text: {
+            en: 'The bridge switches the frames; addresses and TTL stay the same',
+            ja: 'ブリッジがフレームを転送するので、アドレスも TTL も変わらない',
+          },
+        },
+        {
           id: 'masquerade',
           text: {
             en: 'The host masquerades A’s address, so B sees 198.51.100.10',
@@ -98,13 +105,6 @@ export const containerNetworkingQuiz: Quiz = {
           text: {
             en: 'B must publish port 80 with -p first, or A cannot reach it',
             ja: 'B が先に -p でポート 80 を公開しないと、A は届かない',
-          },
-        },
-        {
-          id: 'bridged',
-          text: {
-            en: 'The bridge switches the frames, so the addresses and TTL do not change',
-            ja: 'ブリッジがフレームを転送するので、アドレスも TTL も変わらない',
           },
         },
       ],

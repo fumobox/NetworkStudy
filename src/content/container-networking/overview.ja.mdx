@@ -34,7 +34,7 @@ veth ペアのホスト側の端は、Linux の**ブリッジ**につながる�
 
 同じブリッジのコンテナーは直接話す。コンテナーは相手のコンテナーの MAC アドレスを尋ね、ブリッジが 2 つの veth のポートの間でフレームを転送する。経路の選択も変換もなく、TTL も変わらない。公開は要らない。
 
-**ユーザー定義のネットワーク**（`docker network create`）では、Docker は各コンテナーに `127.0.0.11` の**組み込みの DNS サーバー**も与える。同じネットワークのコンテナーの名前（`db` など）に答え、ほかの名前はホストに設定された DNS サーバーに転送する。既定のブリッジにはこの名前解決がなく、コンテナーは（古い `--link` を除いて）IP アドレスでしか互いに届かない。ユーザー定義のネットワークは、それぞれ専用のブリッジ（`br-` とネットワーク ID の先頭の名前）と、専用のアドレスの範囲（次は `172.18.0.0/16`）を持つ。別のネットワークのコンテナー同士は届かない。
+**ユーザー定義のネットワーク**（`docker network create`）では、Docker は各コンテナーに `127.0.0.11` の**組み込みの DNS サーバー**も与える。同じネットワークのコンテナーの名前（`db` など）に答え、ほかの名前はホストに設定された DNS サーバーに転送する。既定のブリッジにはこの名前解決がなく、コンテナーは（古い `--link` を除いて）IP アドレスでしか互いに届かない。ユーザー定義のネットワークは、それぞれ専用のブリッジ（`br-` とネットワーク ID の先頭の名前）と、専用のアドレスの範囲（次は `172.18.0.0/16`）を持つ。別のネットワークのコンテナー同士は、直接には届かない（届くのは、ホストで公開したポートを通してだけ）。
 
 ## 標準か、実装か
 
@@ -47,7 +47,7 @@ veth ペアのホスト側の端は、Linux の**ブリッジ**につながる�
 - Docker は既定では iptables で規則を書き、nftables も使える。チェーンの名前は違うが、結果は同じ。
 - ホスト自身から公開したポートへの接続（`localhost:8080` など）や、設定によってはほかのコンテナーからの接続は、NAT ではなく Docker の `docker-proxy` のプロセスが扱うことがある。
 - Engine 28 より前は、コンテナーの MAC アドレスを IP アドレスから作っていた（172.17.0.2 なら `02:42:ac:11:00:02`）。それ以降は乱数。
-- `br_netfilter` のモジュールを読み込んでいると、ブリッジを通るパケットもホストの netfilter を通り、接続の追跡にも記録される。
+- `br_netfilter` のモジュールを読み込んでいると（`bridge-nf-call-iptables` が有効なら）、ブリッジを通るパケットもホストの netfilter を通り、接続の追跡にも記録される。
 - macOS と Windows の Docker Desktop は、これをすべて Linux の VM の中で行うので、目の前のホストに `docker0` はない。
 
 ## ウォークスルーで見るところ
@@ -85,3 +85,4 @@ veth ペアのホスト側の端は、Linux の**ブリッジ**につながる�
 - [Linux kernel: Ethernet Bridging](https://docs.kernel.org/networking/bridge.html)
 - [nftables wiki: Performing Network Address Translation (NAT)](https://wiki.nftables.org/wiki-nftables/index.php/Performing_Network_Address_Translation_(NAT))
 - Docker のドキュメント（2026-09-29 に確認）: [Networking overview](https://docs.docker.com/engine/network/)、[Bridge network driver](https://docs.docker.com/engine/network/drivers/bridge/)、[Port publishing and mapping](https://docs.docker.com/engine/network/port-publishing/)、[Packet filtering and firewalls](https://docs.docker.com/engine/network/packet-filtering-firewalls/)
+- [Docker Engine 28 のリリースノート](https://docs.docker.com/engine/release-notes/28/)
