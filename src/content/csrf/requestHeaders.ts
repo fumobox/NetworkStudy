@@ -1,11 +1,11 @@
 /**
  * ブラウザーが付ける Origin と Sec-Fetch-Site
  *
- * - Fetch Standard（WHATWG）"append a request `Origin` header": CORS の要求には必ず付く。それ以外では GET・HEAD でない要求にだけ付き、
+ * - Fetch Standard（WHATWG）"append a request `Origin` header": オリジンをまたぐ CORS の要求（response tainting が cors）には必ず付く。それ以外では GET・HEAD でない要求にだけ付き、
  *   ナビゲーション（フォームの送信など）でも付く。リファラーポリシーが no-referrer なら値は null、
  *   strict-origin-when-cross-origin（既定）なら https のページから https でない宛先への要求のときだけ null
  * - Fetch Metadata Request Headers（W3C Working Draft）§2.3: Sec-Fetch-Site は none（利用者がアドレスを入力したなど）、
- *   same-origin、same-site、cross-site。リダイレクトを含む URL の並びを順に見て決める。§3: 宛先が https のときだけ付く
+ *   same-origin、same-site、cross-site。リダイレクトを含む URL の並びを順に見て決める。§3: 宛先が https のような potentially trustworthy な URL のときだけ付く
  * - 要求を拒むかどうかの方針（isolationPolicy）は標準ではなく、このページの例（OWASP の CSRF 対策の指針と同じ考え方）
  */
 import { isSafeMethod } from './cookies'
@@ -26,7 +26,7 @@ export interface OriginInput {
 export function originHeader(input: OriginInput): string | undefined {
   const { method, mode, initiator, target } = input
   const serialized = serializeOrigin(initiator)
-  if (mode === 'cors') {
+  if (mode === 'cors' && !sameOrigin(initiator, target)) {
     return serialized
   }
   if (method.toUpperCase() === 'GET' || method.toUpperCase() === 'HEAD') {

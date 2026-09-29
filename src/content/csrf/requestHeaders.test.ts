@@ -26,6 +26,12 @@ describe('Origin ヘッダー（Fetch Standard）', () => {
     )
   })
 
+  it('同じオリジンの CORS の GET には付かない（response tainting が basic）', () => {
+    expect(
+      originHeader({ method: 'GET', mode: 'cors', initiator: bank, target: bank }),
+    ).toBeUndefined()
+  })
+
   it('リファラーポリシーが no-referrer なら null', () => {
     expect(
       originHeader({

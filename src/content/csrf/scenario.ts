@@ -2,8 +2,8 @@
  * Cookie と CSRF（SameSite、CSRF トークン、Fetch Metadata）
  *
  * 根拠:
- * - draft-ietf-httpbis-rfc6265bis-22（2025-12-01。2026 年 9 月の時点で RFC になっていない。IESG に提出済みで、RFC Editor の
- *   キューにある。RFC 6265 を置き換える予定）: §2.3（安全なメソッド、登録可能ドメイン）、§4.1.2.7（SameSite）、
+ * - draft-ietf-httpbis-rfc6265bis-22（2025-12-01。2026 年 9 月の時点で RFC になっていない。2026-09-29 に datatracker で確認した
+ *   IESG の状態は RFC Ed Queue。RFC 6265 を置き換える予定）: §2.3（安全なメソッド、登録可能ドメイン）、§4.1.2.7（SameSite）、
  *   §5.2・§5.2.1（同じサイトの要求）、§5.6.7（SameSite の解析。未指定・不明は Default）、§5.6.7.1（Strict と Lax）、
  *   §5.6.7.2・§8.8.6（Lax-allowing-unsafe。Default の Cookie だけ、作られてから短い間だけ）、§5.7 手順 17・19
  *   （None には Secure が要る）、§5.8.3 手順 3（Cookie を付けるかどうか）、§8.2（ambient authority）、
@@ -15,7 +15,7 @@
  * - Fetch Standard（WHATWG）"append a request `Origin` header"（GET・HEAD 以外には、ナビゲーションでも付く）、
  *   "CORS-safelisted method"・"CORS-safelisted request-header"
  * - Fetch Metadata Request Headers（W3C Working Draft）§2.1〜§2.4（Sec-Fetch-Dest・-Mode・-Site・-User）、§3（https の宛先にだけ付く）
- * - RFC 6454 §4、§5、§7（オリジン、Origin ヘッダー）、RFC 9110 §9.2.1（安全なメソッド。安全なメソッドで副作用を起こしてはならない）、
+ * - RFC 6454 §4、§5、§7（オリジン、Origin ヘッダー）、RFC 9110 §9.2.1（安全なメソッド。安全でない動作を安全なメソッドで行えるようにしてはならない）、
  *   §15.4.4（303）、§15.5.4（403）、RFC 2606（example）
  * - 標準でないもの: ブラウザーの既定（Chromium は SameSite のない Cookie を Lax として扱い、2 分間の Lax+POST を一時的な措置と
  *   している。Firefox は None として扱う）、Fetch Metadata で拒む方針（このページの例）、CSRF トークンの作り方
@@ -414,8 +414,8 @@ function openingSteps(situation: Situation): Step[] {
         id: 'visit-evil',
         title: { en: 'Alice opens a link from an email', ja: 'アリスがメールのリンクを開く' },
         description: {
-          en: 'Later, still logged in, Alice opens a link in her email app: https://evil.example/win. It comes from outside the browser, so Sec-Fetch-Site is none. The browser never sends bank’s cookie to evil.example, and evil.example cannot read it either.',
-          ja: 'しばらくして、ログインしたまま、アリスはメールのアプリでリンク https://evil.example/win を開く。ブラウザーの外から開いたので、Sec-Fetch-Site は none。ブラウザーは bank の Cookie を evil.example に送ることはなく、evil.example もそれを読めない。',
+          en: 'Later, still logged in, Alice opens a link in her email app: https://evil.example/win. It comes from outside the browser, so no site started it, and browsers send Sec-Fetch-Site: none (the exact cases are left to the browser, Fetch Metadata §4.3). The browser never sends bank’s cookie to evil.example, and evil.example cannot read it either.',
+          ja: 'しばらくして、ログインしたまま、アリスはメールのアプリでリンク https://evil.example/win を開く。ブラウザーの外から開いたので、どのサイトも始めておらず、ブラウザーは Sec-Fetch-Site: none を送る（どの場合がそうなるかはブラウザーに任されている。Fetch Metadata §4.3）。ブラウザーは bank の Cookie を evil.example に送ることはなく、evil.example もそれを読めない。',
         },
         events: [
           send(
@@ -447,8 +447,8 @@ function openingSteps(situation: Situation): Step[] {
                 ja: 'ページのスクリプトは、ブラウザーを送金する bank の URL に移す。location を変えるのは、トップレベルの GET のナビゲーション。',
               }
             : {
-                en: 'The page contains a form that posts to bank.example/transfer, with the attacker’s account and an amount filled in, and a script that submits it as soon as the page loads. A form can be sent to any site; that is ordinary HTML. It uses a form encoding, so no CORS preflight is needed.',
-                ja: 'ページには、攻撃者の口座と金額を入れた bank.example/transfer への POST のフォームと、読み込むとすぐに送信するスクリプトがある。フォームはどのサイトにでも送れる。普通の HTML の働き。フォームの形式なので、CORS のプリフライトも要らない。',
+                en: 'The page contains a form that posts to bank.example/transfer, with the attacker’s account and an amount filled in, and a script that submits it as soon as the page loads. A form can be sent to any site; that is ordinary HTML. A form submission is a navigation, not a CORS request, so there is no preflight. (Its three encodings are exactly the Content-Types that CORS allows without a preflight, because forms could always send them.)',
+                ja: 'ページには、攻撃者の口座と金額を入れた bank.example/transfer への POST のフォームと、読み込むとすぐに送信するスクリプトがある。フォームはどのサイトにでも送れる。普通の HTML の働き。フォームの送信はナビゲーションで CORS の要求ではないので、プリフライトはない（フォームの 3 つの形式は、CORS がプリフライトなしで許す Content-Type と同じ。フォームは昔から送れたから）。',
               },
         events: [
           send(
@@ -613,8 +613,8 @@ function attackSteps(situation: Situation): Step[] {
       ja: 'bank は正しいセッション Cookie を見て送金する。Cookie からわかるのはどのブラウザーからの要求かだけで、アリスが意図したかどうかではない。これが ambient authority（自動で付く権限、草案 -22 §8.2）。攻撃者は Cookie も応答も見ていないし、見る必要もない。',
     },
     lax: {
-      en: 'Without the cookie, bank sees no session and refuses. The cookie was explicitly SameSite=Lax, so Chrome’s temporary two-minute exception for cookies without a SameSite attribute (Lax+POST) does not apply.',
-      ja: 'Cookie がないので、bank にはセッションが見えず、断る。Cookie は明示的に SameSite=Lax なので、SameSite 属性のない Cookie に Chrome が一時的に設けている 2 分間の例外（Lax+POST）はかからない。',
+      en: 'Without the cookie, bank sees no session and refuses. The cookie was explicitly SameSite=Lax, so the temporary two-minute exception that Chromium-based browsers make for cookies without a SameSite attribute (Lax+POST) does not apply.',
+      ja: 'Cookie がないので、bank にはセッションが見えず、断る。Cookie は明示的に SameSite=Lax なので、SameSite 属性のない Cookie に Chromium 系のブラウザーが一時的に設けている 2 分間の例外（Lax+POST）はかからない。',
     },
     strict: {
       en: 'Without the cookie, bank sees no session and refuses.',
@@ -625,8 +625,8 @@ function attackSteps(situation: Situation): Step[] {
       ja: 'セッションは正しいが、トークンがないので bank は断る。トークンは乱数で、セッションと結びつき、変更を伴うすべての要求で確かめる（OWASP の CSRF Prevention Cheat Sheet）。',
     },
     fetchMetadata: {
-      en: 'bank’s policy refuses unsafe requests that another site started. This page’s example policy: allow same-origin and none; allow cross-site only for GET navigations such as links; if Sec-Fetch-Site is missing (older browsers, or plain http), allow unsafe methods only when Origin is https://bank.example. The standard does not prescribe a policy.',
-      ja: 'bank の方針は、別のサイトが始めた安全でない要求を断る。このページの例の方針は、same-origin と none は通し、cross-site はリンクのような GET のナビゲーションだけ通す。Sec-Fetch-Site がなければ（古いブラウザーや平文の http）、安全でないメソッドは Origin が https://bank.example のときだけ通す。標準は方針を決めていない。',
+      en: 'bank’s policy refuses unsafe requests that another site started. This page’s example policy: allow same-origin and none; allow same-site and cross-site only for GET navigations such as links; if Sec-Fetch-Site is missing (older browsers, or a destination that is not potentially trustworthy, such as plain http), allow unsafe methods only when Origin is https://bank.example. The standard does not prescribe a policy.',
+      ja: 'bank の方針は、別のサイトが始めた安全でない要求を断る。このページの例の方針は、same-origin と none は通し、same-site と cross-site はリンクのような GET のナビゲーションだけ通す。Sec-Fetch-Site がなければ（古いブラウザーや、平文の http のような安全でない宛先）、安全でないメソッドは Origin が https://bank.example のときだけ通す。標準は方針を決めていない。',
     },
   }
   const refusal =
@@ -692,6 +692,7 @@ function attackSteps(situation: Situation): Step[] {
                   ja: '比べてみる。アリスは evil.example に戻り、自分の銀行の口座への普通のリンクを押す。Strict はここでも Cookie を付けないので、bank はログインのページを出す。これが Strict の使い勝手の代償（草案 -22 §8.8.2）。読むための Lax の Cookie と、変更のための Strict の Cookie の 2 つを使うサイトもある。',
                 },
           events: [
+            set(BROWSER, PAGE, `${EVIL_URL}/win`),
             send(
               request({
                 id: 'link',
