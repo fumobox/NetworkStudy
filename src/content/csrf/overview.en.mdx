@@ -1,0 +1,96 @@
+## Cookies and sessions
+
+After you log in, a site usually sends a **session cookie**: `Set-Cookie: sid=3f9a1c; Path=/; Secure; HttpOnly`. From then on, the browser adds `Cookie: sid=3f9a1c` to its requests to that site, and the site knows who you are. `Secure` sends the cookie only over https. `HttpOnly` hides it from scripts. Without a `Domain` attribute, the cookie goes only to the host that set it (host-only).
+
+## Cross-site request forgery
+
+The browser attaches the cookie based on where the request **goes**, not on which page **started** it. The cookie draft calls this *ambient authority*. So any page can make the browser send a request to your bank, and the bank sees your valid session:
+
+1. Alice logs in to bank.example and gets a session cookie.
+2. Later she opens a page on evil.example. It contains a hidden form that posts `to=mallory&amount=1000` to bank.example/transfer, and a script that submits it at once.
+3. The browser sends the request with Alice's cookie, and the bank transfers the money.
+
+This is **cross-site request forgery** (CSRF). The attacker never sees the cookie or the response and does not need to. `Secure` and `HttpOnly` do not help: the cookie is still sent.
+
+## Site and origin
+
+- An **origin** is scheme, host and port: `https://www.bank.example` and `https://forum.bank.example` are different origins.
+- A **site** is scheme and **registrable domain**, the part a person can register, such as `bank.example` or `example.co.jp`. The Public Suffix List decides where that boundary lies. Ports do not count.
+
+For example:
+
+- `https://www.bank.example` and `https://forum.bank.example`: different origins, but the same site.
+- `https://bank.example` and `http://bank.example`: different origins and different sites (the scheme differs).
+- `https://alice.github.io` and `https://bob.github.io`: different sites, because `github.io` is a public suffix.
+- `https://bank.example` and `https://evil.example`: different sites.
+
+## SameSite: Strict, Lax and None
+
+The `SameSite` attribute tells the browser whether to attach a cookie to requests that another site started:
+
+| SameSite | Form POST from another site | Link from another site (GET) | Same-site requests |
+|---|---|---|---|
+| `Strict` | not sent | not sent | sent |
+| `Lax` | not sent | sent | sent |
+| `None` (needs `Secure`) | sent | sent | sent |
+
+`Lax` sends the cookie on another site's request only for a **top-level navigation** with a **safe method** such as GET. It does not send it for iframes, images or `fetch()`. A `None` cookie without `Secure` is not stored at all.
+
+SameSite is not in RFC 6265. It is defined in the draft that will replace it, draft-ietf-httpbis-rfc6265bis. As of September 2026 that draft is in the last stage before becoming an RFC, but it is not one yet.
+
+## What browsers do by default
+
+When a cookie has no `SameSite` attribute, the draft calls its value `Default` and leaves the details to browsers:
+
+- Chromium-based browsers have treated such cookies as `Lax` since 2020. Chrome also introduced an exception that lets such a cookie be sent with a top-level cross-site POST during its first two minutes ("Lax+POST"), and described it as temporary.
+- Not every browser does this. Firefox, for example, treats a missing attribute as `None`.
+
+So set `SameSite` explicitly, and do not count on it alone.
+
+## Where Lax falls short
+
+- **A GET that changes data.** If `GET /transfer?to=mallory&amount=1000` moves money, a link or a script that sets `location` sends the cookie even with `Lax`. RFC 9110 §9.2.1 says a site must not let a safe method trigger an unsafe action. Changes need POST or another unsafe method.
+- **An attacker on the same site.** A page on `forum.bank.example` is the same site as `www.bank.example`, so even `Strict` cookies are sent.
+- **XSS.** A script running on the bank's own pages is not cross-site at all.
+
+The draft itself says that SameSite is defense in depth: keep using CSRF tokens.
+
+## Defenses on the server
+
+- **A CSRF token.** The site puts a random token, tied to the session, in its own forms, and rejects changes without it. The attacker's page cannot read the bank's pages, so it cannot copy the token.
+- **Checking `Origin`.** The browser adds `Origin` to requests other than GET and HEAD, including form submissions, and a page cannot change it. Reject changes whose Origin is not your own.
+- **Fetch Metadata.** `Sec-Fetch-Site` says whether a request came from the same origin, the same site, another site, or directly from the user (`none`). A common policy is to allow `same-origin` and `none`, allow other sites only for GET navigations such as links, and reject the rest. The policy is up to you; the specification does not prescribe one.
+
+The OWASP CSRF Prevention Cheat Sheet recommends tokens or Fetch Metadata as the main defense, with SameSite as an extra layer.
+
+## CSRF and CORS
+
+CORS decides whether a page may **read** a response from another origin. It does not stop the request from being **sent**. An HTML form can only use `application/x-www-form-urlencoded`, `multipart/form-data` or `text/plain`, so its requests never need a CORS preflight. Even a `fetch()` POST with `text/plain` and `credentials: "include"` reaches the bank with the cookie. The page just cannot read the answer. A JSON API that requires a preflight is harder to forge, but that is a side effect, not a defense. See the [CORS theme](/themes/cors).
+
+## What to look for in the walkthrough
+
+- The `Initiator` field: which page started each request.
+- The `Origin` and `Sec-Fetch-Site` headers, and the missing `Sec-Fetch-User` when a script submits the form.
+- The `Cookie` field on the forged request: the cookie, or `(not sent)`.
+- The cookie jar, the bank's sessions and Alice's balance.
+- In the "What if…" options: Lax and Strict, a GET that moves money, a CSRF token, and a Fetch Metadata check.
+
+## About this page
+
+- One user and one attacker page. The form is submitted as a top-level navigation, not in a hidden iframe or popup as real attacks often do.
+- The session cookie is host-only and, by default, explicitly `SameSite=None; Secure`, so that the attack works the same in every browser.
+- After a transfer the bank answers 200 directly instead of redirecting.
+- TLS, TCP and DNS are not drawn, and headers such as `Date`, `Referer` and `User-Agent` are left out.
+
+## References
+
+- [draft-ietf-httpbis-rfc6265bis-22: Cookies: HTTP State Management Mechanism](https://datatracker.ietf.org/doc/draft-ietf-httpbis-rfc6265bis/) (Internet-Draft, December 2025) — §4.1.2.7, §5.6.7, §5.8.3, §8.2, §8.8
+- [RFC 6265: HTTP State Management Mechanism](https://www.rfc-editor.org/rfc/rfc6265)
+- [HTML Standard: Sites](https://html.spec.whatwg.org/multipage/browsers.html#sites) and [Form submission](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-2)
+- [URL Standard: Host miscellaneous](https://url.spec.whatwg.org/#host-miscellaneous)
+- [Fetch Standard: `Origin` header](https://fetch.spec.whatwg.org/#origin-header)
+- [Fetch Metadata Request Headers](https://w3c.github.io/webappsec-fetch-metadata/) (W3C Working Draft)
+- [RFC 6454: The Web Origin Concept](https://www.rfc-editor.org/rfc/rfc6454)
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — §9.2.1
+- [OWASP Cross-Site Request Forgery Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
+- [Chromium: SameSite Updates](https://www.chromium.org/updates/same-site/)

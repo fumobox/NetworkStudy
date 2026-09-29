@@ -1,0 +1,96 @@
+## Cookie とセッション
+
+ログインすると、サイトはたいてい**セッション Cookie** を送る。`Set-Cookie: sid=3f9a1c; Path=/; Secure; HttpOnly`。以後ブラウザーはそのサイトへの要求に `Cookie: sid=3f9a1c` を付け、サイトはそれで誰なのかがわかる。`Secure` は Cookie を https でだけ送る。`HttpOnly` はスクリプトから隠す。`Domain` 属性がなければ、Cookie は設定したホストにだけ送られる（ホストだけ）。
+
+## クロスサイトリクエストフォージェリ
+
+ブラウザーが Cookie を付けるかどうかは、要求の**行き先**で決まり、要求を**始めた**ページでは決まらない。Cookie の草案はこれを ambient authority（自動で付く権限）と呼ぶ。そのため、どのページでもブラウザーに銀行への要求を送らせることができ、銀行には正しいセッションが見える。
+
+1. アリスが bank.example にログインし、セッション Cookie を受け取る。
+2. しばらくして evil.example のページを開く。そのページには、`to=mallory&amount=1000` を bank.example/transfer に POST する隠しフォームと、それをすぐに送信するスクリプトがある。
+3. ブラウザーはアリスの Cookie を付けて要求を送り、銀行は送金する。
+
+これが**クロスサイトリクエストフォージェリ**（CSRF）。攻撃者は Cookie も応答も見ていないし、見る必要もない。`Secure` と `HttpOnly` は役に立たない。Cookie はやはり送られる。
+
+## サイトとオリジン
+
+- **オリジン**はスキーム・ホスト・ポートの組。`https://www.bank.example` と `https://forum.bank.example` は別のオリジン。
+- **サイト**はスキームと**登録可能ドメイン**の組。登録可能ドメインは人が登録できる部分で、`bank.example` や `example.co.jp` のようなもの。その境目は Public Suffix List で決まる。ポートは比べない。
+
+例えば:
+
+- `https://www.bank.example` と `https://forum.bank.example`: オリジンは違うが、同じサイト。
+- `https://bank.example` と `http://bank.example`: オリジンもサイトも違う（スキームが違う）。
+- `https://alice.github.io` と `https://bob.github.io`: 別のサイト。`github.io` が public suffix だから。
+- `https://bank.example` と `https://evil.example`: 別のサイト。
+
+## SameSite: Strict、Lax、None
+
+`SameSite` 属性は、別のサイトが始めた要求に Cookie を付けるかどうかをブラウザーに伝える。
+
+| SameSite | 別のサイトからのフォームの POST | 別のサイトからのリンク（GET） | 同じサイトの要求 |
+|---|---|---|---|
+| `Strict` | 付けない | 付けない | 付ける |
+| `Lax` | 付けない | 付ける | 付ける |
+| `None`（`Secure` が要る） | 付ける | 付ける | 付ける |
+
+`Lax` が別のサイトの要求に Cookie を付けるのは、GET のような**安全なメソッド**による**トップレベルのナビゲーション**のときだけ。iframe、画像、`fetch()` には付けない。`Secure` のない `None` の Cookie は、そもそも保存されない。
+
+SameSite は RFC 6265 にはない。RFC 6265 を置き換える草案 draft-ietf-httpbis-rfc6265bis で定められている。2026 年 9 月の時点で、この草案は RFC になる前の最後の段階にあるが、まだ RFC ではない。
+
+## ブラウザーの既定の動き
+
+`SameSite` 属性のない Cookie の値を、草案は `Default` と呼び、細部はブラウザーに任せている。
+
+- Chromium 系のブラウザーは、2020 年からこうした Cookie を `Lax` として扱っている。Chrome は、作られてから 2 分間はトップレベルのサイトをまたぐ POST にも付ける例外（「Lax+POST」）も設け、一時的な措置だとしている。
+- すべてのブラウザーがこうするわけではない。例えば Firefox は、属性のないものを `None` として扱う。
+
+だから `SameSite` は明示し、それだけに頼らないこと。
+
+## Lax だけでは足りないところ
+
+- **データを変える GET**。`GET /transfer?to=mallory&amount=1000` で送金できるなら、リンクや `location` を変えるスクリプトで、`Lax` でも Cookie が付く。RFC 9110 §9.2.1 は、安全なメソッドで安全でない動作を起こせるようにしてはならないとする。変更には POST などの安全でないメソッドを使う。
+- **同じサイトにいる攻撃者**。`forum.bank.example` のページは `www.bank.example` と同じサイトなので、`Strict` の Cookie でも付く。
+- **XSS**。銀行自身のページで動くスクリプトは、そもそもサイトをまたいでいない。
+
+草案自身も、SameSite は多層防御の 1 つだとしている。CSRF トークンは使い続ける。
+
+## サーバー側の対策
+
+- **CSRF トークン**。サイトは、セッションと結びついた乱数のトークンを自分のフォームに入れ、それのない変更を断る。攻撃者のページは銀行のページを読めないので、トークンを写せない。
+- **`Origin` を確かめる**。ブラウザーは GET・HEAD 以外の要求に `Origin` を付け（フォームの送信も含む）、ページからは変えられない。Origin が自分のものでない変更は断る。
+- **Fetch Metadata**。`Sec-Fetch-Site` は、要求が同じオリジン、同じサイト、別のサイトのどこから来たか、利用者が直接始めたか（`none`）を示す。よくある方針は、`same-origin` と `none` は通し、別のサイトからはリンクのような GET のナビゲーションだけ通し、ほかは断るもの。方針は自分で決める。仕様は決めていない。
+
+OWASP の CSRF Prevention Cheat Sheet は、トークンか Fetch Metadata を主な対策とし、SameSite を追加の層として勧めている。
+
+## CSRF と CORS
+
+CORS が決めるのは、ページが別のオリジンの応答を**読んで**よいかどうか。要求が**送られる**ことは止めない。HTML のフォームは `application/x-www-form-urlencoded`、`multipart/form-data`、`text/plain` しか使えないので、フォームの要求には CORS のプリフライトがいらない。`text/plain` と `credentials: "include"` を付けた `fetch()` の POST でも、Cookie 付きで銀行に届く。ページが答えを読めないだけ。プリフライトを要する JSON の API は偽りにくいが、それは副作用で、対策ではない。[CORS のテーマ](/themes/cors) も参照。
+
+## ウォークスルーで見るところ
+
+- `Initiator` のフィールド。どのページが要求を始めたか。
+- `Origin` と `Sec-Fetch-Site` のヘッダーと、スクリプトがフォームを送るときに `Sec-Fetch-User` がないこと。
+- 偽の要求の `Cookie` のフィールド。Cookie か、`(not sent)` か。
+- Cookie の保存場所、銀行のセッション、アリスの残高。
+- 「もしも…」の選択肢: Lax と Strict、送金できる GET、CSRF トークン、Fetch Metadata の確認。
+
+## このページについて
+
+- 利用者は 1 人、攻撃者のページは 1 枚。フォームはトップレベルのナビゲーションで送る。実際の攻撃では、隠した iframe やポップアップを使うことも多い。
+- セッション Cookie はホストだけのもので、既定では `SameSite=None; Secure` を明示する。どのブラウザーでも同じように攻撃が通るようにするため。
+- 送金のあと、銀行はリダイレクトせずにそのまま 200 を返す。
+- TLS・TCP・DNS は描かず、`Date`、`Referer`、`User-Agent` などのヘッダーは省く。
+
+## 参考
+
+- [draft-ietf-httpbis-rfc6265bis-22: Cookies: HTTP State Management Mechanism](https://datatracker.ietf.org/doc/draft-ietf-httpbis-rfc6265bis/)（Internet-Draft、2025 年 12 月）— §4.1.2.7、§5.6.7、§5.8.3、§8.2、§8.8
+- [RFC 6265: HTTP State Management Mechanism](https://www.rfc-editor.org/rfc/rfc6265)
+- [HTML Standard: Sites](https://html.spec.whatwg.org/multipage/browsers.html#sites)、[Form submission](https://html.spec.whatwg.org/multipage/form-control-infrastructure.html#form-submission-2)
+- [URL Standard: Host miscellaneous](https://url.spec.whatwg.org/#host-miscellaneous)
+- [Fetch Standard: `Origin` header](https://fetch.spec.whatwg.org/#origin-header)
+- [Fetch Metadata Request Headers](https://w3c.github.io/webappsec-fetch-metadata/)（W3C Working Draft）
+- [RFC 6454: The Web Origin Concept](https://www.rfc-editor.org/rfc/rfc6454)
+- [RFC 9110: HTTP Semantics](https://www.rfc-editor.org/rfc/rfc9110) — §9.2.1
+- [OWASP Cross-Site Request Forgery Prevention Cheat Sheet](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
+- [Chromium: SameSite Updates](https://www.chromium.org/updates/same-site/)
