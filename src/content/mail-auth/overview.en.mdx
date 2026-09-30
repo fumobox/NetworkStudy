@@ -18,7 +18,7 @@ DKIM survives forwarding, because the message does not change. It breaks when th
 
 Neither SPF nor DKIM checks the domain the reader actually sees. **DMARC** does: it takes the domain of From:, fetches the policy at `_dmarc.<domain>`, and passes only if SPF or DKIM passed for a domain **aligned** with it. With relaxed alignment (the default) the same organizational domain is enough, so `mail.example.com` aligns with `example.com`; strict alignment needs an exact match. A pass for an unrelated domain counts for nothing.
 
-When DMARC fails, the policy `p=` says what the domain owner would like: **none** (just monitor; the aggregate reports that receivers send to `rua=` show what fails), **quarantine** (treat as suspicious, such as the spam folder), or **reject** (refuse it; since From: is only known after DATA, the refusal is the reply to the end of the message, such as `550 5.7.1`). The receiver decides how to apply it: RFC 9989 says receivers must not reject on p=reject alone, and without other evidence should treat such mail as quarantine, although many still reject.
+When DMARC fails, the policy `p=` says what the domain owner would like: **none** (just monitor; the aggregate reports that receivers send to `rua=` show what fails), **quarantine** (treat as suspicious, such as the spam folder), or **reject** (refuse it; since From: is only known after DATA, the refusal is the reply to the end of the message, such as `550 5.7.1`). The receiver decides how to apply it: RFC 9989 says receivers must not reject on p=reject alone, and without other evidence must treat such mail as quarantine, although many still reject.
 
 DMARC is now specified in RFC 9989 (with RFC 9990 and RFC 9991 for reports), which replaced RFC 7489.
 

@@ -84,8 +84,8 @@ export const csrfQuiz: Quiz = {
         {
           id: 'sent',
           text: {
-            en: 'The cookie is sent, because both hosts share the registrable domain bank.example (same site). Check Origin or Sec-Fetch-Site: same-origin',
-            ja: 'Cookie は付く。両方のホストの登録可能ドメインが bank.example で、同じサイトだから。Origin か Sec-Fetch-Site: same-origin を確かめる',
+            en: 'The cookie is sent, because both hosts share the registrable domain bank.example (same site). Check Origin, or require Sec-Fetch-Site to be same-origin',
+            ja: 'Cookie は付く。両方のホストの登録可能ドメインが bank.example で、同じサイトだから。Origin を確かめるか、Sec-Fetch-Site が same-origin であることを求める',
           },
         },
         {

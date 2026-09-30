@@ -2,7 +2,7 @@
  * Strict-Transport-Security の解析（RFC 6797 §6.1）
  *
  * 構文: [ directive ] *( ";" [ directive ] )、directive = directive-name [ "=" directive-value ]、値は token か quoted-string。
- * RFC 2616 の「暗黙の LWS」があるので、; と = の前後の空白は許される。
+ * RFC 6797 §6.1 が引く RFC 2616 の「暗黙の LWS」（RFC 2616 は廃止。今は RFC 9110 §5.6.3）があるので、; と = の前後の空白は許される。
  * 1. 順不同 2. どのディレクティブも 1 回だけ（2 回あれば全体が不正）3. 名前は大文字小文字を区別しない
  * 4. 構文に合わないヘッダーは全体を無視する 5. 知らないディレクティブは無視し、ほかは処理する
  * §6.1.1: max-age は必須で、値は 1 桁以上の数字（quoted-string でもよい）。§6.1.2: includeSubDomains は値を持たない

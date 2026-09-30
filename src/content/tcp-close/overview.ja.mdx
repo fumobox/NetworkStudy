@@ -43,7 +43,7 @@ $ sysctl net.inet.tcp.msl
 net.inet.tcp.msl: 15000
 ```
 
-- 接続は TIME_WAIT にある（netstat は状態の名前を下線で書く）。30 秒ほどしてもう一度 netstat を実行すると、消えている。macOS の MSL は 15 秒（`15000` ms）なので、TIME-WAIT は 2 × MSL = 30 秒。RFC 9293 が定める 2 分より短い。
+- 接続は TIME_WAIT にある（netstat は状態の名前を下線で書く）。30 秒ほどしてもう一度 netstat を実行すると、消えている。macOS の MSL は、RFC 9293 が想定する 2 分ではなく 15 秒（`15000` ms）なので、TIME-WAIT は 4 分ではなく 2 × MSL = 30 秒。
 - Linux では `ss -tan state time-wait` で同じものが見える。Linux は TIME-WAIT を 60 秒保つ。Wireshark では、表示フィルター `tcp.flags.fin == 1` で FIN のセグメントが見える。
 
 ## 参考

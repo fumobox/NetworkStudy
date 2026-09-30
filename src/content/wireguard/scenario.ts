@@ -15,7 +15,7 @@
  *
  * 標準ではなく実装で決まるもの（概要で書き分ける）: wg(8)（ListenPort は省略するとランダム、PersistentKeepalive、Endpoint の更新）、
  * wg-quick(8)（MTU は経路の MTU − 80、AllowedIPs への経路）、Linux の drivers/net/wireguard（リプレイの窓 8128、既定の MTU 1420、
- * 「負荷が高い」の判定、外側に DF を立てない、ピアのない宛先に ICMP を返す、エンドポイントの更新は内側の送信元の確認より前）。
+ * 「負荷が高い」の判定、外側に DF を立てない、エンドポイントの更新は内側の送信元の確認より前）。
  * ポート 51820 は慣例の値で、IANA の登録はない
  *
  * 学習用の単純化: IPv4 だけ。鍵、インデックス、ノンス、cookie、時刻は名前か例の値で、暗号の計算はしない。事前共有鍵は使わない。
@@ -950,8 +950,8 @@ function rejectedSteps(): Step[] {
       id: 'no-peer',
       title: { en: 'No peer for the destination', ja: '宛先のピアがない' },
       description: {
-        en: 'The internal server sends a packet to 10.8.0.9, which no peer’s AllowedIPs contain. The VPN server has no key to encrypt it with, so it drops it; Linux also answers with an ICMP Destination Unreachable (host).',
-        ja: '内部のサーバーが、どのピアの AllowedIPs にも入っていない 10.8.0.9 にパケットを送る。VPN サーバーには暗号化する鍵がないので捨てる。Linux は ICMP の Destination Unreachable（host）も返す。',
+        en: 'The internal server sends a packet to 10.8.0.9, which no peer’s AllowedIPs contain. The VPN server has no key to encrypt it with, so it drops it and, as the whitepaper specifies (§3), tells the sender with an ICMP Destination Unreachable (host).',
+        ja: '内部のサーバーが、どのピアの AllowedIPs にも入っていない 10.8.0.9 にパケットを送る。VPN サーバーには暗号化する鍵がないので捨て、ホワイトペーパーの決まり（§3）どおり、ICMP の Destination Unreachable（host）で送った側に知らせる。',
       },
       events: [
         send(

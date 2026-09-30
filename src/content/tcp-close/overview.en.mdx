@@ -43,7 +43,7 @@ $ sysctl net.inet.tcp.msl
 net.inet.tcp.msl: 15000
 ```
 
-- The connection is in TIME_WAIT (netstat writes the state names with an underscore). Run netstat again after half a minute and it is gone: macOS uses an MSL of 15 seconds (`15000` ms), so TIME-WAIT lasts 2 × MSL = 30 seconds, shorter than the 2 minutes RFC 9293 assumes.
+- The connection is in TIME_WAIT (netstat writes the state names with an underscore). Run netstat again after half a minute and it is gone: macOS uses an MSL of 15 seconds (`15000` ms) instead of the 2 minutes RFC 9293 assumes, so TIME-WAIT lasts 2 × MSL = 30 seconds instead of 4 minutes.
 - On Linux, `ss -tan state time-wait` lists the same; Linux keeps TIME-WAIT for 60 seconds. In Wireshark, the display filter `tcp.flags.fin == 1` shows the FIN segments.
 
 ## References
