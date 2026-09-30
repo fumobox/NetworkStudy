@@ -34,6 +34,17 @@ An interface ID can be made from the 48-bit MAC address (**EUI-64**): insert `ff
 - Type an address in a long form and see its recommended form, or change the prefix length and watch the bits.
 - Make a link-local address from a MAC address.
 
+## Try it yourself
+
+```sh
+ifconfig en0 inet6
+```
+
+On Linux, `ip -6 addr` shows the same. Copy one of your addresses into the tool above:
+
+- The one starting with `fe80::` is link-local, and `%en0` (or `scopeid`) names the interface it belongs to. The others are global addresses in the prefix your router announces, and `prefixlen 64` is the length of that prefix.
+- macOS does not build the interface ID from the MAC address (EUI-64), so the tool’s MAC-to-link-local conversion will not match your own addresses. See [IPv6 neighbor discovery](/themes/ipv6-nd) for trimmed output and for what `secured` and `temporary` mean.
+
 ## About this page
 
 Zone IDs (`fe80::1%eth0`), 6to4 and Teredo, the deprecated site-local range, and the rules for random interface IDs (RFC 7217, RFC 8981) are left out.

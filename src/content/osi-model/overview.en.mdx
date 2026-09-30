@@ -26,6 +26,14 @@ Each layer only reads its own header. TCP on the server reads the header written
 - The order of the headers in the frame: Ethernet, IP, TCP, then the data, then the FCS.
 - On the receiving side, each layer removes exactly the header that the same layer added on the sending side.
 
+## Try it yourself
+
+In Wireshark, click any packet. The packet details pane lists the headers in the same order as the walkthrough, one line per layer:
+
+- **Frame** (what Wireshark knows about the capture itself), then **Ethernet II** (or 802.11 on Wi-Fi), **Internet Protocol**, **Transmission Control Protocol** or **User Datagram Protocol**, and finally the data or the application protocol.
+- Expand one line to see the fields of that header. The capture usually has no FCS: most network cards remove it before Wireshark sees the frame.
+- Without Wireshark, `sudo tcpdump -e -n -c 5` prints the MAC addresses (layer 2), the IP addresses (layer 3) and the ports (layer 4) of five packets, then stops. It only reads traffic and needs root.
+
 ## References
 
 - ISO/IEC 7498-1: The Basic Reference Model (OSI)

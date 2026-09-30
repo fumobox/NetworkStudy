@@ -31,6 +31,27 @@ CIDR より前は、先頭のビットでアドレスを**クラス** A・B・C 
 - プレフィックス長を動かし、2 進数の表示でネットワーク部が伸び縮みするのを見る。
 - /30、/31、/32 を比べる。
 
+## 手元で試す
+
+自分のコンピューターが、アドレスとマスクを表示する。macOS では（`en0` はふつう Wi-Fi）:
+
+```sh
+ipconfig getoption en0 subnet_mask
+ifconfig en0 inet
+```
+
+出力の一部（macOS 26、2026-09-30）。アドレスは、同じ種類のネットワークの例に置き換えた。
+
+```
+$ ipconfig getoption en0 subnet_mask
+255.255.255.0
+$ ifconfig en0 inet
+inet 192.168.1.20 netmask 0xffffff00 broadcast 192.168.1.255
+```
+
+- `netmask 0xffffff00` は同じマスクの 16 進数の表記。ff ff ff 00 は 255.255.255.0 で、プレフィックス長は 24。`broadcast` はサブネットのブロードキャストアドレス。上の計算機に自分のアドレスと /24 を入れて見比べる。
+- Linux では、`ip -4 addr` がアドレスをプレフィックス長付きで（`192.168.1.20/24` のように）表示し、`brd` の後にブロードキャストアドレスを表示する。
+
 ## 参考
 
 - [RFC 4632: Classless Inter-domain Routing (CIDR)](https://www.rfc-editor.org/rfc/rfc4632)

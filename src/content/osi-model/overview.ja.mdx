@@ -26,6 +26,14 @@ Web のページをインターネット越しに送るには、別々の問題�
 - フレームの中のヘッダーの並び: Ethernet、IP、TCP、データ、FCS。
 - 受信側では、各層が送信側の同じ層で付けたヘッダーを、ちょうど外していくこと。
 
+## 手元で試す
+
+Wireshark で、どれかのパケットを選ぶ。パケットの詳細の枠に、ステップ実行と同じ順でヘッダーが並ぶ。層ごとに 1 行。
+
+- **Frame**（キャプチャーそのものについて Wireshark が知っていること）、**Ethernet II**（Wi-Fi なら 802.11）、**Internet Protocol**、**Transmission Control Protocol** か **User Datagram Protocol**、最後にデータかアプリケーションのプロトコル。
+- 1 行を開くと、そのヘッダーのフィールドが見える。キャプチャーにはふつう FCS がない。ほとんどのネットワークカードは、Wireshark に渡す前に外す。
+- Wireshark がなくても、`sudo tcpdump -e -n -c 5` は 5 つのパケットの MAC アドレス（第 2 層）、IP アドレス（第 3 層）、ポート（第 4 層）を表示して止まる。通信を読むだけで、root が要る。
+
 ## 参考
 
 - ISO/IEC 7498-1: The Basic Reference Model（OSI 参照モデル）

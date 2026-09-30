@@ -31,6 +31,27 @@ Before CIDR, addresses were split into **classes** A, B, and C by their first bi
 - Move the prefix length and watch the network part grow in the binary view.
 - Compare /30, /31, and /32.
 
+## Try it yourself
+
+Your own computer shows its address and mask. On macOS (`en0` is usually Wi-Fi):
+
+```sh
+ipconfig getoption en0 subnet_mask
+ifconfig en0 inet
+```
+
+Trimmed output (macOS 26, 2026-09-30). The address is replaced with an example on the same kind of network.
+
+```
+$ ipconfig getoption en0 subnet_mask
+255.255.255.0
+$ ifconfig en0 inet
+inet 192.168.1.20 netmask 0xffffff00 broadcast 192.168.1.255
+```
+
+- `netmask 0xffffff00` is the same mask in hexadecimal: ff ff ff 00 is 255.255.255.0, a prefix length of 24. `broadcast` is the broadcast address of the subnet. Enter your address and /24 in the calculator above and compare.
+- On Linux, `ip -4 addr` prints the address with its prefix length (such as `192.168.1.20/24`) and the broadcast address after `brd`.
+
 ## References
 
 - [RFC 4632: Classless Inter-domain Routing (CIDR)](https://www.rfc-editor.org/rfc/rfc4632)
