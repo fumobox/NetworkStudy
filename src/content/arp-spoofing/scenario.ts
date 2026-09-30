@@ -7,8 +7,9 @@
  * - RFC 5227 §2.3（ARP Announcement）、§2.4（自分のアドレスを別の MAC アドレスで名乗るパケットを見たら衝突として扱い、
  *   既定のルーターのように変えられないホストは自分の Announcement で守ってよい）。守れるのは、そのパケットが届いたときだけ
  * - RFC 2131（DHCPACK の yiaddr、chaddr）、RFC 2132（オプション 51、53）
- * - RFC 7513 §6（SAVI for DHCP: 束縛は、信頼するポートから届いたサーバーの応答で記録する）、RFC 7039（SAVI の枠組み）。
- *   SAVI はデータのパケットの送信元の IP アドレスを確かめるもので、ARP の中身は見ない
+ * - RFC 7513 §6（SAVI for DHCP: 束縛は、信頼するポートから届いたサーバーの応答で記録する）、§8.2（送信元の IP アドレスが
+ *   そのポートに束縛されていない ARP と、対象の IP アドレスが束縛されていない ARP の応答を捨てる）、RFC 7039（SAVI の枠組み）。
+ *   SAVI は仕様で、束縛はポート（binding anchor）に結びつき、データのパケットの送信元も確かめる。製品の機能は DAI など
  * - RFC 9542 §2.1.4（説明用の MAC アドレス 00-00-5E-00-53-00〜FF）、RFC 5737・RFC 1918（アドレス）
  *
  * 標準ではなく実装で決まるもの（概要で書き分ける）:
@@ -390,7 +391,7 @@ function ipMessage(
   }
 }
 
-const TO_SERVER = (ethDst: string, ethSrc: string = ADDRESSES.pc.mac): IpFrame => ({
+const toServer = (ethDst: string, ethSrc: string = ADDRESSES.pc.mac): IpFrame => ({
   ethDst,
   ethSrc,
   ipSrc: ADDRESSES.pc.ip,
@@ -402,7 +403,7 @@ const FROM_SERVER: IpFrame = {
   ipSrc: ADDRESSES.server.ip,
   ipDst: ADDRESSES.pc.ip,
 }
-const PACKET_TO_SERVER = `IP ${ADDRESSES.pc.ip} → ${ADDRESSES.server.ip}`
+const PACKET_toServer = `IP ${ADDRESSES.pc.ip} → ${ADDRESSES.server.ip}`
 
 /** DHCPACK（RFC 2131、RFC 2132）。層は付けない（DHCP のテーマと同じく平らな一覧） */
 function dhcpAckMessage(
@@ -465,7 +466,7 @@ const forward = (port: number) => `forward: port ${String(port)}`
 
 /** PC A からインターネットへのパケットが、ゲートウェイに届く */
 function normalStep(id: string, title: LocalizedText, description: LocalizedText): Step {
-  const frame = TO_SERVER(ADDRESSES.gateway.mac)
+  const frame = toServer(ADDRESSES.gateway.mac)
   return {
     id,
     title,
@@ -662,8 +663,8 @@ const intactStep = (description: LocalizedText): Step =>
 
 function poisonSteps(): Step[] {
   const poisoned = applyArpPacket([GATEWAY_ENTRY], FORGED_REPLY.packet, ADDRESSES.pc.ip)
-  const hijacked = TO_SERVER(ADDRESSES.attacker.mac)
-  const relayed = TO_SERVER(ADDRESSES.gateway.mac, ADDRESSES.attacker.mac)
+  const hijacked = toServer(ADDRESSES.attacker.mac)
+  const relayed = toServer(ADDRESSES.gateway.mac, ADDRESSES.attacker.mac)
   return [
     {
       id: 'setup',
@@ -725,7 +726,7 @@ function poisonSteps(): Step[] {
           }),
         ),
         set(SWITCH, DAI, forward(ADDRESSES.attacker.port)),
-        set(ATTACKER, CAPTURED, capturedTable([[PACKET_TO_SERVER, '-']])),
+        set(ATTACKER, CAPTURED, capturedTable([[PACKET_toServer, '-']])),
       ],
     },
     {
@@ -755,7 +756,7 @@ function poisonSteps(): Step[] {
         set(
           ATTACKER,
           CAPTURED,
-          capturedTable([[PACKET_TO_SERVER, `gateway (${ADDRESSES.gateway.mac})`]]),
+          capturedTable([[PACKET_toServer, `gateway (${ADDRESSES.gateway.mac})`]]),
         ),
       ],
     },

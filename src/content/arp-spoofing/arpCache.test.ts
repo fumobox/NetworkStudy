@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest'
-import { applyArpPacket, isGratuitous, type ArpEntry, type ArpPacket } from './arpCache'
+import { applyArpPacket, type ArpEntry, type ArpPacket } from './arpCache'
 
 const PC_A = '192.168.1.10'
 const GATEWAY: ArpEntry = { ip: '192.168.1.1', mac: '00:00:5e:00:53:01', type: 'dynamic' }
@@ -44,13 +44,5 @@ describe('applyArpPacket（RFC 826）', () => {
   it('静的なエントリーは書き換えない', () => {
     const fixed: ArpEntry = { ...GATEWAY, type: 'static' }
     expect(applyArpPacket([fixed], FORGED, PC_A)).toEqual({ cache: [fixed], action: 'static' })
-  })
-})
-
-describe('isGratuitous', () => {
-  it('SPA と TPA が同じものだけ。攻撃の偽の応答は当たらない', () => {
-    expect(isGratuitous(FORGED)).toBe(false)
-    expect(isGratuitous({ ...FORGED, oper: 1, tpa: '192.168.1.1' })).toBe(true)
-    expect(isGratuitous({ ...FORGED, oper: 1, spa: '0.0.0.0', tpa: '0.0.0.0' })).toBe(false)
   })
 })

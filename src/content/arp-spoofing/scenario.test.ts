@@ -7,7 +7,7 @@ import type { Message, StateValue, Step } from '@/engine/types'
 import { validateScenario } from '@/engine/validate'
 import { en } from '@/lib/i18n/messages/en'
 import { ja } from '@/lib/i18n/messages/ja'
-import { isGratuitous } from './arpCache'
+import type { ArpPacket } from './arpCache'
 import { ADDRESSES, arpSpoofingScenario, FORGED_REPLY, type ArpSpoofingOptions } from './scenario'
 
 const handle = toScenarioHandle(arpSpoofingScenario)
@@ -39,6 +39,9 @@ function dictionaryStrings(value: unknown): string[] {
     return Object.values(value).flatMap(dictionaryStrings)
   return []
 }
+
+/** Gratuitous ARP: SPA と TPA が同じ（RFC 5227 §2.3 の ARP Announcement もこの形） */
+const isGratuitous = (packet: ArpPacket) => packet.spa !== '0.0.0.0' && packet.spa === packet.tpa
 
 const { pc, gateway, attacker, server } = ADDRESSES
 const FORGED_LABEL = `ARP ${gateway.ip} is-at ${attacker.mac}`
