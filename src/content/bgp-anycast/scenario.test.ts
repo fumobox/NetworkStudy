@@ -6,7 +6,7 @@ import type { Message, StateValue, Step } from '@/engine/types'
 import { validateScenario } from '@/engine/validate'
 import { en } from '@/lib/i18n/messages/en'
 import { ja } from '@/lib/i18n/messages/ja'
-import { ADDR, ANYCAST_PREFIX, bgpAnycastScenario, type BgpAnycastOptions } from './scenario'
+import { ADDR, ANYCAST_PREFIX, AS, bgpAnycastScenario, type BgpAnycastOptions } from './scenario'
 
 const handle = toScenarioHandle(bgpAnycastScenario)
 const SITUATIONS = ['propagate', 'withdraw', 'holdTimer', 'routeChange'] as const
@@ -144,7 +144,7 @@ describe('bgpAnycastScenario', () => {
       expect(isp?.values.decision).toBe('best: via Site A (AS_PATH length 1 is shorter)')
       expect(anycastNextHop(steps, 'update-transit')).toBe(ADDR.siteA)
       expect(stateAt(steps, 'loop').actorStates.siteB?.values.decision).toBe(
-        'drop: own AS 64511 in AS_PATH',
+        `drop: own AS ${String(AS.anycast)} in AS_PATH`,
       )
     })
   })
@@ -160,7 +160,7 @@ describe('bgpAnycastScenario', () => {
         'withdraw',
         'retry',
       ])
-      expect(byId(steps, 'dropped-2')?.status).toBe('rejected')
+      expect(byId(steps, 'dropped-2')?.status).toBe('lost')
       expect(anycastNextHop(steps, 'query-dropped')).toBe(ADDR.siteA)
       expect(anycastNextHop(steps, 'withdraw')).toBe(ADDR.transitToIsp)
       expect(field(byId(steps, 'withdraw'), 'Withdrawn Routes')).toBe(ANYCAST_PREFIX)

@@ -10,7 +10,7 @@
  * - KEEPALIVE: ヘッダーだけの 19。NOTIFICATION: 21 + Data
  */
 
-export const HEADER_LENGTH = 19
+const HEADER_LENGTH = 19
 export const KEEPALIVE_LENGTH = HEADER_LENGTH
 export const MESSAGE_TYPES = { OPEN: 1, UPDATE: 2, NOTIFICATION: 3, KEEPALIVE: 4 } as const
 export const MARKER = Array.from({ length: 16 }, () => 'ff').join(' ')

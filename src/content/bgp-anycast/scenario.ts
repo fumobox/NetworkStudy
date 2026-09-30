@@ -16,7 +16,7 @@
  *
  * 学習用の単純化: 拠点ごとに 1 本のレーン（BGP を話すルーターと DNS のサーバーを 1 つにする。RFC 4786 §4.4.1 はサーバーで
  * 経路の広告をする構成も挙げる）。IPv4 だけ。ISP とトランジット、トランジットと拠点 B のセッションは最初から Established で、
- * 帰りの経路（192.0.2.0/24）は準備で示す。iBGP、LOCAL_PREF、MED、MinRouteAdvertisementInterval、経路のフラップの抑制は扱わない。
+ * 帰りの経路は描かない。iBGP、LOCAL_PREF、MED、MinRouteAdvertisementInterval、経路のフラップの抑制は扱わない。
  * TCP の 3 ウェイハンドシェイクは 1 本の矢印にまとめ、一時的なポートは描かない。DNS の応答の値と TCP の初期シーケンス番号は例の値
  */
 import { z } from 'zod'
@@ -72,8 +72,8 @@ const FIB: StateKey = 'fib'
 const ANNOUNCE: StateKey = 'announce'
 const SERVICE: StateKey = 'service'
 
-export const RIB_COLUMNS = ['Prefix', 'From', 'AS_PATH', 'NEXT_HOP', 'Best'] as const
-export const FIB_COLUMNS = ['Prefix', 'Next hop', 'Via'] as const
+const RIB_COLUMNS = ['Prefix', 'From', 'AS_PATH', 'NEXT_HOP', 'Best'] as const
+const FIB_COLUMNS = ['Prefix', 'Next hop', 'Via'] as const
 
 /** AS 番号（RFC 5398）。拠点 A と B は同じ起点の AS（RFC 4786 §4.4.4） */
 export const AS = { isp: 64496, transit: 64500, anycast: 64511 } as const
@@ -624,8 +624,8 @@ function propagateSteps(): Step[] {
           ja: 'ISP がポート 179 に TCP の接続を開く',
         },
         description: {
-          en: 'BGP runs over TCP, port 179. The three segments of the handshake are drawn as one arrow (see the TCP theme). Both sides move from Idle to Connect.',
-          ja: 'BGP は TCP のポート 179 の上で動く。ハンドシェイクの 3 つのセグメントは 1 本の矢印にまとめる（TCP のテーマを参照）。両側は Idle から Connect に移る。',
+          en: 'BGP runs over TCP, port 179. The three segments of the handshake are drawn as one arrow (see the TCP theme). The ISP, which dials, is in Connect; Site A, which listens, is in Active.',
+          ja: 'BGP は TCP のポート 179 の上で動く。ハンドシェイクの 3 つのセグメントは 1 本の矢印にまとめる（TCP のテーマを参照）。接続を始める ISP は Connect、待ち受ける拠点 A は Active。',
         },
         events: [
           send({
@@ -642,7 +642,7 @@ function propagateSteps(): Step[] {
             ]),
           }),
           set(ISP, SESSION, 'Connect'),
-          set(SITE_A, SESSION, 'Connect'),
+          set(SITE_A, SESSION, 'Active'),
         ],
       },
       {
@@ -676,8 +676,8 @@ function propagateSteps(): Step[] {
         id: 'keepalive',
         title: { en: 'KEEPALIVEs confirm: Established', ja: 'KEEPALIVE で確かめる: Established' },
         description: {
-          en: 'Each side accepts the peer’s OPEN, answers with a KEEPALIVE and moves to OpenConfirm. When the peer’s KEEPALIVE arrives, the session is Established and the Hold Timer starts.',
-          ja: '両側は相手の OPEN を受け入れ、KEEPALIVE で答えて OpenConfirm に移る。相手の KEEPALIVE が届くと、セッションは Established になり、Hold Timer が動き出す。',
+          en: 'Each side accepts the peer’s OPEN, answers with a KEEPALIVE and moves to OpenConfirm. Accepting the OPEN sets the Hold Timer to the agreed value, and the peer’s KEEPALIVE restarts it. The session is now Established.',
+          ja: '両側は相手の OPEN を受け入れ、KEEPALIVE で答えて OpenConfirm に移る。OPEN を受け入れたところで Hold Timer は合意した値に設定され、相手の KEEPALIVE でやり直しになる。これでセッションは Established。',
         },
         events: [
           send(keepalive('ka-isp', ISP, SITE_A)),
@@ -800,12 +800,12 @@ function withdrawSteps(): Step[] {
     ...inSection(SECTIONS.failure, [
       {
         id: 'fail',
-        title: { en: 'Site A’s DNS server stops', ja: '拠点 A の DNS のサーバーが止まる' },
+        title: { en: 'Site A’s DNS server hangs', ja: '拠点 A の DNS のサーバーが固まる' },
         description: {
-          en: 'The DNS server process at Site A crashes. The router part keeps running, so BGP still announces the route for a moment.',
-          ja: '拠点 A の DNS のサーバーのプロセスが落ちる。ルーターの部分は動き続けるので、しばらくは BGP で経路を広告したまま。',
+          en: 'The DNS server process at Site A hangs and stops answering. The router part keeps running, so BGP still announces the route for a moment.',
+          ja: '拠点 A の DNS のサーバーのプロセスが固まって答えなくなる。ルーターの部分は動き続けるので、しばらくは BGP で経路を広告したまま。',
         },
-        events: [set(SITE_A, SERVICE, 'down (process crashed)')],
+        events: [set(SITE_A, SERVICE, 'down (not answering)')],
       },
       {
         id: 'query-dropped',
@@ -814,10 +814,10 @@ function withdrawSteps(): Step[] {
           ja: '問い合わせはまだ拠点 A へ行き、答えがない',
         },
         description: {
-          en: 'The route still points to Site A, so the next query goes there, and nobody answers it.',
-          ja: '経路はまだ拠点 A を指しているので、次の問い合わせもそこへ行き、誰も答えない。',
+          en: 'The route still points to Site A, so the next query goes there, and the hung server never answers it.',
+          ja: '経路はまだ拠点 A を指しているので、次の問い合わせもそこへ行き、固まったサーバーは答えない。',
         },
-        events: [...hops('dropped', [PC, ISP, SITE_A], QUERY, 'rejected')],
+        events: [...hops('dropped', [PC, ISP, SITE_A], QUERY, 'lost')],
       },
       {
         id: 'withdraw',
