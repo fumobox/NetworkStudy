@@ -26,8 +26,8 @@ const LEARNING_PATH_DEFS: Readonly<Record<LearningPathId, LearningPathDef>> = {
   'web-developer': {
     title: { en: 'Web developers', ja: 'Web エンジニア向け' },
     summary: {
-      en: 'From the name in the address bar to the page on screen: DNS, TCP, TLS and HTTPS, then the HTTP features you use every day (caching, CORS, cookies and CSRF, HSTS, HTTP/2, QUIC, WebSocket, Server-Sent Events) and the reverse proxy in front of your servers.',
-      ja: 'アドレスバーの名前から画面のページまで。DNS、TCP、TLS、HTTPS の流れを押さえてから、日々使う HTTP のしくみ（キャッシュ、CORS、Cookie と CSRF、HSTS、HTTP/2、QUIC、WebSocket、Server-Sent Events）と、サーバーの前に立つリバースプロキシへ進む。',
+      en: 'From the name in the address bar to the page on screen: DNS, TCP, TLS and HTTPS, then the HTTP features you use every day (caching, CORS, cookies and CSRF, HSTS, OAuth and OpenID Connect, HTTP/2, QUIC, WebSocket, Server-Sent Events) and the reverse proxy in front of your servers.',
+      ja: 'アドレスバーの名前から画面のページまで。DNS、TCP、TLS、HTTPS の流れを押さえてから、日々使う HTTP のしくみ（キャッシュ、CORS、Cookie と CSRF、HSTS、OAuth と OpenID Connect、HTTP/2、QUIC、WebSocket、Server-Sent Events）と、サーバーの前に立つリバースプロキシへ進む。',
     },
     themeIds: [
       'osi-model',
@@ -39,6 +39,7 @@ const LEARNING_PATH_DEFS: Readonly<Record<LearningPathId, LearningPathDef>> = {
       'cors',
       'csrf',
       'hsts',
+      'oauth',
       'http2',
       'quic',
       'websocket',

@@ -5,8 +5,8 @@ An interactive portal for learning how network protocols work, one packet at a t
 
 ## Learning paths / 学習の道筋
 
-Not sure where to start? Follow a path: Web developers (14 themes) or Infrastructure and operations (20 themes).
-どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（14 テーマ）、インフラ運用向け（20 テーマ）。
+Not sure where to start? Follow a path: Web developers (15 themes) or Infrastructure and operations (20 themes).
+どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（15 テーマ）、インフラ運用向け（20 テーマ）。
 
 ## Topics / テーマ
 
@@ -58,6 +58,7 @@ HTTP for web developers / Web 開発で出会う HTTP
 - WebSocket: handshake, frames, and closing / WebSocket: ハンドシェイク、フレーム、接続の終了
 - Server-Sent Events: a response that never ends, and reconnecting on its own / Server-Sent Events: 終わらない応答と自動の再接続
 - Reverse proxies and load balancers / リバースプロキシとロードバランサー
+- OAuth 2.0 and OpenID Connect: the authorization code flow with PKCE / OAuth 2.0 と OpenID Connect: PKCE 付きの認可コードフロー
 
 Network security / ネットワークのセキュリティ
 
