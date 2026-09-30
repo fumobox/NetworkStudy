@@ -44,7 +44,7 @@ $ curl -sI https://www.cloudflare.com/ | grep -i '^alt-svc'
 alt-svc: h3=":443"; ma=86400
 ```
 
-- 最初のリクエストは TCP で行く。`alt-svc` のヘッダーは、同じサイトが UDP の 443 番ポートで HTTP/3（`h3`）も話すこと、ブラウザーがそれを 1 日（`ma=86400`）覚えてよいことを知らせる。次の接続では QUIC を使える。
+- 最初の要求は TCP で行く。`alt-svc` のヘッダーは、同じサイトが UDP の 443 番ポートで HTTP/3（`h3`）も話すこと、ブラウザーがそれを 1 日（`ma=86400`）覚えてよいことを知らせる。次の接続では QUIC を使える。
 - macOS に入っている curl は HTTP/3 なしで作られている。HTTP/3 付きで作った curl なら `curl --http3 -sI https://www.cloudflare.com/` を試せる。ブラウザーでは、Network のパネルの Protocol の列に `h3` と出る。Wireshark では、表示フィルター `quic` で QUIC のパケットが見える。TLS と同じく、中身は暗号化されている。
 
 ## このページについて

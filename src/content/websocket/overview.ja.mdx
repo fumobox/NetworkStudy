@@ -81,7 +81,7 @@ HTTP/2 と HTTP/3 には、101 も Upgrade のヘッダーもない。そこで�
 
 WebSocket のための組み込みのコマンドはないが、ブラウザーでよく見える。
 
-- WebSocket を使うページ（チャットやライブのダッシュボード）で開発者ツールの Network のパネルを開き、`WS` で絞り込む。リクエストは `101 Switching Protocols` で、`Upgrade`、`Sec-WebSocket-Key`、`Sec-WebSocket-Accept` のヘッダーが見え、Messages のタブに送り受けしたフレームが並ぶ。
+- WebSocket を使うページ（チャットやライブのダッシュボード）で開発者ツールの Network のパネルを開き、`WS` で絞り込む。要求は `101 Switching Protocols` で、`Upgrade`、`Sec-WebSocket-Key`、`Sec-WebSocket-Accept` のヘッダーが見え、Messages のタブに送り受けしたフレームが並ぶ。
 - Wireshark では、表示フィルター `websocket` で、暗号化しない `ws://` の接続のフレームが見える。`wss://` なら、先に TLS を復号する必要がある。
 
 ## 参考

@@ -53,9 +53,9 @@ access-control-allow-methods: GET, POST, PATCH, PUT, DELETE
 access-control-allow-origin: *
 ```
 
-- 1 つ目は単純なリクエスト。`access-control-allow-origin: *` は、どのオリジンのページにも（認証情報なしで）応答を読ませる。
-- 2 つ目は、`Authorization` のヘッダーを付けた `PUT` の前にブラウザーが送るプリフライト。204 で許すメソッドとヘッダーを答え、`access-control-max-age: 86400` でブラウザーに答えを 1 日キャッシュさせる。
-- ブラウザーでは、開発者ツールの Network のパネルにプリフライトが別の `OPTIONS` のリクエストとして現れ、止められたリクエストは Console に CORS のエラーとして出る。
+- 1 つ目は単純な要求。`access-control-allow-origin: *` は、どのオリジンのページにも（資格情報なしで）応答を読ませる。
+- 2 つ目は、`Authorization` のヘッダーを付けた `PUT` の前にブラウザーが送るプリフライト。204 で許すメソッドとヘッダーを答え、`access-control-max-age: 86400` でブラウザーに答えを最長 1 日キャッシュさせる（ブラウザーには上限がある）。
+- ブラウザーでは、開発者ツールの Network のパネルにプリフライトが別の `OPTIONS` の要求として現れ、止められた要求は Console に CORS のエラーとして出る。
 
 ## このページについて
 

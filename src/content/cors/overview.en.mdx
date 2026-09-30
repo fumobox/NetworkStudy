@@ -54,7 +54,7 @@ access-control-allow-origin: *
 ```
 
 - The first is a simple request: `access-control-allow-origin: *` lets a page from any origin read the response (without credentials).
-- The second is the preflight a browser sends before a `PUT` with an `Authorization` header. The 204 answers with the allowed methods and headers, and `access-control-max-age: 86400` lets the browser cache the answer for a day.
+- The second is the preflight a browser sends before a `PUT` with an `Authorization` header. The 204 answers with the allowed methods and headers, and `access-control-max-age: 86400` lets the browser cache the answer for up to a day (browsers cap this).
 - In a browser, the developer tools show a preflight as a separate `OPTIONS` request in the Network panel, and a blocked request as a CORS error in the Console.
 
 ## About this page

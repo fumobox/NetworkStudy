@@ -106,7 +106,7 @@ SSE は普通の HTTP なので、WebSocket の Upgrade を止めてしまうプ
 ## 手元で試す
 
 - `curl -N -H 'Accept: text/event-stream' https://your-server.example/events` は、届いたそばからイベントストリームを表示する（`-N` は curl 自身のバッファリングを止める）。自分で動かしているエンドポイントを使う。`data:`、`event:`、`id:` の行と、イベントの間の空行が見える。
-- Chrome の開発者ツールでは、Network のパネルでリクエストを選ぶと、EventStream のタブに各イベントの種類、データ、ID が並ぶ。
+- Chrome の開発者ツールでは、Network のパネルで要求を選ぶと、EventStream のタブに各イベントの種類、データ、ID が並ぶ。
 
 ## このページについて
 
