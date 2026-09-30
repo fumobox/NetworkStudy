@@ -34,6 +34,22 @@ ICMP errors such as port unreachable and fragmentation needed are how hosts lear
 - The UDP entry going from **UNREPLIED** to **REPLIED**, and disappearing after the **UDP timeout**.
 - In “What if…”, rule 3 set to **reject** (RST for TCP, ICMP for UDP) instead of drop, and an **ICMP Port Unreachable** that is let in as RELATED.
 
+## Try it yourself
+
+```sh
+/usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+```
+
+Output (macOS 26, 2026-09-30; yours may say enabled):
+
+```
+$ /usr/libexec/ApplicationFirewall/socketfilterfw --getglobalstate
+Firewall is disabled. (State = 0)
+```
+
+- This is macOS’s application firewall: it decides per app whether incoming connections are allowed, and is off by default. The stateful filtering of this page usually happens in your home router, together with its NAT: replies to connections you opened come in, and unsolicited packets do not.
+- On Linux, the kernel keeps a connection-tracking table like the one in the walkthrough. `sudo conntrack -L` lists it (read only; it needs root and the conntrack tool), with states such as `ESTABLISHED`, and `sudo nft list ruleset` shows the rules. In Wireshark, the display filter `tcp.flags.syn == 1 && tcp.flags.ack == 0` shows attempts to open new connections.
+
 ## References
 
 - [RFC 6092: Recommended Simple Security Capabilities in Customer Premises Equipment (CPE) for Providing Residential IPv6 Internet Service](https://www.rfc-editor.org/rfc/rfc6092) — §3.2.3 “UDP Filters”, §3.3.1 “TCP Filters”

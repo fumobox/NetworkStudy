@@ -80,6 +80,17 @@ IPsec は IETF の標準の VPN。IKEv2（RFC 7296）は少なくとも 4 つの
   - 120 秒での鍵の更新。
   - Cookie Reply と、mac2 を付けた送り直し。
 
+## 手元で試す
+
+コマンドラインの道具（wireguard-tools。Linux、または macOS では Homebrew で入る）で WireGuard を使っているなら、`wg show` がインターフェースの今の状態を表示する。root が要り、秘密鍵は決して表示しない。
+
+```sh
+sudo wg show wg0
+```
+
+- ピアごとに、公開鍵、**endpoint**（最後にそのピアから届いたアドレス。ノート PC が移ると変わるのが見える）、**allowed ips**、**latest handshake**（通信が続くあいだ約 2 分ごとに新しくなる）、送り受けしたバイト数、設定していれば **persistent keepalive** を表示する。
+- `wg showconf` の出力は貼らない。秘密鍵が入っている。Wireshark では、表示フィルター `wg` で WireGuard のメッセージが、種類、インデックス、カウンターとともに見える。中身は暗号化されたまま。
+
 ## ホワイトペーパーか、wg(8) か、Linux か
 
 - **ホワイトペーパー**: メッセージとその大きさ、ハンドシェイク、暗号鍵ルーティング（ピアのない宛先には ICMP の「no route to host」で知らせる）、ローミング、タイマー、cookie。

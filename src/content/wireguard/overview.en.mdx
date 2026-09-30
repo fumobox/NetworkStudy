@@ -80,6 +80,17 @@ IPsec is the standard VPN of the IETF: IKEv2 (RFC 7296) sets up the keys in at l
   - new keys after 120 seconds;
   - a Cookie Reply and a retry with mac2.
 
+## Try it yourself
+
+If you use WireGuard with the command-line tools (wireguard-tools, on Linux or through Homebrew on macOS), `wg show` prints the live state of an interface. It needs root, and it never prints the private key:
+
+```sh
+sudo wg show wg0
+```
+
+- For each peer it shows the public key, the **endpoint** (the address the peer was last heard from; watch it change when a laptop moves), the **allowed ips**, the **latest handshake** (it renews about every two minutes while traffic flows), the bytes transferred, and **persistent keepalive** if it is set.
+- Do not paste the output of `wg showconf`: it contains the private key. In Wireshark, the display filter `wg` shows WireGuard messages with their types, indexes and counters; the payload stays encrypted.
+
 ## Whitepaper, wg(8) or Linux?
 
 - **Whitepaper:** the messages and their sizes, the handshake, cryptokey routing (including an ICMP “no route to host” for a destination with no peer), roaming, the timers, cookies.

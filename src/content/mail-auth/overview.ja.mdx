@@ -32,6 +32,27 @@ DMARC の pass は From のドメインが本物だという意味で、メー�
 - 3 回の DNS の問い合わせと、受信サーバーの**確かめた識別子**の表が埋まっていくこと。SPF、DKIM、そして DMARC のアライメント。
 - 「もしも…」のオプションで、**なりすまし**、**転送**（SPF は fail、DKIM が救う）、**メーリングリスト**（SPF は別のドメインで pass、DKIM は壊れる）、3 つの**ポリシー**。
 
+## 手元で試す
+
+SPF と DMARC のポリシーは、誰でも引ける TXT レコード。
+
+```sh
+dig +short TXT example.com
+dig +short TXT _dmarc.example.com
+```
+
+出力の一部（macOS 26、2026-09-30。example.com には関係のない TXT レコードもある）:
+
+```
+$ dig +short TXT example.com
+"v=spf1 -all"
+$ dig +short TXT _dmarc.example.com
+"v=DMARC1;p=reject;sp=reject;adkim=s;aspf=s"
+```
+
+- `v=spf1 -all` は、example.com のメールを送ってよいサーバーはまったくないということ。メールを送らないドメインは、こうして自分を守れる。`p=reject` は DMARC に通らないメッセージを拒否するよう受信側に求め、`sp=reject` はサブドメインについても同じ。`adkim=s` と `aspf=s` は厳密なアライメントを求める。
+- DKIM の鍵は、受け取ったメッセージから見つける。`DKIM-Signature` のヘッダーにセレクター（`s=`）とドメイン（`d=`）があり、鍵は `セレクター._domainkey.ドメイン` にある。メールのクライアントで「原文を表示」（「ソースを表示」）すると、受信側の `Authentication-Results` のヘッダーに `spf=`、`dkim=`、`dmarc=` の結果が見える。
+
 ## 参考
 
 - [RFC 5321: Simple Mail Transfer Protocol](https://www.rfc-editor.org/rfc/rfc5321)

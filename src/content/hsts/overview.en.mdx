@@ -73,6 +73,22 @@ Getting off the list takes months, because the list ships with browser updates. 
   - the record being updated.
 - With the attacker's own certificate: the `unknown_ca` alert, and no way to proceed.
 
+## Try it yourself
+
+```sh
+curl -sI https://github.com/ | grep -i '^strict-transport-security'
+```
+
+Output (macOS 26, 2026-09-30):
+
+```
+$ curl -sI https://github.com/ | grep -i '^strict-transport-security'
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+```
+
+- `max-age=31536000` is one year, `includeSubdomains` extends the rule to every subdomain, and `preload` says the site agrees to be in the preload list. The header counts only because it arrived over https.
+- Chrome shows what it remembers at `chrome://net-internals/#hsts`: type a domain under “Query HSTS/PKP domain”. Firefox keeps the same data in the `SiteSecurityServiceState` file of the profile. [hstspreload.org](https://hstspreload.org/) says whether a domain is on the preload list.
+
 ## About this page
 
 - A name typed without a scheme opens over http; the browser's automatic https upgrades are not used.

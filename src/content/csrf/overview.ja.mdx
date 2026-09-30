@@ -75,6 +75,26 @@ CORS が決めるのは、ページが別のオリジンの応答を**読んで*
 - Cookie の保存場所、銀行のセッション、アリスの残高。
 - 「もしも…」の選択肢: Lax と Strict、送金できる GET、CSRF トークン、Fetch Metadata の確認。
 
+## 手元で試す
+
+本物の Cookie の属性に、このページの守りが表れる。
+
+```sh
+curl -sI https://github.com/ | grep -i '^set-cookie'
+```
+
+出力（macOS 26、2026-09-30。値は「…」に置き換えた）:
+
+```
+$ curl -sI https://github.com/ | grep -i '^set-cookie'
+set-cookie: _gh_sess=…; path=/; HttpOnly; secure; SameSite=Lax
+set-cookie: _octo=…; expires=…; domain=.github.com; path=/; secure; SameSite=Lax
+set-cookie: logged_in=no; expires=…; domain=.github.com; path=/; HttpOnly; secure; SameSite=Lax
+```
+
+- どの Cookie も `SameSite=Lax`。サイトをまたぐ POST やサブリソースの要求には付かず、安全なメソッドのトップレベルのナビゲーションにだけ付く。ウォークスルーの Lax の場合と同じ。`secure` は https だけに限り、`HttpOnly` はセッションの Cookie を JavaScript から隠す。
+- ブラウザーの開発者ツールでは、Application（ストレージ）のパネルに Cookie ごとの SameSite の値が並び、Network のパネルで各要求の `Sec-Fetch-Site` のヘッダーが見える。ウォークスルーの Fetch Metadata の場合は、これを使う。
+
 ## このページについて
 
 - 利用者は 1 人、攻撃者のページは 1 枚。フォームはトップレベルのナビゲーションで送る。実際の攻撃では、隠した iframe やポップアップを使うことも多い。
