@@ -59,6 +59,7 @@
 | WireGuard | WireGuard、wg、wg0、wlan0、wg-quick、Noise、IKpsk2、X25519、Curve25519、ChaCha20-Poly1305、XChaCha20-Poly1305、Poly1305、BLAKE2s、HKDF、AEAD、XAEAD、TAI64N、AllowedIPs、Endpoint、ListenPort、PersistentKeepalive、pub:laptop などの鍵の名前、E_pub(…)、Handshake Initiation、Handshake Response、Cookie Reply、Transport Data、mac1、mac2、R_m、REKEY_AFTER_TIME、REJECT_AFTER_TIME、REKEY_TIMEOUT、KEEPALIVE_TIMEOUT、51820、IPsec、IKEv2、ESP、Destination Unreachable、ラベルの [keepalive]（本文ではキープアライブと訳す）（状態の値 out: …、in: …、drop: …、rekey: …、endpoint → …、under load (cookie required)、not under load、previous、current、next、#1、#2、greatest … と、表の列 Peer、Endpoint、AllowedIPs、Latest handshake、Keepalive、Slot、Keypair、Packet、Captured from、フィールド名 Outer Src、Outer Dst、IP Length、UDP Length、Type、Sender、Receiver、Ephemeral、Static、Timestamp、Empty、Counter、Inner …、Padding、Tag、Nonce、Cookie も翻訳しない。cookie は HTTP の Cookie とは別物で、小文字で書く） |
 | ARP スプーフィング | DAI、Dynamic ARP Inspection、DHCP snooping（本文では DHCP スヌーピング）、ARP ACL、ARP Announcement、Gratuitous ARP、SAVI、VRRP、RA Guard、SEND、arp_accept、PERMANENT、permanent、dynamic、static（状態の値 forward: port …、forward: port … (no inspection)、permit … ↔ …（ARP ACL の行）、bypass: trusted port …、permit: bound …、permit: ARP ACL …、drop: no binding for …、drop: denied by ARP ACL …、bound: …、updated: …、added: …、unchanged: …、ignored: static entry、ignored: not the target、port 2 (gateway, DHCP server)、… (gateway)、… (attacker) と、表の列 IP、MAC、Type、Port、Lease、Packet、Forwarded to も翻訳しない） |
 | OAuth 2.0 と OpenID Connect | OAuth 2.0、OAuth 2.1、OpenID Connect、OIDC、PKCE、S256、plain、JWT、JWS、Discovery、DPoP、Bearer、Basic、client_secret_basic、response_type、client_id、client_secret、redirect_uri、scope、state、nonce、code、code_verifier、code_challenge、code_challenge_method、iss、sub、aud、exp、iat、jti、kid、alg、typ、at+jwt、RS256、grant_type、authorization_code、refresh_token、access_token、id_token、token_type、expires_in、invalid_grant、invalid_token、Resource Owner Password Credentials、Preserve log、Authorization、WWW-Authenticate、Cache-Control、Pragma、no-store、no-cache、302 Found、400 Bad Request、401 Unauthorized（状態の値 state OK …、state mismatch: …、code_verifier: S256 match、no code_challenge on record: nothing to check、with PKCE: …、redirect_uri: exact match、refresh_token: active → rotated、active、rotated (invalid)、not requested、not computed here、logged in as alice at …、code for mallory + state …、session … と、表の列 Value、Where、Session、User、Claim、Check、Token、Expires、Used、Refresh token、Status、Result、フィールド名 Request line、Status line、Host、Location、Set-Cookie、Cookie、Body、Access token claims、ID token claims も翻訳しない） |
+| BGP とエニーキャスト | BGP、BGP-4、eBGP、iBGP、AS、AS_PATH、AS_SEQUENCE、ORIGIN、IGP、NEXT_HOP、NLRI、LOCAL_PREF、MED、OPEN、UPDATE、KEEPALIVE、NOTIFICATION、Marker、Hold Time、Hold Timer、KeepaliveTimer、Capability、BGP Identifier、Withdrawn Routes、Idle、Connect、Active、OpenSent、OpenConfirm、Established、FIB、BFD、RPKI、catchment、looking glass、id.server、hostname.bind、NSID、Hold Timer Expired（状態の値 best: …、drop: own AS … in AS_PATH、no route to …、… s left、expired、withdrawn、connected、up、down (…)、✓、ESTABLISHED (…)、CLOSED (connection reset)、example.com A … (from Site A) と、表の列 Prefix、From、AS_PATH、NEXT_HOP、Best、Next hop、Via、フィールド名 Transport、Length、Type、Version、My Autonomous System、Optional Parameters Length、Total Path Attribute Length、Withdrawn Routes Length、Error Code、Error Subcode、IP Src、IP Dst、UDP Src、UDP Dst、TCP Src、TCP Dst、Question、Answer、Flags、Seq、Ack、Len も翻訳しない。Site A・Site B・Transit は表の値。本文では拠点 A・拠点 B・トランジット事業者と書く） |
 | パケットの層（Wireshark の表示名） | Ethernet II、Address Resolution Protocol、Internet Protocol Version 4、Internet Control Message Protocol、User Datagram Protocol、Transmission Control Protocol、Domain Name System（層の 1 行の要約も、フィールドの名前と値から作るので翻訳しない。DNS のテーマのフィールド名 IP Src、IP Dst、UDP Src、UDP Dst も翻訳しない） |
 
 ## 3. 訳語の対応表
@@ -407,6 +408,18 @@
 | implicit flow | インプリシットフロー | |
 | claim / issuer | クレーム／発行者 | JWT |
 | token introspection | トークンイントロスペクション | RFC 7662 |
+| autonomous system (AS) | 自律システム（AS） | |
+| announce / advertise (a route) | （経路を）広告する | |
+| withdraw (a route) | （経路を）取り下げる | |
+| best path | 最良経路 | BGP |
+| path attribute | 経路の属性 | BGP |
+| prepend / prepending | 付け足す／プリペンド | AS_PATH |
+| transit provider | トランジット事業者 | |
+| anycast | エニーキャスト | |
+| site (of an anycast service) | 拠点 | Web のサイト（site）とは別 |
+| forwarding table (FIB) | 転送の表（FIB） | ルーターの表。VXLAN の FDB とは別 |
+| data plane | データプレーン | |
+| route leak / hijack | 経路の漏れ／乗っ取り（ハイジャック） | |
 | defense in depth | 多層防御 | |
 | cookie jar | Cookie の保存場所 | |
 | host-only (cookie) | ホストだけ | Domain 属性のない Cookie |

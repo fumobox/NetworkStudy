@@ -23,6 +23,7 @@ import { quicQuiz } from './quic/quiz'
 import { oauthQuiz } from './oauth/quiz'
 import { reverseProxyQuiz } from './reverse-proxy/quiz'
 import { routeLookupQuiz } from './route-lookup/quiz'
+import { bgpAnycastQuiz } from './bgp-anycast/quiz'
 import { sseQuiz } from './server-sent-events/quiz'
 import { subnetCalculatorQuiz } from './subnet-calculator/quiz'
 import { switchingQuiz } from './switching/quiz'
@@ -57,6 +58,7 @@ import {
   REVERSE_PROXY_META,
   OAUTH_META,
   ROUTE_LOOKUP_META,
+  BGP_ANYCAST_META,
   SERVER_SENT_EVENTS_META,
   SUBNET_CALCULATOR_META,
   SWITCHING_META,
@@ -96,6 +98,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: NAT_META, quiz: natQuiz },
   { meta: NAT_TRAVERSAL_META, quiz: natTraversalQuiz },
   { meta: ROUTE_LOOKUP_META, quiz: routeLookupQuiz },
+  { meta: BGP_ANYCAST_META, quiz: bgpAnycastQuiz },
   { meta: SWITCHING_META, quiz: switchingQuiz },
   { meta: VLAN_META, quiz: vlanQuiz },
   { meta: CONTAINER_NETWORKING_META, quiz: containerNetworkingQuiz },

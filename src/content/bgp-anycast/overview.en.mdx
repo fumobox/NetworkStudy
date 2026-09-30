@@ -1,0 +1,109 @@
+## How does a router learn a route to the whole Internet?
+
+[Route lookup](/themes/route-lookup) picks the best matching entry in a routing table. But where do the entries come from? Inside one network, an administrator or an interior protocol fills the table. Between networks, the routes come from **BGP** (Border Gateway Protocol, version 4, RFC 4271).
+
+The Internet is made of tens of thousands of **autonomous systems** (ASes): networks run by one organisation with one routing policy, each identified by an AS number. An AS announces the address ranges it can reach to its neighbours, and each neighbour passes the announcement on. Every router ends up knowing, for each prefix, which neighbour to send packets to.
+
+This page uses AS numbers and addresses reserved for documentation (RFC 5398, RFC 5737):
+
+| Lane | AS | Addresses | Role |
+|---|---|---|---|
+| Your ISP’s router | 64496 | 192.0.2.1, 198.51.100.2 | Customers’ PCs are in 192.0.2.0/24 |
+| Site A | 64511 | 192.0.2.2 | Anycast DNS, directly connected to the ISP |
+| Transit provider | 64500 | 198.51.100.1, 198.51.100.5 | Carries traffic between the ISP and Site B |
+| Site B | 64511 | 198.51.100.6 | Anycast DNS, connected to the transit provider |
+
+## Sessions: OPEN, KEEPALIVE, and the Hold Time
+
+Two BGP neighbours talk over a TCP connection to port 179. Every BGP message starts with the same 19-octet header: a 16-octet Marker of all ones, a Length and a Type.
+
+1. Each side sends **OPEN**: its version (4), its AS number, a proposed **Hold Time**, its BGP Identifier, and optional capabilities. Here both can use four-octet AS numbers (RFC 6793).
+2. Both use the smaller Hold Time. RFC 4271 suggests 90 seconds, and it must be 0 or at least 3.
+3. Each side confirms with a **KEEPALIVE**, which is only the header. The session is now **Established**.
+
+After that, each side sends a KEEPALIVE about every third of the Hold Time (30 seconds here) whenever it has nothing else to send. If nothing at all arrives for the whole Hold Time, the session is declared dead. The side that notices sends **NOTIFICATION** with Error Code 4 (Hold Timer Expired), closes the connection, and deletes every route it learned from that neighbour.
+
+The session states are Idle, Connect (or Active while retrying), OpenSent, OpenConfirm and Established (RFC 4271 §8).
+
+## UPDATE: announcing and withdrawing
+
+An **UPDATE** can do two things at once: withdraw prefixes that are no longer reachable, and announce prefixes (the **NLRI**) together with **path attributes**:
+
+- **ORIGIN**: where the route came from (IGP here).
+- **AS_PATH**: the ASes the announcement has passed through, the newest first. The originating AS puts in only its own number. Each AS that passes the route on to another AS adds its own number on the left.
+- **NEXT_HOP**: where to send packets for the prefix. Between neighbouring ASes it is normally the sender’s address on the shared link, so it changes at every AS.
+
+When a router receives a route whose AS_PATH already contains its own AS, it ignores it: that route would loop (RFC 4271 §9.1.2). A new announcement of the same prefix from the same neighbour replaces the old one. A withdrawal, or the end of the session, removes it.
+
+## Choosing the best path
+
+When several neighbours announce the same prefix, a router picks one. The full decision process (RFC 4271 §9.1) starts with the router’s own policy: **LOCAL_PREF**, used inside an AS to prefer one exit over another. Among equally preferred routes, it prefers:
+
+1. the shortest AS_PATH;
+2. the lowest ORIGIN;
+3. the lowest **MED** (a hint from a neighbour about which of its links to use; compared only between routes from the same neighbouring AS);
+4. then more tie-breakers, ending with the lowest BGP Identifier.
+
+This page configures no policy, so the shortest AS_PATH decides. In practice, operators set LOCAL_PREF according to business relationships (their customers first, then peers, then transit), so the shortest path does not always win.
+
+Only the winner goes into the router’s **forwarding table** (FIB), where the [route lookup](/themes/route-lookup) happens.
+
+## Anycast: one address in many places
+
+With **anycast**, the same prefix is announced from several sites, usually from the same AS (RFC 4786 §4.4.4). Every site answers on the same address. Each network sends packets to whichever site its own BGP decision prefers, usually the “closest” in AS terms. The set of places that reach one site is that site’s **catchment**. This is how many public DNS resolvers, root name servers and CDNs serve users from many locations with one address.
+
+Two things follow:
+
+- **Failover is a routing change.** When a site stops announcing (withdraws) the prefix, routers switch to another site. RFC 4786 §4.4.1 recommends announcing only while the service works, for example by tying the announcement to a health check. A site that fails silently is noticed only when the Hold Timer expires, so operators often use shorter timers or a separate fast failure detection (BFD).
+- **Prefix length.** Many networks do not accept IPv4 prefixes longer than /24 from other ASes, so an anycast service is usually announced as a /24 (RFC 4786 §4.4.2). This is operational practice, not a protocol limit.
+
+## Why anycast suits UDP, and what happens to TCP
+
+A DNS query over UDP is one packet and one answer. If the route changes between two queries, the next query simply reaches another site, which can answer it just as well.
+
+A TCP connection has state, and that state exists only at the site where it was opened. If the route changes while the connection is open, the next segment arrives at a site that has never seen it. That site answers with a reset (RFC 9293 §3.10.7.1), and the connection breaks. RFC 7094 calls UDP the “lingua franca” of anycast for this reason. TCP over anycast is still widely used (DNS over TCP, CDNs), because routes are normally stable for far longer than a connection lasts (RFC 4786 §4.1).
+
+## Policy, leaks and hijacks
+
+BGP carries no proof that an AS may announce a prefix. Two consequences:
+
+- A **route leak** passes announcements on where they should not go, for example an ISP re-announcing a route from one provider to another. That is why the ISP on this page announces only its own prefix to the transit provider. RFC 8212 makes “no policy, no routes” the default for sessions between ASes.
+- A **hijack** announces someone else’s prefix. **RPKI** origin validation (RFC 6811) lets routers check that the origin AS is authorised. It is not covered here.
+
+## What to look for in the walkthrough
+
+- The ISP’s **BGP table**, **Best path** and **Forwarding table**, which change when routes are announced, withdrawn, or replaced.
+- The fields of OPEN (Hold Time, Capability), UPDATE (AS_PATH, NEXT_HOP, NLRI, Withdrawn Routes) and NOTIFICATION, and each message’s Length.
+- The **Hold Timer** and the time column in the Hold Timer option.
+- In the “What if…” options:
+  - sessions, routes, the shorter AS_PATH and the loop check;
+  - Site A’s service fails and a health check withdraws the route;
+  - Site A dies silently and the Hold Timer expires;
+  - Site A prepends its AS, the route changes, TCP breaks and UDP does not.
+
+## Try it yourself
+
+These commands only read.
+
+- `dig CH TXT id.server @<an anycast DNS server>` (or `hostname.bind`, RFC 4892) asks which instance of an anycast server answered. Many anycast operators answer with a name for the site. Run it from two different networks, for example home Wi-Fi and a phone’s mobile data, and the answer may change: you are in a different catchment. `dig +nsid` asks the same through EDNS (RFC 5001).
+- `traceroute` to an anycast address shows the path to the site that serves you. Hops inside your own network and your ISP are private to you; do not share them.
+- A public **looking glass** (a web page run by a network operator) shows that network’s BGP table for a prefix: the AS_PATHs it has, and which one it chose.
+- In Wireshark, the display filter `bgp` shows BGP messages (for example in a lab with two routing daemons in containers), with the Marker, Type, AS_PATH and NLRI. `tcp.port == 179` shows the TCP connection.
+
+## About this page
+
+- One lane per site stands for a router and a DNS server together (RFC 4786 §4.4.1 also describes running the routing software on the server).
+- IPv4 only. The sessions between the ISP and the transit provider, and between the transit provider and Site B, are already up, and the route back to 192.0.2.0/24 is set up beforehand.
+- Not covered: iBGP, policies (LOCAL_PREF, MED, communities), the minimum interval between announcements, route flap damping, graceful restart, RPKI, and IPv6.
+- The TCP handshake for BGP is one arrow. Ephemeral ports, DNS answer values and TCP initial sequence numbers are example values.
+
+## References
+
+- [RFC 4271: A Border Gateway Protocol 4 (BGP-4)](https://www.rfc-editor.org/rfc/rfc4271) — §3.1, §4, §5.1.2, §5.1.3, §6.5, §8, §9.1, §10
+- [RFC 6793: BGP Support for Four-Octet AS Number Space](https://www.rfc-editor.org/rfc/rfc6793), [RFC 5492: Capabilities Advertisement with BGP-4](https://www.rfc-editor.org/rfc/rfc5492)
+- [RFC 4786: Operation of Anycast Services](https://www.rfc-editor.org/rfc/rfc4786) (BCP 126) — §2, §4.1, §4.4
+- [RFC 7094: Architectural Considerations of IP Anycast](https://www.rfc-editor.org/rfc/rfc7094) — §4.2
+- [RFC 9293: Transmission Control Protocol](https://www.rfc-editor.org/rfc/rfc9293) — §3.10.7.1
+- [RFC 8212: Default External BGP (EBGP) Route Propagation Behavior without Policies](https://www.rfc-editor.org/rfc/rfc8212), [RFC 6811: BGP Prefix Origin Validation](https://www.rfc-editor.org/rfc/rfc6811)
+- [RFC 4892: Requirements for a Mechanism Identifying a Name Server Instance](https://www.rfc-editor.org/rfc/rfc4892), [RFC 5001: DNS Name Server Identifier (NSID) Option](https://www.rfc-editor.org/rfc/rfc5001)
+- [RFC 5398](https://www.rfc-editor.org/rfc/rfc5398) (AS numbers for documentation), [RFC 5737](https://www.rfc-editor.org/rfc/rfc5737) (IPv4 addresses for documentation)

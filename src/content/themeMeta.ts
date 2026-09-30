@@ -16,7 +16,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
 
 /**
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
- * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、パス MTU 探索、NAT、NAT 越え、経路制御）、lan: LAN の中（スイッチ、VLAN、コンテナーのネットワーク、VXLAN、Wi-Fi、IPv6 の近隣探索）、
+ * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、パス MTU 探索、NAT、NAT 越え、経路制御、BGP とエニーキャスト）、lan: LAN の中（スイッチ、VLAN、コンテナーのネットワーク、VXLAN、Wi-Fi、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
  * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket、Server-Sent Events、リバースプロキシとロードバランサー、OAuth 2.0 と OpenID Connect）、security: ネットワークのセキュリティ（ARP スプーフィング、ファイアウォール、WireGuard、DNSSEC、メールの送信ドメイン認証、HSTS、Cookie と CSRF）
  */
@@ -422,6 +422,22 @@ export const NAT_TRAVERSAL_META = {
   minutes: 20,
 } as const satisfies ThemeMeta
 
+export const BGP_ANYCAST_META = {
+  id: 'bgp-anycast',
+  kind: 'sequence',
+  category: 'ip',
+  title: {
+    en: 'BGP and anycast: how routes travel, and one address in many places',
+    ja: 'BGP とエニーキャスト: 経路が伝わるしくみと、1 つのアドレスを複数の拠点で',
+  },
+  summary: {
+    en: 'How networks tell each other which addresses they reach (OPEN, KEEPALIVE, UPDATE, AS_PATH), how a router picks the shortest path, and how one DNS address served from two sites fails over, and why a route change breaks TCP but not UDP.',
+    ja: 'ネットワークどうしが、届けられるアドレスを伝え合うしくみ（OPEN、KEEPALIVE、UPDATE、AS_PATH）、ルーターが短い経路を選ぶしくみ、2 つの拠点で応える 1 つの DNS のアドレスの切り替わり方、経路が変わると TCP は切れて UDP は切れない理由。',
+  },
+  difficulty: 'intermediate',
+  minutes: 20,
+} as const satisfies ThemeMeta
+
 export const ROUTE_LOOKUP_META = {
   id: 'route-lookup',
   kind: 'custom',
@@ -610,7 +626,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → コンテナーのネットワーク → VXLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー → OAuth 2.0 と OpenID Connect）→ ネットワークのセキュリティ（ARP スプーフィング → ファイアウォール → WireGuard → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索 → BGP とエニーキャスト）→ LAN の中（スイッチ → VLAN → コンテナーのネットワーク → VXLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー → OAuth 2.0 と OpenID Connect）→ ネットワークのセキュリティ（ARP スプーフィング → ファイアウォール → WireGuard → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -623,6 +639,7 @@ export const THEME_META = [
   NAT_META,
   NAT_TRAVERSAL_META,
   ROUTE_LOOKUP_META,
+  BGP_ANYCAST_META,
   SWITCHING_META,
   VLAN_META,
   CONTAINER_NETWORKING_META,
