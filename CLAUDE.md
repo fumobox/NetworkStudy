@@ -18,7 +18,7 @@
 | `npm test` / `test:run` / `test:coverage` | Vitest |
 | `npm run pages:verify` | 生成した静的ページの検証（`build` の後に実行） |
 | `npm run e2e` | Playwright のスモークテストと axe によるアクセシビリティのチェック（`build` の後に実行。初回は `npx playwright install chromium`） |
-| `npm run lhci` | Lighthouse CI（`build` の後に実行。sitemap.xml の全ページでアクセシビリティ 90 以上。レポートは `lhci-report/`） |
+| `npm run lhci` | Lighthouse CI（`build` の後に実行。代表のページ（ホーム、シーケンスのテーマ、独自の UI のテーマ、学習の道筋 × en / ja。`lighthouserc.cjs` の `PAGES`）でアクセシビリティ 90 以上。全ページは e2e の axe が見る。レポートは `lhci-report/`） |
 
 CI（`.github/workflows/ci.yml` の `Check` job）は typecheck → lint → depcruise → format:check → test:run → build → pages:verify → e2e → lhci の順に実行する。main への push では、その後 `Deploy` job が GitHub Pages へデプロイする。
 
@@ -99,7 +99,7 @@ e2e/                Playwright のスモークテストとアクセシビリテ�
 
 - GitHub Pages には SPA 用のフォールバックがないため、`build` の最後に「ロケール × ルート」と「ロケールなし × ルート」の `index.html`、および `404.html` を生成する（`lang`・`title`・`description`・`hreflang`、ロケール付きのページには `canonical` も埋め込む）
 - テーマを追加したら `src/content/themeMeta.ts` にメタ情報（id は英小文字・数字・ハイフンのみ。分類 `category` も決め、`THEME_META` では分類ごとにまとめて並べる）を足し、`src/content/registry.ts` に登録し、`src/content/quizzes.ts` の `THEME_QUIZZES` にもメタ情報とクイズを足す（順序は registry と同じ。registry.test.ts で確かめる）。静的ページも e2e の対象も自動で増える。どの学習の道筋に入れるか（入れないか）も決め、入れるなら `src/content/learningPaths.ts` の `themeIds` の読む順の位置に足す（前提の順は learningPaths.test.ts の `PREREQUISITES` で確かめる）
-- 学習の道筋（`src/content/learningPaths.ts`）は対象者別の順番付きのテーマの一覧で、`/:locale/paths/:id` のページになる（静的ページ・sitemap・e2e・Lighthouse の対象に自動で入る）。テーマのページは `?path=` の道筋（ないか、テーマを含まない道筋ならテーマを含む道筋。複数なら並べる）の中の位置と前後のテーマを出す。位置の文言は「Theme n of m」にし、ステップ実行の「Step n of m」と紛れさせない
+- 学習の道筋（`src/content/learningPaths.ts`）は対象者別の順番付きのテーマの一覧で、`/:locale/paths/:id` のページになる（静的ページ・sitemap・e2e の対象に自動で入る）。テーマのページは `?path=` の道筋（ないか、テーマを含まない道筋ならテーマを含む道筋。複数なら並べる）の中の位置と前後のテーマを出す。位置の文言は「Theme n of m」にし、ステップ実行の「Step n of m」と紛れさせない
 - パケットの詳細を層ごとに表示するには、メッセージのすべてのフィールドに、カプセル化の順に `layer` を付ける（`@/engine/layers` の `inLayer` を使ってよい）。要約に入れるフィールドには `inLayerSummary`。値はシナリオがもう持っているか、RFC を根拠に導けるものだけにし、チェックサム・IP の ID・パケットの長さ（Total Length など）は、テストした純関数で計算するのでなければ載せない。足りない層は `src/engine/types.ts` の `PACKET_LAYERS` に足し、層の順と要約をテーマのテストで固定する。今は TCP のハンドシェイク・DNS・ARP・ICMP に付けている
 - テーマには種類（`kind`）がある。`ThemeModule` は `kind` で判別する共用体（`src/content/types.ts`）で、メタ情報の `kind` と同じ値にする（型で強制される）。どの種類にも概要（MDX）とクイズが必要
   - `sequence`: シーケンスエンジンを使う（`SequenceThemeModule`。`scenario` と、必要なら `panels`）。e2e は最終ステップまで進める
