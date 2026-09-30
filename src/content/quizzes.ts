@@ -4,6 +4,7 @@ import { csrfQuiz } from './csrf/quiz'
 import { dhcpQuiz } from './dhcp/quiz'
 import { dnsResolutionQuiz } from './dns-resolution/quiz'
 import { dnssecQuiz } from './dnssec/quiz'
+import { arpSpoofingQuiz } from './arp-spoofing/quiz'
 import { firewallQuiz } from './firewall/quiz'
 import { wireguardQuiz } from './wireguard/quiz'
 import { hstsQuiz } from './hsts/quiz'
@@ -36,6 +37,7 @@ import {
   DHCP_META,
   DNS_RESOLUTION_META,
   DNSSEC_META,
+  ARP_SPOOFING_META,
   FIREWALL_META,
   WIREGUARD_META,
   HSTS_META,
@@ -113,6 +115,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: WEBSOCKET_META, quiz: webSocketQuiz },
   { meta: SERVER_SENT_EVENTS_META, quiz: sseQuiz },
   { meta: REVERSE_PROXY_META, quiz: reverseProxyQuiz },
+  { meta: ARP_SPOOFING_META, quiz: arpSpoofingQuiz },
   { meta: FIREWALL_META, quiz: firewallQuiz },
   { meta: WIREGUARD_META, quiz: wireguardQuiz },
   { meta: DNSSEC_META, quiz: dnssecQuiz },
