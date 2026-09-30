@@ -1,0 +1,147 @@
+## Why OAuth?
+
+A photo-printing site wants to read Alice’s photos, which are stored somewhere else. It could ask for her password there, but then it could do anything as Alice, forever, and she could not take that back without changing her password. **OAuth 2.0** (RFC 6749) lets Alice grant the site a limited, revocable permission instead. She logs in only at the service that holds her account, and the site gets an **access token** that allows just what she agreed to.
+
+OAuth is about **authorization**: what the client may do. **OpenID Connect** (OIDC) adds **authentication** on top: an **ID token** that tells the client who logged in. “Log in with …” buttons use both.
+
+## Four roles
+
+| Role | In this walkthrough | What it does |
+|---|---|---|
+| Resource owner | Alice (in her browser) | Owns the data and decides |
+| Client | client.example.com (its backend) | Wants to act for Alice |
+| Authorization server | as.example.net | Logs Alice in, asks for consent, issues tokens |
+| Resource server | api.example.org | The API that accepts access tokens |
+
+The client here is a web application with a server: a **confidential client**, which can keep a secret. An app on a phone or a single-page app cannot keep a secret; it is a **public client**.
+
+## The authorization code flow
+
+1. The client sends Alice’s browser to the authorization server with an **authorization request**: `response_type=code`, its `client_id`, its `redirect_uri`, the `scope` it wants, the random values `state` and `nonce`, and the `code_challenge`.
+2. Alice logs in at the authorization server and consents. The client never sees her password.
+3. The authorization server sends the browser back to the `redirect_uri` with an **authorization code**, the same `state`, and `iss` (RFC 9207).
+4. The client checks `state` and `iss`, then sends the code to the **token endpoint**, authenticating itself and adding the `code_verifier`.
+5. The authorization server returns an access token, a **refresh token**, and (with OIDC) an ID token.
+6. The client calls the API with `Authorization: Bearer <access token>` (RFC 6750).
+
+The code is short-lived (RFC 6749 recommends at most 10 minutes) and can be used only once.
+
+## Front channel and back channel
+
+The requests in steps 1 and 3 travel as redirects through the browser (the **front channel**). Everything in them can end up in the browser’s history, in logs, or with another app. Steps 4 and 5 go directly between the client’s server and the authorization server (the **back channel**).
+
+| Value | Through the browser? |
+|---|---|
+| `state`, `nonce`, `code_challenge` | Yes (authorization request) |
+| Authorization code, `iss` | Yes (authorization response) |
+| `code_verifier`, client secret | No (token request) |
+| Access token, refresh token, ID token | No (token response) |
+
+That is the point of the code flow: the browser carries only a code, which is useless without the client’s credentials and the `code_verifier`.
+
+## PKCE
+
+**PKCE** (Proof Key for Code Exchange, RFC 7636) ties the code to the client instance that started the login. The client makes a random `code_verifier` (43 to 128 characters) and keeps it. In the authorization request it sends only
+
+`code_challenge = BASE64URL(SHA256(code_verifier))` (the method `S256`).
+
+The authorization server stores the challenge with the code. At the token endpoint the client sends the verifier, and the server hashes it and compares. Someone who has only the code, and not the verifier, gets `invalid_grant`. The walkthrough uses the example from RFC 7636 Appendix B: the verifier `dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk` gives the challenge `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM`.
+
+RFC 9700 (the OAuth 2.0 Security Best Current Practice) says public clients MUST use PKCE and recommends it for confidential clients too. PKCE was first designed for apps on phones, where another app can register the same redirect scheme and receive the code (RFC 7636 §1). It also stops **authorization code injection** (RFC 9700 §4.5): an attacker who got hold of Alice’s code puts it into their own session at the client. `state` cannot help there, because the attacker’s `state` is their own. PKCE does, because the client sends the verifier of the attacker’s session.
+
+## state, PKCE and nonce
+
+- `state` is tied to Alice’s session at the client. When the response comes back, it must match. It stops **login CSRF**: an attacker making Alice’s browser finish the attacker’s login, so that Alice ends up in the attacker’s account (RFC 6749 §10.12).
+- `code_challenge` ties the code to the session that started the flow, at the token endpoint.
+- `nonce` is copied by the authorization server into the ID token, so the client can tell that the ID token belongs to this login.
+
+RFC 9700 §4.7.1 notes that PKCE or a validated `nonce` also protects against CSRF, if the client has made sure the authorization server supports PKCE. Using all three costs little.
+
+## The ID token
+
+The ID token is a JWT (RFC 7519) signed by the authorization server. Its claims include `iss` (who issued it), `sub` (a stable identifier for Alice at that issuer), `aud` (the client it is meant for), `exp` and `iat` (expiry and issue time), and `nonce`. The client must check that `iss` is the server it used, that `aud` contains its own `client_id`, that it has not expired, and that `nonce` is the one it sent (OIDC Core §3.1.3.7). It identifies Alice by `iss` and `sub` together, not by her email address, which can change or be reused.
+
+The ID token is for the client. It is not an access token and must not be sent to APIs.
+
+## Access tokens at the resource server
+
+This walkthrough’s access token is also a JWT, in the profile of RFC 9068 (`typ: at+jwt`). The resource server checks it locally: the signature (with the authorization server’s published keys), `iss`, that `aud` is this API, `exp`, and that the `scope` covers the request. Other deployments use opaque tokens and ask the authorization server about them (token introspection, RFC 7662).
+
+An access token is a **bearer token**: whoever holds it can use it. It is sent only over TLS, only to the API, and never in a URL (RFC 6750, RFC 9700 §4.3.2). Techniques that bind a token to a key (DPoP, mutual TLS) exist but are not covered here.
+
+## Expiry and refresh
+
+Access tokens are short-lived; RFC 6750 suggests one hour or less. When one expires, the API answers `401` with `WWW-Authenticate: Bearer error="invalid_token"`. The client then sends the refresh token to the token endpoint (`grant_type=refresh_token`) and gets a new access token without bothering Alice. The refresh token goes only to the authorization server, never to the API.
+
+With **refresh token rotation**, each refresh also returns a new refresh token and invalidates the old one. If an old one is ever used again, the authorization server knows that one of them was stolen and can revoke the grant (RFC 9700 §4.14.2). RFC 9700 requires rotation, or binding the token to the client, for public clients.
+
+## Why not the implicit flow or passwords?
+
+Older guides show the **implicit flow** (`response_type=token`), which returned the access token directly in the redirect URL, where it could leak. RFC 9700 says clients SHOULD NOT use it and should use the code flow instead. The **resource owner password credentials** grant, where the client collects Alice’s password, MUST NOT be used (RFC 9700 §2.4). This page covers neither.
+
+## OAuth 2.1?
+
+OAuth 2.1 is an IETF draft (as of September 2026, draft-ietf-oauth-v2-1-16, not yet an RFC). It collects today’s best practice into one document: PKCE for every client, exact matching of redirect URIs, no implicit flow and no password grant. What this page shows already follows it.
+
+## What to look for in the walkthrough
+
+- **Values that passed through the browser**: state, nonce, the code_challenge and the code (with the other parameters in the URLs). The code_verifier, the client secret and the three tokens never do.
+- The fields of each message: the query parameters of the authorization request and response, `Authorization: Basic` and `code_verifier` in the token request, and `Cache-Control: no-store` on the token response.
+- The client’s **Sessions**, **ID token checks** and **Tokens it holds**; the authorization server’s **Authorization codes** (with the challenge) and **Refresh tokens**; the resource server’s **Access token checks**.
+- In the “What if…” options:
+  - `state` does not match: Mallory’s code delivered by Alice’s browser (login CSRF);
+  - without PKCE: Alice’s leaked code injected into Mallory’s session, and what PKCE and nonce would have done;
+  - the access token expires: 401, refresh, and rotation.
+
+## Try it yourself
+
+An authorization server publishes its settings in a discovery document (OIDC Discovery, RFC 8414):
+
+```sh
+curl -s https://accounts.google.com/.well-known/openid-configuration
+```
+
+Trimmed to a few keys (macOS 26, 2026-09-30):
+
+```
+"issuer": "https://accounts.google.com"
+"authorization_endpoint": "https://accounts.google.com/o/oauth2/v2/auth"
+"token_endpoint": "https://oauth2.googleapis.com/token"
+"code_challenge_methods_supported": ["plain", "S256"]
+"token_endpoint_auth_methods_supported": ["client_secret_post", "client_secret_basic"]
+"authorization_response_iss_parameter_supported": true
+```
+
+- `issuer` is the value the client compares with `iss`. `code_challenge_methods_supported` tells a client that PKCE with S256 works here.
+
+The PKCE example from RFC 7636 can be recomputed with standard tools (on Linux, use `sha256sum` instead of `shasum -a 256`):
+
+```sh
+printf '%s' 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' | shasum -a 256 | cut -d' ' -f1 | xxd -r -p | base64 | tr '+/' '-_' | tr -d '='
+```
+
+```
+E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM
+```
+
+- In a browser’s developer tools, open the Network panel with “Preserve log” and sign in to a site with a “Log in with …” button. You can see the redirect to the authorization endpoint with `response_type=code`, `state` and often `code_challenge`, and the redirect back with `code=`. The token request is not there: it happens on the back channel. Do not paste real codes or tokens anywhere.
+
+## About this page
+
+- The client is a web application with a backend (a confidential client, `client_secret_basic`). Apps on phones and single-page apps are described but not drawn.
+- Login and consent are one form. How the authorization server authenticates Alice is outside OAuth (RFC 6749 §3.1).
+- Signatures are not computed; the third part of each JWT is shown as “(signature)”. Fetching the authorization server’s keys, discovery, and TLS, DNS and TCP are not drawn.
+- In the injection option, how the code leaks is described but not drawn.
+- Times start at 2026-10-01T09:00:00Z. The example values come from RFC 6749, RFC 7636 and OIDC Core.
+
+## References
+
+- [RFC 6749: The OAuth 2.0 Authorization Framework](https://www.rfc-editor.org/rfc/rfc6749) — §1.3.1, §2.3.1, §4.1, §5, §6, §10.12
+- [RFC 7636: Proof Key for Code Exchange (PKCE)](https://www.rfc-editor.org/rfc/rfc7636) — §4, Appendix B
+- [RFC 9700: Best Current Practice for OAuth 2.0 Security](https://www.rfc-editor.org/rfc/rfc9700) (BCP 240) — §2.1, §2.4, §3, §4.5, §4.7, §4.14
+- [RFC 6750: Bearer Token Usage](https://www.rfc-editor.org/rfc/rfc6750) — §2.1, §3
+- [RFC 9207: Authorization Server Issuer Identification](https://www.rfc-editor.org/rfc/rfc9207)
+- [RFC 9068: JWT Profile for OAuth 2.0 Access Tokens](https://www.rfc-editor.org/rfc/rfc9068), [RFC 7519: JSON Web Token](https://www.rfc-editor.org/rfc/rfc7519)
+- [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html) (errata set 2) — §2, §3.1
+- [RFC 8252: OAuth 2.0 for Native Apps](https://www.rfc-editor.org/rfc/rfc8252), [RFC 8414: Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414), [RFC 7662: Token Introspection](https://www.rfc-editor.org/rfc/rfc7662)
+- [The OAuth 2.1 Authorization Framework](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/) (Internet-Draft)

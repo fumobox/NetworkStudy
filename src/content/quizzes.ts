@@ -20,6 +20,7 @@ import { natTraversalQuiz } from './nat-traversal/quiz'
 import { osiModelQuiz } from './osi-model/quiz'
 import { pmtudQuiz } from './pmtud/quiz'
 import { quicQuiz } from './quic/quiz'
+import { oauthQuiz } from './oauth/quiz'
 import { reverseProxyQuiz } from './reverse-proxy/quiz'
 import { routeLookupQuiz } from './route-lookup/quiz'
 import { sseQuiz } from './server-sent-events/quiz'
@@ -54,6 +55,7 @@ import {
   PMTUD_META,
   QUIC_META,
   REVERSE_PROXY_META,
+  OAUTH_META,
   ROUTE_LOOKUP_META,
   SERVER_SENT_EVENTS_META,
   SUBNET_CALCULATOR_META,
@@ -115,6 +117,7 @@ export const THEME_QUIZZES: readonly Pick<ThemeModule, 'meta' | 'quiz'>[] = [
   { meta: WEBSOCKET_META, quiz: webSocketQuiz },
   { meta: SERVER_SENT_EVENTS_META, quiz: sseQuiz },
   { meta: REVERSE_PROXY_META, quiz: reverseProxyQuiz },
+  { meta: OAUTH_META, quiz: oauthQuiz },
   { meta: ARP_SPOOFING_META, quiz: arpSpoofingQuiz },
   { meta: FIREWALL_META, quiz: firewallQuiz },
   { meta: WIREGUARD_META, quiz: wireguardQuiz },

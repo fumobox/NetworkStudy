@@ -58,6 +58,7 @@
 | VXLAN | VXLAN、VTEP、VNI、NVE、EVPN、BGP、Geneve、NVGRE、GRE、IGMP、PIM、ECMP、BUM、4789、8472、vxlan100、vethA〜vethD、dstport、srcport、nolearning、proxy、group、dev、df、ttl、spine 1、spine 2、Echo Request、Echo Reply、MSS、RTO（状態の値 encap: …、decap: …、flood: …、drop: …、route: …、multicast: …、ECMP: via …、proxy ARP: …、local、learned、static、connected と、表の列 VNI、MAC、Where、Type、Send to、Ports、Group、Members、Outer src port、Path、Destination、Next hop、フィールド名 Outer Eth Dst、Outer Eth Src、Outer IP Src、Outer IP Dst、TTL、Total Length、UDP Src、UDP Dst、UDP Checksum、VXLAN、VNI、Path、Inner … も翻訳しない。EVPN の DF（Designated Forwarder）は DF ビットと関係がないので書かない） |
 | WireGuard | WireGuard、wg、wg0、wlan0、wg-quick、Noise、IKpsk2、X25519、Curve25519、ChaCha20-Poly1305、XChaCha20-Poly1305、Poly1305、BLAKE2s、HKDF、AEAD、XAEAD、TAI64N、AllowedIPs、Endpoint、ListenPort、PersistentKeepalive、pub:laptop などの鍵の名前、E_pub(…)、Handshake Initiation、Handshake Response、Cookie Reply、Transport Data、mac1、mac2、R_m、REKEY_AFTER_TIME、REJECT_AFTER_TIME、REKEY_TIMEOUT、KEEPALIVE_TIMEOUT、51820、IPsec、IKEv2、ESP、Destination Unreachable、ラベルの [keepalive]（本文ではキープアライブと訳す）（状態の値 out: …、in: …、drop: …、rekey: …、endpoint → …、under load (cookie required)、not under load、previous、current、next、#1、#2、greatest … と、表の列 Peer、Endpoint、AllowedIPs、Latest handshake、Keepalive、Slot、Keypair、Packet、Captured from、フィールド名 Outer Src、Outer Dst、IP Length、UDP Length、Type、Sender、Receiver、Ephemeral、Static、Timestamp、Empty、Counter、Inner …、Padding、Tag、Nonce、Cookie も翻訳しない。cookie は HTTP の Cookie とは別物で、小文字で書く） |
 | ARP スプーフィング | DAI、Dynamic ARP Inspection、DHCP snooping（本文では DHCP スヌーピング）、ARP ACL、ARP Announcement、Gratuitous ARP、SAVI、VRRP、RA Guard、SEND、arp_accept、PERMANENT、permanent、dynamic、static（状態の値 forward: port …、forward: port … (no inspection)、permit … ↔ …（ARP ACL の行）、bypass: trusted port …、permit: bound …、permit: ARP ACL …、drop: no binding for …、drop: denied by ARP ACL …、bound: …、updated: …、added: …、unchanged: …、ignored: static entry、ignored: not the target、port 2 (gateway, DHCP server)、… (gateway)、… (attacker) と、表の列 IP、MAC、Type、Port、Lease、Packet、Forwarded to も翻訳しない） |
+| OAuth 2.0 と OpenID Connect | OAuth 2.0、OAuth 2.1、OpenID Connect、OIDC、PKCE、S256、plain、JWT、JWS、Discovery、DPoP、Bearer、Basic、client_secret_basic、response_type、client_id、client_secret、redirect_uri、scope、state、nonce、code、code_verifier、code_challenge、code_challenge_method、iss、sub、aud、exp、iat、jti、kid、alg、typ、at+jwt、RS256、grant_type、authorization_code、refresh_token、access_token、id_token、token_type、expires_in、invalid_grant、invalid_token、Resource Owner Password Credentials、Preserve log、Authorization、WWW-Authenticate、Cache-Control、Pragma、no-store、no-cache、302 Found、400 Bad Request、401 Unauthorized（状態の値 state OK …、state mismatch: …、code_verifier: S256 match、no code_challenge on record: nothing to check、with PKCE: …、redirect_uri: exact match、refresh_token: active → rotated、active、rotated (invalid)、not requested、not computed here、logged in as alice at …、code for mallory + state …、session … と、表の列 Value、Where、Session、User、Claim、Check、Token、Expires、Used、Refresh token、Status、Result、フィールド名 Request line、Status line、Host、Location、Set-Cookie、Cookie、Body、Access token claims、ID token claims も翻訳しない） |
 | パケットの層（Wireshark の表示名） | Ethernet II、Address Resolution Protocol、Internet Protocol Version 4、Internet Control Message Protocol、User Datagram Protocol、Transmission Control Protocol、Domain Name System（層の 1 行の要約も、フィールドの名前と値から作るので翻訳しない。DNS のテーマのフィールド名 IP Src、IP Dst、UDP Src、UDP Dst も翻訳しない） |
 
 ## 3. 訳語の対応表
@@ -390,6 +391,22 @@
 | static ARP entry | 静的な ARP エントリー | |
 | address conflict | アドレスの衝突 | RFC 5227 |
 | defend (an address) | （アドレスを）守る | RFC 5227 |
+| authorization / authentication | 認可／認証 | OAuth は認可、OpenID Connect は認証 |
+| authorization server / resource server / resource owner | 認可サーバー／リソースサーバー／リソースオーナー | OAuth の役割 |
+| authorization code / authorization code flow | 認可コード／認可コードフロー | |
+| authorization request / response | 認可要求／認可応答 | |
+| access token / refresh token / ID token | アクセストークン／リフレッシュトークン／ID トークン | |
+| token endpoint / authorization endpoint | トークンエンドポイント／認可エンドポイント | |
+| consent | 同意 | |
+| redirect URI | リダイレクト URI | 値の redirect_uri は翻訳しない |
+| public / confidential client | パブリッククライアント／コンフィデンシャルクライアント | RFC 6749 §2.1 |
+| front channel / back channel | フロントチャネル／バックチャネル | |
+| authorization code injection | 認可コードの注入 | RFC 9700 §4.5 |
+| login CSRF | ログイン CSRF | |
+| refresh token rotation | リフレッシュトークンのローテーション | RFC 9700 §4.14.2 |
+| implicit flow | インプリシットフロー | |
+| claim / issuer | クレーム／発行者 | JWT |
+| token introspection | トークンイントロスペクション | RFC 7662 |
 | defense in depth | 多層防御 | |
 | cookie jar | Cookie の保存場所 | |
 | host-only (cookie) | ホストだけ | Domain 属性のない Cookie |

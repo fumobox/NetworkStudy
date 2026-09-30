@@ -52,7 +52,7 @@ describe('pathPosition', () => {
       next: 'dns-resolution',
     })
     expect(pathPosition(WEB, 'cors')).toMatchObject({ previous: 'http-caching', next: 'csrf' })
-    expect(pathPosition(WEB, 'hsts')).toMatchObject({ previous: 'csrf', next: 'http2' })
+    expect(pathPosition(WEB, 'hsts')).toMatchObject({ previous: 'csrf', next: 'oauth' })
     expect(pathPosition(WEB, 'reverse-proxy')).toMatchObject({
       index: last,
       previous: 'server-sent-events',

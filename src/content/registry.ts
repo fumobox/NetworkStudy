@@ -20,6 +20,7 @@ import { natTraversalTheme } from './nat-traversal'
 import { pmtudTheme } from './pmtud'
 import { osiModelTheme } from './osi-model'
 import { quicTheme } from './quic'
+import { oauthTheme } from './oauth'
 import { reverseProxyTheme } from './reverse-proxy'
 import { routeLookupTheme } from './route-lookup'
 import { serverSentEventsTheme } from './server-sent-events'
@@ -71,6 +72,7 @@ export const THEMES: readonly ThemeModule[] = [
   webSocketTheme,
   serverSentEventsTheme,
   reverseProxyTheme,
+  oauthTheme,
   arpSpoofingTheme,
   firewallTheme,
   wireguardTheme,

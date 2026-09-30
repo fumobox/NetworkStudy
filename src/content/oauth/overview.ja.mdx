@@ -1,0 +1,147 @@
+## なぜ OAuth か
+
+写真を印刷するサイトが、別の場所にあるアリスの写真を読みたい。その場所のパスワードを尋ねることもできるが、そうするとサイトはアリスとして何でも、いつまでもできてしまい、アリスはパスワードを変えない限り取り消せない。**OAuth 2.0**（RFC 6749）では、代わりにアリスが、限られた、取り消せる許可をサイトに与える。アリスがログインするのはアカウントのあるサービスだけで、サイトは、アリスが同意したことだけを許す**アクセストークン**を受け取る。
+
+OAuth が扱うのは**認可**、つまりクライアントが何をしてよいか。**OpenID Connect**（OIDC）はその上に**認証**を足す。誰がログインしたかをクライアントに伝える **ID トークン**。「… でログイン」のボタンは、この両方を使う。
+
+## 4 つの役割
+
+| 役割 | このウォークスルーでは | すること |
+|---|---|---|
+| リソースオーナー | アリス（ブラウザー） | データを持ち、決める |
+| クライアント | client.example.com（そのバックエンド） | アリスの代わりに動きたい |
+| 認可サーバー | as.example.net | アリスをログインさせ、同意を求め、トークンを出す |
+| リソースサーバー | api.example.org | アクセストークンを受け付ける API |
+
+ここでのクライアントは、サーバーを持つ Web アプリケーション。秘密を守れる**コンフィデンシャルクライアント**。スマートフォンのアプリやシングルページアプリケーションは秘密を守れない。**パブリッククライアント**と呼ぶ。
+
+## 認可コードフロー
+
+1. クライアントはアリスのブラウザーを、**認可要求**を付けて認可サーバーへ送る。`response_type=code`、自分の `client_id`、`redirect_uri`、求める `scope`、乱数の `state` と `nonce`、`code_challenge`。
+2. アリスは認可サーバーでログインし、同意する。クライアントはアリスのパスワードを見ない。
+3. 認可サーバーはブラウザーを、**認可コード**、同じ `state`、`iss`（RFC 9207）を付けて `redirect_uri` へ戻す。
+4. クライアントは `state` と `iss` を確かめ、コードを**トークンエンドポイント**に送る。自分を認証し、`code_verifier` を添える。
+5. 認可サーバーは、アクセストークン、**リフレッシュトークン**、（OIDC なら）ID トークンを返す。
+6. クライアントは `Authorization: Bearer <アクセストークン>` で API を呼ぶ（RFC 6750）。
+
+コードは短い時間だけ有効で（RFC 6749 は長くても 10 分を勧める）、1 回だけ使える。
+
+## フロントチャネルとバックチャネル
+
+1 と 3 の要求は、ブラウザーを通るリダイレクトで運ぶ（**フロントチャネル**）。中身はすべて、ブラウザーの履歴や記録、ほかのアプリに渡りうる。4 と 5 は、クライアントのサーバーと認可サーバーの間で直接やり取りする（**バックチャネル**）。
+
+| 値 | ブラウザーを通るか |
+|---|---|
+| `state`、`nonce`、`code_challenge` | 通る（認可要求） |
+| 認可コード、`iss` | 通る（認可応答） |
+| `code_verifier`、クライアントの秘密 | 通らない（トークン要求） |
+| アクセストークン、リフレッシュトークン、ID トークン | 通らない（トークン応答） |
+
+これが認可コードフローの要点。ブラウザーが運ぶのはコードだけで、クライアントの資格情報と `code_verifier` がなければ役に立たない。
+
+## PKCE
+
+**PKCE**（Proof Key for Code Exchange、RFC 7636）は、コードを、ログインを始めたクライアントのインスタンスに結びつける。クライアントは乱数の `code_verifier`（43〜128 文字）を作って取っておく。認可要求で送るのは
+
+`code_challenge = BASE64URL(SHA256(code_verifier))`（方式は `S256`）
+
+だけ。認可サーバーは、コードとともに code_challenge を覚える。トークンエンドポイントでクライアントが code_verifier を送ると、サーバーはハッシュして比べる。コードだけを持ち、code_verifier を持たない者は `invalid_grant` を受け取る。ウォークスルーは RFC 7636 付録 B の例を使う。code_verifier `dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk` から、code_challenge `E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM` になる。
+
+RFC 9700（OAuth 2.0 のセキュリティの Best Current Practice）は、パブリッククライアントには PKCE を必須とし、コンフィデンシャルクライアントにも勧める。PKCE は、もともとスマートフォンのアプリのために作られた。別のアプリが同じリダイレクトのスキームを登録し、コードを受け取れるから（RFC 7636 §1）。PKCE は**認可コードの注入**（RFC 9700 §4.5）も止める。アリスのコードを手に入れた攻撃者が、それをクライアントでの自分のセッションに入れる攻撃。ここで `state` は役に立たない。攻撃者の `state` は攻撃者自身のものだから。PKCE なら止まる。クライアントは、攻撃者のセッションの code_verifier を送るから。
+
+## state、PKCE、nonce
+
+- `state` は、クライアントでのアリスのセッションに結びつく。応答が戻ったとき、合わなければならない。**ログイン CSRF** を止める。攻撃者がアリスのブラウザーに攻撃者のログインを終えさせ、アリスが攻撃者のアカウントに入ってしまう攻撃（RFC 6749 §10.12）。
+- `code_challenge` は、トークンエンドポイントで、コードをフローを始めたセッションに結びつける。
+- `nonce` は、認可サーバーが ID トークンに写す。クライアントは、ID トークンがこのログインのものだとわかる。
+
+RFC 9700 §4.7.1 は、クライアントが認可サーバーの PKCE の対応を確かめていれば、PKCE か確かめた `nonce` でも CSRF を防げるとしている。3 つとも使っても、手間は小さい。
+
+## ID トークン
+
+ID トークンは、認可サーバーが署名した JWT（RFC 7519）。クレームには、`iss`（発行者）、`sub`（その発行者でのアリスの変わらない識別子）、`aud`（宛てたクライアント）、`exp` と `iat`（期限と発行の時刻）、`nonce` がある。クライアントは、`iss` が使ったサーバーか、`aud` に自分の `client_id` が入っているか、期限が切れていないか、`nonce` が送ったものかを確かめる（OIDC Core §3.1.3.7）。アリスは `iss` と `sub` の組で見分け、変わったり使い回されたりしうるメールアドレスでは見分けない。
+
+ID トークンはクライアントのためのもの。アクセストークンではなく、API に送ってはいけない。
+
+## リソースサーバーでのアクセストークン
+
+このウォークスルーのアクセストークンも JWT で、RFC 9068 の形（`typ: at+jwt`）。リソースサーバーは、それをその場で確かめる。署名（認可サーバーが公開する鍵で）、`iss`、`aud` がこの API か、`exp`、`scope` が要求を覆うか。中身の見えないトークンを使い、認可サーバーに問い合わせる運用もある（トークンイントロスペクション、RFC 7662）。
+
+アクセストークンは **Bearer トークン**。持っている者が使える。TLS で、API にだけ送り、URL には決して入れない（RFC 6750、RFC 9700 §4.3.2）。トークンを鍵に結びつける方法（DPoP、相互 TLS）もあるが、このページでは扱わない。
+
+## 期限切れとリフレッシュ
+
+アクセストークンの有効期間は短い。RFC 6750 は 1 時間以下を勧める。切れると、API は `WWW-Authenticate: Bearer error="invalid_token"` を付けて `401` を返す。クライアントはリフレッシュトークンをトークンエンドポイントに送り（`grant_type=refresh_token`）、アリスに手間をかけずに新しいアクセストークンを受け取る。リフレッシュトークンは認可サーバーにだけ送り、API には決して送らない。
+
+**リフレッシュトークンのローテーション**では、リフレッシュのたびに新しいリフレッシュトークンも返し、古いものを無効にする。古いものがまた使われたら、認可サーバーはどちらかが盗まれたとわかり、認可を取り消せる（RFC 9700 §4.14.2）。RFC 9700 は、パブリッククライアントには、ローテーションか、トークンをクライアントに結びつけることを求める。
+
+## インプリシットフローやパスワードはなぜ使わないか
+
+古い解説には**インプリシットフロー**（`response_type=token`）がある。アクセストークンをリダイレクトの URL で直接返すので、漏れうる。RFC 9700 は、クライアントはこれを使うべきでなく、認可コードフローを使うべきとする。クライアントがアリスのパスワードを集める **Resource Owner Password Credentials** は、使ってはならない（RFC 9700 §2.4）。このページでは、どちらも扱わない。
+
+## OAuth 2.1 は？
+
+OAuth 2.1 は IETF の草案（2026 年 9 月の時点で draft-ietf-oauth-v2-1-16。まだ RFC ではない）。今のベストプラクティスを 1 つの文書にまとめる。すべてのクライアントに PKCE、リダイレクト URI の完全一致、インプリシットフローとパスワードの廃止。このページの内容は、すでにそれに沿っている。
+
+## ウォークスルーで見るところ
+
+- **ブラウザーを通った値**。state、nonce、code_challenge、コード（と URL のほかのパラメーター）。code_verifier、クライアントの秘密、3 つのトークンは決して通らない。
+- 各メッセージのフィールド。認可要求と認可応答のクエリのパラメーター、トークン要求の `Authorization: Basic` と `code_verifier`、トークン応答の `Cache-Control: no-store`。
+- クライアントの**セッション**、**ID トークンの確かめ**、**持っているトークン**。認可サーバーの**認可コード**（code_challenge とともに）と**リフレッシュトークン**。リソースサーバーの**アクセストークンの確かめ**。
+- 「もしも…」の選択肢:
+  - `state` が合わない。アリスのブラウザーが届けるマロリーのコード（ログイン CSRF）。
+  - PKCE なし。マロリーのセッションに注入された、漏れたアリスのコードと、PKCE と nonce ならどうなったか。
+  - アクセストークンが切れる。401、リフレッシュ、ローテーション。
+
+## 手元で試す
+
+認可サーバーは、設定を Discovery の文書で公開する（OIDC Discovery、RFC 8414）。
+
+```sh
+curl -s https://accounts.google.com/.well-known/openid-configuration
+```
+
+いくつかのキーに絞った出力（macOS 26、2026-09-30）:
+
+```
+"issuer": "https://accounts.google.com"
+"authorization_endpoint": "https://accounts.google.com/o/oauth2/v2/auth"
+"token_endpoint": "https://oauth2.googleapis.com/token"
+"code_challenge_methods_supported": ["plain", "S256"]
+"token_endpoint_auth_methods_supported": ["client_secret_post", "client_secret_basic"]
+"authorization_response_iss_parameter_supported": true
+```
+
+- `issuer` は、クライアントが `iss` と比べる値。`code_challenge_methods_supported` で、ここでは S256 の PKCE が使えるとわかる。
+
+RFC 7636 の PKCE の例は、ふつうの道具で計算し直せる（Linux では `shasum -a 256` の代わりに `sha256sum`）。
+
+```sh
+printf '%s' 'dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk' | shasum -a 256 | cut -d' ' -f1 | xxd -r -p | base64 | tr '+/' '-_' | tr -d '='
+```
+
+```
+E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM
+```
+
+- ブラウザーの開発者ツールで、Network のパネルを「Preserve log」にして、「… でログイン」のボタンのあるサイトにログインする。`response_type=code`、`state`、多くは `code_challenge` の付いた認可エンドポイントへのリダイレクトと、`code=` の付いた戻りのリダイレクトが見える。トークン要求はそこにない。バックチャネルで起きるから。本物のコードやトークンは、どこにも貼らない。
+
+## このページについて
+
+- クライアントは、バックエンドを持つ Web アプリケーション（コンフィデンシャルクライアント、`client_secret_basic`）。スマートフォンのアプリとシングルページアプリケーションは説明だけで、描かない。
+- ログインと同意は 1 つのフォーム。認可サーバーがアリスをどう認証するかは OAuth の外（RFC 6749 §3.1）。
+- 署名は計算しない。各 JWT の 3 つ目の部分は「(signature)」で示す。認可サーバーの鍵の取得、Discovery、TLS・DNS・TCP は描かない。
+- 注入の選択肢では、コードがどう漏れるかは説明だけで、描かない。
+- 時刻は 2026-10-01T09:00:00Z から。例の値は RFC 6749、RFC 7636、OIDC Core から取った。
+
+## 参考
+
+- [RFC 6749: The OAuth 2.0 Authorization Framework](https://www.rfc-editor.org/rfc/rfc6749) — §1.3.1、§2.3.1、§4.1、§5、§6、§10.12
+- [RFC 7636: Proof Key for Code Exchange (PKCE)](https://www.rfc-editor.org/rfc/rfc7636) — §4、付録 B
+- [RFC 9700: Best Current Practice for OAuth 2.0 Security](https://www.rfc-editor.org/rfc/rfc9700)（BCP 240） — §2.1、§2.4、§3、§4.5、§4.7、§4.14
+- [RFC 6750: Bearer Token Usage](https://www.rfc-editor.org/rfc/rfc6750) — §2.1、§3
+- [RFC 9207: Authorization Server Issuer Identification](https://www.rfc-editor.org/rfc/rfc9207)
+- [RFC 9068: JWT Profile for OAuth 2.0 Access Tokens](https://www.rfc-editor.org/rfc/rfc9068)、[RFC 7519: JSON Web Token](https://www.rfc-editor.org/rfc/rfc7519)
+- [OpenID Connect Core 1.0](https://openid.net/specs/openid-connect-core-1_0.html)（errata set 2） — §2、§3.1
+- [RFC 8252: OAuth 2.0 for Native Apps](https://www.rfc-editor.org/rfc/rfc8252)、[RFC 8414: Authorization Server Metadata](https://www.rfc-editor.org/rfc/rfc8414)、[RFC 7662: Token Introspection](https://www.rfc-editor.org/rfc/rfc7662)
+- [The OAuth 2.1 Authorization Framework](https://datatracker.ietf.org/doc/draft-ietf-oauth-v2-1/)（Internet-Draft）
