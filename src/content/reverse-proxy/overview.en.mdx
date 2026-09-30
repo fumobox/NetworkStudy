@@ -92,6 +92,27 @@ A shared cache must be careful with responses that depend on the request: `Vary`
   - a layer-4 load balancer with the PROXY protocol;
   - the shared cache.
 
+## Try it yourself
+
+The headers of a response often show that a reverse proxy or a CDN answered, not the site’s own server:
+
+```sh
+curl -sI https://example.com/
+```
+
+Trimmed output (macOS 26, 2026-09-29):
+
+```
+$ curl -sI https://example.com/
+HTTP/2 200
+server: cloudflare
+age: 2872
+cf-cache-status: HIT
+```
+
+- `server: cloudflare` is the proxy’s name, not the origin server’s. `age` and `cf-cache-status: HIT` (Cloudflare’s own header) say the response came from the proxy’s shared cache, as in the shared-cache option of the walkthrough; `Cache-Status` (RFC 9211) is the standard form of the same information.
+- Other proxies add `Via`, or headers of their own. You cannot see the `X-Forwarded-For` or `Forwarded` headers the proxy sends to the backend from outside; a test endpoint that echoes its request headers shows them.
+
 ## About this page
 
 - One browser and two backends of equal weight, chosen by round robin.

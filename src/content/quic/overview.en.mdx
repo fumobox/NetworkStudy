@@ -31,6 +31,22 @@ Each HTTP/3 request uses its own QUIC **stream**, and QUIC delivers each stream 
 - The **Packet numbers sent** table: three separate spaces, and the Initial and Handshake spaces being discarded.
 - In the “What if…” options: 0-RTT accepted or rejected, a lost first datagram (PTO), and a lost packet of stream 0 (stream 4 is not held back).
 
+## Try it yourself
+
+```sh
+curl -sI https://www.cloudflare.com/ | grep -i '^alt-svc'
+```
+
+Output (macOS 26, 2026-09-29):
+
+```
+$ curl -sI https://www.cloudflare.com/ | grep -i '^alt-svc'
+alt-svc: h3=":443"; ma=86400
+```
+
+- The first request goes over TCP. The `alt-svc` header announces that the same site also speaks HTTP/3 (`h3`) on UDP port 443, and that the browser may remember this for a day (`ma=86400`). The next connection can then use QUIC.
+- The curl that comes with macOS is built without HTTP/3; a curl built with it can try `curl --http3 -sI https://www.cloudflare.com/`. In a browser, the Network panel’s Protocol column shows `h3`. In Wireshark, the display filter `quic` shows QUIC packets; like TLS, their contents are encrypted.
+
 ## About this page
 
 One message is drawn as one QUIC packet; the description says when packets share a datagram. Retry, version negotiation, header protection, connection migration, key updates, congestion control, the server’s acknowledgment of the Handshake packet, and HTTP/3’s control streams and QPACK are left out. Browsers learn that a server supports HTTP/3 from an `Alt-Svc` header or a DNS record, which is not shown. Packet sizes are examples.

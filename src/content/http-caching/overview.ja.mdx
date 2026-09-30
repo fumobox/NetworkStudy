@@ -27,6 +27,31 @@
 - 何も送らないステップ。保存した応答をそのまま使っている。
 - 「もしも…」のオプションで、`no-cache` と `no-store`、途中で新しい版が公開される場合（新しいうちは更新に気づかず、古くなってから気づく）。
 
+## 手元で試す
+
+`curl -I` はヘッダーだけを求める。`Last-Modified` の値を `If-Modified-Since` で返すと、サーバーは 304 で答える。
+
+```sh
+curl -sI https://example.com/
+curl -sI -H 'If-Modified-Since: Mon, 28 Sep 2026 16:19:32 GMT' https://example.com/
+```
+
+出力の一部（macOS 26、2026-09-29。日付は最初の要求で表示されたものを使う）:
+
+```
+$ curl -sI https://example.com/
+HTTP/2 200
+last-modified: Mon, 28 Sep 2026 16:19:32 GMT
+age: 2872
+cf-cache-status: HIT
+$ curl -sI -H 'If-Modified-Since: Mon, 28 Sep 2026 16:19:32 GMT' https://example.com/
+HTTP/2 304
+```
+
+- 304 には本文がない。「持っているものはまだ最新」という意味で、ステップ実行の再検証と同じ。`ETag` を送るサーバーなら、`If-None-Match` で同じように再検証できる。
+- `age` は、応答が共有キャッシュ（ここでは CDN。`cf-cache-status: HIT` は Cloudflare 独自のヘッダー）に入ってからの秒数。このサーバーは `Cache-Control` を送らないので、キャッシュは経験則に頼る。
+- Linux でも同じコマンドが使える。ブラウザーでは、開発者ツールの Network のパネルで、状態（304）や、ブラウザーのキャッシュから来たかどうかが見える。
+
 ## このページについて
 
 ブラウザー自身の（プライベートな）キャッシュだけを描いている。CDN などの共有キャッシュ、`s-maxage`、`Vary` は扱わない。検証に使う値は ETag だけにした。サーバーは `Last-Modified` と `If-Modified-Since` も使える。`max-age` も `Expires` もない応答も、経験則でしばらく新しいとみなされることがあり、古い `Expires` ヘッダーは `max-age` と同じように働く。Age は応答が届いてからの時間として表し、`Date` と `Age` のヘッダーの計算は省いた。ヘッダーを読めるよう HTTP は暗号化せずに描いているが、実際は HTTPS の上で送る（HTTPS のテーマを参照）。

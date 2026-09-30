@@ -27,6 +27,31 @@ Despite its name, `no-cache` does store the response. Use `no-store` for respons
 - The steps where nothing is sent: the stored response is used directly.
 - In the “What if…” options: `no-cache` and `no-store`, and a new version deployed in between (a fresh copy hides the update until it becomes stale).
 
+## Try it yourself
+
+`curl -I` asks for the headers only. Send the `Last-Modified` value back as `If-Modified-Since`, and the server answers with 304:
+
+```sh
+curl -sI https://example.com/
+curl -sI -H 'If-Modified-Since: Mon, 28 Sep 2026 16:19:32 GMT' https://example.com/
+```
+
+Trimmed output (macOS 26, 2026-09-29; use the date your first request printed):
+
+```
+$ curl -sI https://example.com/
+HTTP/2 200
+last-modified: Mon, 28 Sep 2026 16:19:32 GMT
+age: 2872
+cf-cache-status: HIT
+$ curl -sI -H 'If-Modified-Since: Mon, 28 Sep 2026 16:19:32 GMT' https://example.com/
+HTTP/2 304
+```
+
+- The 304 has no body: “what you have is still current”, as in the revalidation of the walkthrough. A server that sends an `ETag` can be revalidated the same way with `If-None-Match`.
+- `age` says how many seconds the response has been in a shared cache (here a CDN; `cf-cache-status: HIT` is Cloudflare’s own header). This server sends no `Cache-Control`, so caches fall back on heuristics.
+- The same commands work on Linux. In a browser, the developer tools’ Network panel shows the status (304) and whether a response came from the browser’s cache.
+
 ## About this page
 
 Only the browser’s own (private) cache is shown; shared caches such as CDNs, `s-maxage` and `Vary` are left out. The only validator here is ETag; servers can also use `Last-Modified` with `If-Modified-Since`. Responses with neither `max-age` nor `Expires` may be treated as fresh for a while by a heuristic, and the older `Expires` header works like `max-age`. Age is shown as the time since the response arrived, without the `Date` and `Age` header arithmetic. HTTP is drawn unencrypted so the headers are readable; in practice it runs over HTTPS (see the HTTPS theme).

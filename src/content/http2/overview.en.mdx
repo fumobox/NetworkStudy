@@ -24,6 +24,25 @@ All streams still share one TCP connection, and TCP delivers bytes strictly in o
 - The order of `DATA` frames: style.css finishes first even though it was requested together with the others.
 - In the “What if…” options: HTTP/1.1 for comparison, and a lost packet (the TCP receive buffer holds hero.jpg until app.js is resent).
 
+## Try it yourself
+
+```sh
+curl -sI --http1.1 https://example.com/ | head -1
+curl -sI https://example.com/ | head -1
+```
+
+Output (macOS 26, 2026-09-29):
+
+```
+$ curl -sI --http1.1 https://example.com/ | head -1
+HTTP/1.1 200 OK
+$ curl -sI https://example.com/ | head -1
+HTTP/2 200
+```
+
+- The same server speaks both. Without an option, curl offers `h2` in ALPN during the TLS handshake and the server accepts it; `curl -v` shows the lines `ALPN: curl offers h2,http/1.1` and `ALPN: server accepted h2`.
+- In a browser’s developer tools, the Network panel can show a Protocol column (`h2`, `http/1.1`). In Wireshark, the display filter `http2` shows HTTP/2 frames, but only if Wireshark can decrypt the TLS (for example with the browser’s SSLKEYLOGFILE).
+
 ## About this page
 
 The TCP and TLS connection is already set up (HTTP/2 is chosen with ALPN during the TLS handshake). One message is drawn as one frame; in reality a frame is split into several TCP segments and only the lost segment is resent. The HTTP/1.1 responses are drawn in the same pieces for comparison. `WINDOW_UPDATE`, `SETTINGS` acknowledgments, `PRIORITY`, `PUSH_PROMISE` and `GOAWAY` are left out, HPACK is shown only as table numbers, and the loss is recovered by a 1-second RTO (fast retransmit is covered in the TCP congestion control theme).

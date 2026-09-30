@@ -103,6 +103,11 @@ SSE is ordinary HTTP, so it passes through proxies that would block a WebSocket'
   - the `queued` request with six HTTP/1.1 tabs;
   - streams 1 to 13 on one HTTP/2 connection.
 
+## Try it yourself
+
+- `curl -N -H 'Accept: text/event-stream' https://your-server.example/events` prints an event stream as it arrives: `-N` turns off curl’s own buffering. Use an endpoint you run yourself; you will see the `data:`, `event:` and `id:` lines and the blank lines between events.
+- In Chrome’s developer tools, select the request in the Network panel: the EventStream tab lists each event with its type, data and ID.
+
 ## About this page
 
 - TCP and TLS are assumed to be set up, and HTTP is shown unencrypted so that it can be read (in practice it is https). Only TCP's FIN is drawn.

@@ -24,6 +24,25 @@ HTTP/2 はすべてをバイナリの**フレーム**に分け、要求ごとに
 - `DATA` フレームの順番。style.css はほかと一緒に要求したのに、最初に届き終わる。
 - 「もしも…」のオプションで、比べるための HTTP/1.1 と、パケットのロス（app.js が再送されるまで、TCP の受信バッファーが hero.jpg を止める）。
 
+## 手元で試す
+
+```sh
+curl -sI --http1.1 https://example.com/ | head -1
+curl -sI https://example.com/ | head -1
+```
+
+出力（macOS 26、2026-09-29）:
+
+```
+$ curl -sI --http1.1 https://example.com/ | head -1
+HTTP/1.1 200 OK
+$ curl -sI https://example.com/ | head -1
+HTTP/2 200
+```
+
+- 同じサーバーが両方を話す。オプションなしなら、curl は TLS のハンドシェイクで ALPN に `h2` を申し出て、サーバーが受け入れる。`curl -v` では `ALPN: curl offers h2,http/1.1` と `ALPN: server accepted h2` の行が見える。
+- ブラウザーの開発者ツールでは、Network のパネルに Protocol の列（`h2`、`http/1.1`）を出せる。Wireshark では、表示フィルター `http2` で HTTP/2 のフレームが見えるが、Wireshark が TLS を復号できるとき（たとえばブラウザーの SSLKEYLOGFILE を使う）だけ。
+
 ## このページについて
 
 TCP と TLS の接続はすでにできているものとした（HTTP/2 は TLS のハンドシェイクで ALPN により選ぶ）。1 つのメッセージを 1 つのフレームとして描いているが、実際のフレームは複数の TCP セグメントに分かれ、再送されるのは失われたセグメントだけ。HTTP/1.1 の応答も、比べやすいよう同じ大きさに分けて描いた。`WINDOW_UPDATE`、`SETTINGS` への確認応答、`PRIORITY`、`PUSH_PROMISE`、`GOAWAY` は省き、HPACK は表の番号だけを示した。ロスは 1 秒の RTO で回復させている（高速再送は TCP の輻輳制御のテーマで扱う）。

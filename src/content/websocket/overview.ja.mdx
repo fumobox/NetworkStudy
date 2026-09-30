@@ -77,6 +77,13 @@ HTTP/2 と HTTP/3 には、101 も Upgrade のヘッダーもない。そこで�
 - サーバーが最初の **TCP FIN** を送ること。
 - 「もしも…」のオプションで、**誤った Accept**（Close フレームなし、1006）、写真を**フラグメント**で送る場合（message のイベントは 1 回）、**接続が切れる**場合（ブラウザーは OPEN のまま）。
 
+## 手元で試す
+
+WebSocket のための組み込みのコマンドはないが、ブラウザーでよく見える。
+
+- WebSocket を使うページ（チャットやライブのダッシュボード）で開発者ツールの Network のパネルを開き、`WS` で絞り込む。要求は `101 Switching Protocols` で、`Upgrade`、`Sec-WebSocket-Key`、`Sec-WebSocket-Accept` のヘッダーが見え、Messages のタブに送り受けしたフレームが並ぶ。
+- Wireshark では、表示フィルター `websocket` で、暗号化しない `ws://` の接続のフレームが見える。`wss://` なら、先に TLS を復号する必要がある。
+
 ## 参考
 
 - [RFC 6455: The WebSocket Protocol](https://www.rfc-editor.org/rfc/rfc6455) — §1.3「Opening Handshake」、§5「Data Framing」、§7「Closing the Connection」、§10「Security Considerations」

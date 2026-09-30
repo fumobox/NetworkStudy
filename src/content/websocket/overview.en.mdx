@@ -77,6 +77,13 @@ HTTP/2 and HTTP/3 have no 101 and no Upgrade header. There, WebSocket uses an ex
 - The server sending the first **TCP FIN**.
 - In “What if…”, a **wrong Accept** (no Close frame, 1006), a photo sent in **fragments** (one message event), and a **lost connection** (the browser still says OPEN).
 
+## Try it yourself
+
+There is no built-in command for WebSocket, but a browser shows it well:
+
+- Open the developer tools’ Network panel on a page that uses WebSocket (a chat or a live dashboard) and filter by `WS`. The request shows `101 Switching Protocols` with the `Upgrade`, `Sec-WebSocket-Key` and `Sec-WebSocket-Accept` headers, and the Messages tab lists every frame sent and received.
+- In Wireshark, the display filter `websocket` shows the frames of an unencrypted `ws://` connection. For `wss://`, Wireshark first needs to decrypt the TLS.
+
 ## References
 
 - [RFC 6455: The WebSocket Protocol](https://www.rfc-editor.org/rfc/rfc6455) — §1.3 “Opening Handshake”, §5 “Data Framing”, §7 “Closing the Connection”, §10 “Security Considerations”

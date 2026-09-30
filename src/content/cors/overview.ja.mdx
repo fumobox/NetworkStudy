@@ -26,6 +26,37 @@ CORS を強制するのは**ブラウザー**で、サーバーではない。�
 - プリフライトが通ったあとに埋まる**プリフライトのキャッシュ**。
 - 「もしも…」のオプションで、ふつうの GET（プリフライトなし）、`*` を返すサーバーと何も返さないサーバー、Cookie を送る場合。
 
+## 手元で試す
+
+curl はブラウザーではない。すべてを送り受け取り、CORS の規則は何も強制しない。それでも、ブラウザーが送るヘッダーを付けて、サーバーの答えを読める。ここでは GitHub の公開の API を使う。
+
+```sh
+curl -sI -H 'Origin: https://example.org' https://api.github.com/zen
+curl -si -X OPTIONS -H 'Origin: https://example.org' \
+  -H 'Access-Control-Request-Method: PUT' \
+  -H 'Access-Control-Request-Headers: authorization' https://api.github.com/zen
+```
+
+出力の一部（macOS 26、2026-09-29）:
+
+```
+$ curl -sI -H 'Origin: https://example.org' https://api.github.com/zen
+HTTP/2 200
+access-control-allow-origin: *
+$ curl -si -X OPTIONS -H 'Origin: https://example.org' \
+    -H 'Access-Control-Request-Method: PUT' \
+    -H 'Access-Control-Request-Headers: authorization' https://api.github.com/zen
+HTTP/2 204
+access-control-max-age: 86400
+access-control-allow-headers: Authorization, Content-Type, If-Match, …
+access-control-allow-methods: GET, POST, PATCH, PUT, DELETE
+access-control-allow-origin: *
+```
+
+- 1 つ目は単純な要求。`access-control-allow-origin: *` は、どのオリジンのページにも（資格情報なしで）応答を読ませる。
+- 2 つ目は、`Authorization` のヘッダーを付けた `PUT` の前にブラウザーが送るプリフライト。204 で許すメソッドとヘッダーを答え、`access-control-max-age: 86400` でブラウザーに答えを最長 1 日キャッシュさせる（ブラウザーには上限がある）。
+- ブラウザーでは、開発者ツールの Network のパネルにプリフライトが別の `OPTIONS` の要求として現れ、止められた要求は Console に CORS のエラーとして出る。
+
 ## このページについて
 
 ページのオリジンは 1 つだけにした。`Access-Control-Expose-Headers`、リダイレクト、Private Network Access は扱わず、ブラウザーが `Access-Control-Max-Age` に設ける上限も省いた。ヘッダーを読めるよう HTTP は暗号化せずに描いているが、実際は HTTPS の上で送る。
