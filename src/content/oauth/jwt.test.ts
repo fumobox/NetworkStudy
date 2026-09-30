@@ -64,9 +64,19 @@ describe('jwt', () => {
     expect(validateIdToken({ ...base, claims: ID_CLAIMS, nonce: null, now: NOW + 3600 }).ok).toBe(
       false,
     )
-    const unrequested = validateIdToken({ ...base, claims: ID_CLAIMS, nonce: null })
+    const withoutNonce = {
+      iss: ID_CLAIMS.iss,
+      sub: ID_CLAIMS.sub,
+      aud: ID_CLAIMS.aud,
+      exp: ID_CLAIMS.exp,
+      iat: ID_CLAIMS.iat,
+    }
+    const unrequested = validateIdToken({ ...base, claims: withoutNonce, nonce: null })
     expect(unrequested.ok).toBe(true)
-    expect(unrequested.rows[4]).toEqual(['nonce', 'n-0S6_WzA2Mj', 'not requested'])
+    expect(unrequested.rows[4]).toEqual(['nonce', '-', 'not requested'])
+    const unexpected = validateIdToken({ ...base, claims: ID_CLAIMS, nonce: null })
+    expect(unexpected.ok).toBe(false)
+    expect(unexpected.rows[4]).toEqual(['nonce', 'n-0S6_WzA2Mj', 'unexpected'])
   })
 
   it('アクセストークン（RFC 9068 §4）', () => {

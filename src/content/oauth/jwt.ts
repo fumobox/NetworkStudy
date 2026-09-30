@@ -24,7 +24,7 @@ export interface IdTokenClaims {
 
 export type ClaimRow = readonly [claim: string, value: string, check: string]
 
-/** ID トークンの確かめの行。nonce を送っていなければ確かめられない（not requested） */
+/** ID トークンの確かめの行。nonce を送っていなければ確かめられない（not requested）。送っていないのに入っていたら拒む（OIDC Core §2） */
 export function validateIdToken(input: {
   readonly claims: IdTokenClaims
   readonly issuer: string
@@ -41,7 +41,13 @@ export function validateIdToken(input: {
     [
       'nonce',
       claims.nonce ?? '-',
-      nonce === null ? 'not requested' : claims.nonce === nonce ? 'OK' : 'mismatch',
+      nonce === null
+        ? claims.nonce === undefined
+          ? 'not requested'
+          : 'unexpected'
+        : claims.nonce === nonce
+          ? 'OK'
+          : 'mismatch',
     ],
   ]
   return { ok: rows.every(([, , check]) => check === 'OK' || check === 'not requested'), rows }
