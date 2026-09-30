@@ -103,6 +103,11 @@ SSE は普通の HTTP なので、WebSocket の Upgrade を止めてしまうプ
   - HTTP/1.1 の 6 つのタブで待たされる要求（`queued`）。
   - 1 本の HTTP/2 の接続の中のストリーム 1〜13。
 
+## 手元で試す
+
+- `curl -N -H 'Accept: text/event-stream' https://your-server.example/events` は、届いたそばからイベントストリームを表示する（`-N` は curl 自身のバッファリングを止める）。自分で動かしているエンドポイントを使う。`data:`、`event:`、`id:` の行と、イベントの間の空行が見える。
+- Chrome の開発者ツールでは、Network のパネルでリクエストを選ぶと、EventStream のタブに各イベントの種類、データ、ID が並ぶ。
+
 ## このページについて
 
 - TCP と TLS の接続はできているものとし、HTTP は読めるよう暗号化せずに描く（実際は https）。TCP は FIN だけを描く。

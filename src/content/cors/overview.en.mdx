@@ -26,6 +26,37 @@ The **browser** enforces CORS, not the server. When the check fails, the script 
 - The **preflight cache** filling in after a successful preflight.
 - In the “What if…” options: a plain GET (no preflight), a server that allows `*` or nothing, and sending cookies.
 
+## Try it yourself
+
+curl is not a browser: it sends and receives everything and enforces no CORS rules. But you can send the headers a browser would and read the server’s answer, here from GitHub’s public API:
+
+```sh
+curl -sI -H 'Origin: https://example.org' https://api.github.com/zen
+curl -si -X OPTIONS -H 'Origin: https://example.org' \
+  -H 'Access-Control-Request-Method: PUT' \
+  -H 'Access-Control-Request-Headers: authorization' https://api.github.com/zen
+```
+
+Trimmed output (macOS 26, 2026-09-29):
+
+```
+$ curl -sI -H 'Origin: https://example.org' https://api.github.com/zen
+HTTP/2 200
+access-control-allow-origin: *
+$ curl -si -X OPTIONS -H 'Origin: https://example.org' \
+    -H 'Access-Control-Request-Method: PUT' \
+    -H 'Access-Control-Request-Headers: authorization' https://api.github.com/zen
+HTTP/2 204
+access-control-max-age: 86400
+access-control-allow-headers: Authorization, Content-Type, If-Match, …
+access-control-allow-methods: GET, POST, PATCH, PUT, DELETE
+access-control-allow-origin: *
+```
+
+- The first is a simple request: `access-control-allow-origin: *` lets a page from any origin read the response (without credentials).
+- The second is the preflight a browser sends before a `PUT` with an `Authorization` header. The 204 answers with the allowed methods and headers, and `access-control-max-age: 86400` lets the browser cache the answer for a day.
+- In a browser, the developer tools show a preflight as a separate `OPTIONS` request in the Network panel, and a blocked request as a CORS error in the Console.
+
 ## About this page
 
 There is one page origin. `Access-Control-Expose-Headers`, redirects and Private Network Access are left out, and so are the limits browsers put on `Access-Control-Max-Age`. HTTP is drawn unencrypted so the headers are readable; in practice it runs over HTTPS.
