@@ -112,7 +112,7 @@ Transmit Rate: 229
 ```
 
 - **PHY Mode** 802.11ax is Wi-Fi 6. **Channel** 6 is in the 2.4 GHz band and 20 MHz wide. **Security** WPA2 Personal means the keys came from a passphrase through the 4-way handshake of the walkthrough.
-- **Signal / Noise** in dBm: the difference (42 dB here) largely decides how fast the link can go; **Transmit Rate** is the current rate in Mbit/s.
+- **Signal / Noise** in dBm: the difference (42 dB here) largely decides how fast the link can go; **Transmit Rate** is the current rate in Mb/s.
 - On Linux, `iw dev wlan0 link` shows the connected AP, the frequency and the signal. In Wireshark, the display filter `eapol` shows the 4-way handshake, but only when capturing 802.11 frames in monitor mode; a normal capture sees the traffic as Ethernet.
 
 ## About this page

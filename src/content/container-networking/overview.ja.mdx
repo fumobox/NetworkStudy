@@ -64,7 +64,7 @@ veth ペアのホスト側の端は、Linux の**ブリッジ**につながる�
 
 ## 手元で試す
 
-これらは Linux の Docker 向けのコマンド。macOS と Windows の Docker Desktop はすべてを VM の中で動かすので、ブリッジは手元のコンピューターからは見えない。どれも設定を読むだけ。
+これらは Linux の Docker 向けのコマンド。macOS と Windows の Docker Desktop はすべてを VM の中で動かすので、ブリッジは手元のコンピューターからは見えない。最初の 3 つは設定を読むだけ。最後のものは使い捨てのコンテナーを 1 つ動かす（初回は小さな alpine のイメージをダウンロードする）。
 
 ```sh
 docker network inspect bridge

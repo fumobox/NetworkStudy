@@ -64,7 +64,7 @@ On a **user-defined network** (`docker network create`), Docker also gives each 
 
 ## Try it yourself
 
-These commands are for Docker on Linux. Docker Desktop on macOS and Windows runs everything inside a VM, so its bridge is not visible on your computer. They only read the configuration:
+These commands are for Docker on Linux. Docker Desktop on macOS and Windows runs everything inside a VM, so its bridge is not visible on your computer. The first three only read the configuration; the last starts a throwaway container (it downloads the small alpine image the first time):
 
 ```sh
 docker network inspect bridge

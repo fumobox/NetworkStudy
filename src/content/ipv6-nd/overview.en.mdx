@@ -35,21 +35,21 @@ ifconfig en0 inet6
 ndp -an
 ```
 
-Trimmed output (macOS 26, 2026-09-29). The global prefix and the MAC addresses are replaced with the values used in this theme (2001:db8:1::/64).
+Trimmed output (macOS 26, 2026-09-29). The addresses and MAC addresses are replaced with made-up values in this theme’s prefix (2001:db8:1::/64).
 
 ```
 $ ifconfig en0 inet6
-inet6 fe80::1c38:fd23:1cb8:916d%en0 prefixlen 64 secured scopeid 0xb
-inet6 2001:db8:1:0:c35:c0f1:eb7c:c74e prefixlen 64 autoconf secured
-inet6 2001:db8:1:0:94b9:2864:3e2e:f8a9 prefixlen 64 deprecated autoconf temporary
-inet6 2001:db8:1:0:c1a:4e0f:fe40:740a prefixlen 64 autoconf temporary
+inet6 fe80::a1b2:c3d4:e5f6:1%en0 prefixlen 64 secured scopeid 0xb
+inet6 2001:db8:1:0:5c1e:7a2b:9d04:3e61 prefixlen 64 autoconf secured
+inet6 2001:db8:1:0:8f3a:2c6d:b1e0:47d9 prefixlen 64 deprecated autoconf temporary
+inet6 2001:db8:1:0:e27b:15f8:6c90:a3b2 prefixlen 64 autoconf temporary
 $ ndp -an
 Neighbor                    Linklayer Address  Netif Expire    St
-2001:db8:1:0:4d1:e319:1180:84ff 00:00:5e:00:53:14  en0 21h33m13s S
-2001:db8:1:0:c35:c0f1:eb7c:c74e 00:00:5e:00:53:0a  en0 permanent R
+2001:db8:1:0:200:5eff:fe00:5314 00:00:5e:00:53:14  en0 21h33m13s S
+2001:db8:1:0:5c1e:7a2b:9d04:3e61 00:00:5e:00:53:0a  en0 permanent R
 ```
 
-- The `fe80::` address is the link-local one. The others were made by SLAAC (`autoconf`) from the prefix in the Router Advertisement. macOS picks random interface IDs instead of EUI-64: a `secured` address stays the same on this network (RFC 7217), and `temporary` ones change regularly for privacy (RFC 8981). An older temporary address is `deprecated`: still valid, but no longer used for new connections.
+- The `fe80::` address is the link-local one. The others were made by SLAAC (`autoconf`) from the prefix in the Router Advertisement. macOS does not use EUI-64: a `secured` address is a cryptographically generated address (CGA, RFC 3972) made from a key kept on this computer and the prefix, so it stays the same on this network; `temporary` ones are random and change regularly for privacy (RFC 8981). An older temporary address is `deprecated`: still valid, but no longer used for new connections.
 - `ndp -an` is the neighbor cache. `St` is the state: R (REACHABLE) and S (STALE); `permanent` rows are the computer’s own addresses.
 - On Linux, `ip -6 addr` and `ip -6 neigh` show the same. In Wireshark, the display filter `icmpv6.type >= 133 && icmpv6.type <= 137` shows the Neighbor Discovery messages (RS, RA, NS, NA, Redirect).
 

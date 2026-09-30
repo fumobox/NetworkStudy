@@ -101,7 +101,7 @@ AP がなくても、STA どうしで **IBSS**（independent BSS）を作れる�
 system_profiler SPAirPortDataType
 ```
 
-今のネットワークについての出力の一部（macOS 26、2026-09-29。macOS はネットワークの名前を隠す）:
+今のネットワークについての出力の一部（macOS 26、2026-09-29。macOS はネットワークの名前を隠す）。
 
 ```
 PHY Mode: 802.11ax
@@ -112,7 +112,7 @@ Transmit Rate: 229
 ```
 
 - **PHY Mode** の 802.11ax は Wi-Fi 6。**Channel** の 6 は 2.4 GHz の帯で、幅は 20 MHz。**Security** の WPA2 Personal は、鍵がパスフレーズから、ウォークスルーの 4 ウェイハンドシェイクでできたこと。
-- **Signal / Noise** は dBm。その差（ここでは 42 dB）が、リンクの速さをおおむね決める。**Transmit Rate** は今の速さ（Mbit/s）。
+- **Signal / Noise** は dBm。その差（ここでは 42 dB）が、リンクの速さをおおむね決める。**Transmit Rate** は今の速さ（Mb/s）。
 - Linux では、`iw dev wlan0 link` がつながっている AP、周波数、信号の強さを表示する。Wireshark では、表示フィルター `eapol` で 4 ウェイハンドシェイクが見えるが、モニターモードで 802.11 のフレームをキャプチャーしたときだけ。ふつうのキャプチャーでは、通信は Ethernet に見える。
 
 ## このページについて
