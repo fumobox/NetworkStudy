@@ -16,6 +16,22 @@ TCP はデータを確実に届けるが、ネットワークが運べる以上�
 
 この「ゆっくり増やし、ロスで半分にする」やり方を **AIMD**（加算的増加・乗算的減少）といい、グラフのノコギリの歯のような形になる。
 
+## 手元で試す
+
+```sh
+sysctl net.inet.tcp.use_newreno
+```
+
+出力（macOS 26、2026-09-29）:
+
+```
+$ sysctl net.inet.tcp.use_newreno
+net.inet.tcp.use_newreno: 0
+```
+
+- 0 は macOS が NewReno を使わないこと。macOS の TCP は既定で CUBIC（RFC 9438）を使う。このページのスロースタートと、ロスへの反応は同じ考え方で、CUBIC はロスの後の cwnd の増やし方が違うだけ。
+- Linux では、`sysctl net.ipv4.tcp_congestion_control` がアルゴリズム（ふつうは `cubic`）を、`ss -ti` が各接続の今の `cwnd`、`ssthresh`、RTT（このページが描く値）を表示する。Wireshark では、「統計」→「TCP ストリームグラフ」→「Stevens」で、接続のシーケンス番号の伸び方が見える。
+
 ## このページについて
 
 このページは RFC 5681 の TCP Reno にならい、単純にしている。バイトではなくセグメントで数え、1 往復を 1 ステップにまとめ、cwnd = 1、ssthresh = 8 から始める。今の OS はたいてい別のアルゴリズム（Linux なら CUBIC、RFC 9438）を使っているが、重複 ACK やタイムアウトへの反応の考え方は同じ。

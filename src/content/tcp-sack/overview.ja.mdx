@@ -28,6 +28,24 @@ TCP の ACK は**累積**の確認応答で、Ack の番号は、受信側がま
 - 送信側の**スコアボード**（in flight、ACKed、SACKed、retransmitted）。
 - 「もしも…」のオプションで、**累積の確認応答だけ**の場合（部分的な確認応答で 1 往復かかる）、失われるのが **1 つ**の場合、**最後の**セグメントが失われる場合（RTO を待つしかない）。
 
+## 手元で試す
+
+```sh
+sysctl net.inet.tcp.sack
+netstat -s -p tcp
+```
+
+最初のコマンドの出力（macOS 26、2026-09-29）:
+
+```
+$ sysctl net.inet.tcp.sack
+net.inet.tcp.sack: 1
+```
+
+- 1 は SACK が有効なこと。SYN で SACK-permitted を申し出て、相手が同意すれば、ACK に SACK のブロックを付けられる。
+- `netstat -s -p tcp` の出力のうち、「data packet … retransmitted」「duplicate ack」「SACK recovery episode」「segment rexmit in SACK recovery episodes」の行が、コンピューターが起動してから、このページが描く出来事を数えている。
+- Linux では、`sysctl net.ipv4.tcp_sack` が同じ設定を、`nstat -az | grep -i sack` が数を表示する。Wireshark では、表示フィルター `tcp.options.sack_le` で SACK のブロックを付けた ACK が、`tcp.analysis.retransmission || tcp.analysis.fast_retransmission` で再送が見える。
+
 ## 参考
 
 - [RFC 5681: TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681) — §3.2「Fast Retransmit/Fast Recovery」
