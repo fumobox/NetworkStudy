@@ -17,7 +17,7 @@ The client here is a web application with a server: a **confidential client**, w
 
 ## The authorization code flow
 
-1. The client sends Alice’s browser to the authorization server with an **authorization request**: `response_type=code`, its `client_id`, its `redirect_uri`, the `scope` it wants, and the random values `state`, `nonce` and `code_challenge`.
+1. The client sends Alice’s browser to the authorization server with an **authorization request**: `response_type=code`, its `client_id`, its `redirect_uri`, the `scope` it wants, the random values `state` and `nonce`, and the `code_challenge`.
 2. Alice logs in at the authorization server and consents. The client never sees her password.
 3. The authorization server sends the browser back to the `redirect_uri` with an **authorization code**, the same `state`, and `iss` (RFC 9207).
 4. The client checks `state` and `iss`, then sends the code to the **token endpoint**, authenticating itself and adding the `code_verifier`.
@@ -85,9 +85,9 @@ OAuth 2.1 is an IETF draft (as of September 2026, draft-ietf-oauth-v2-1-16, not 
 
 ## What to look for in the walkthrough
 
-- **Values that passed through the browser**: state, nonce, the code_challenge and the code, and nothing else.
+- **Values that passed through the browser**: state, nonce, the code_challenge and the code (with the other parameters in the URLs). The code_verifier, the client secret and the three tokens never do.
 - The fields of each message: the query parameters of the authorization request and response, `Authorization: Basic` and `code_verifier` in the token request, and `Cache-Control: no-store` on the token response.
-- The client’s **Sessions**, **ID token checks** and **Tokens**; the authorization server’s **Authorization codes** (with the challenge) and **Refresh tokens**; the resource server’s **Access token checks**.
+- The client’s **Sessions**, **ID token checks** and **Tokens it holds**; the authorization server’s **Authorization codes** (with the challenge) and **Refresh tokens**; the resource server’s **Access token checks**.
 - In the “What if…” options:
   - `state` does not match: Mallory’s code delivered by Alice’s browser (login CSRF);
   - without PKCE: Alice’s leaked code injected into Mallory’s session, and what PKCE and nonce would have done;

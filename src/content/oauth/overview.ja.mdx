@@ -17,7 +17,7 @@ OAuth が扱うのは**認可**、つまりクライアントが何をしてよ�
 
 ## 認可コードフロー
 
-1. クライアントはアリスのブラウザーを、**認可要求**を付けて認可サーバーへ送る。`response_type=code`、自分の `client_id`、`redirect_uri`、求める `scope`、乱数の `state`・`nonce`・`code_challenge`。
+1. クライアントはアリスのブラウザーを、**認可要求**を付けて認可サーバーへ送る。`response_type=code`、自分の `client_id`、`redirect_uri`、求める `scope`、乱数の `state` と `nonce`、`code_challenge`。
 2. アリスは認可サーバーでログインし、同意する。クライアントはアリスのパスワードを見ない。
 3. 認可サーバーはブラウザーを、**認可コード**、同じ `state`、`iss`（RFC 9207）を付けて `redirect_uri` へ戻す。
 4. クライアントは `state` と `iss` を確かめ、コードを**トークンエンドポイント**に送る。自分を認証し、`code_verifier` を添える。
@@ -85,7 +85,7 @@ OAuth 2.1 は IETF の草案（2026 年 9 月の時点で draft-ietf-oauth-v2-1-
 
 ## ウォークスルーで見るところ
 
-- **ブラウザーを通った値**。state、nonce、code_challenge、コードだけで、ほかは何もない。
+- **ブラウザーを通った値**。state、nonce、code_challenge、コード（と URL のほかのパラメーター）。code_verifier、クライアントの秘密、3 つのトークンは決して通らない。
 - 各メッセージのフィールド。認可要求と認可応答のクエリのパラメーター、トークン要求の `Authorization: Basic` と `code_verifier`、トークン応答の `Cache-Control: no-store`。
 - クライアントの**セッション**、**ID トークンの確かめ**、**持っているトークン**。認可サーバーの**認可コード**（code_challenge とともに）と**リフレッシュトークン**。リソースサーバーの**アクセストークンの確かめ**。
 - 「もしも…」の選択肢:
