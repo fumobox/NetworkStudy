@@ -32,6 +32,33 @@ The keys, key tags and digests on this page are made up; IANA publishes the real
 - The **last signature check**, and the **AD** bit in the final answer.
 - In “What if…”, an **unsigned** zone (Insecure), an answer **altered** on the way or **expired** signatures (Bogus, SERVFAIL), and a PC that sets **CD**.
 
+## Try it yourself
+
+`+dnssec` asks for the signatures too (the DO bit), here from a validating resolver:
+
+```sh
+dig @1.1.1.1 +dnssec cloudflare.com A
+dig @1.1.1.1 cloudflare.com A
+```
+
+Trimmed output (macOS 26, 2026-09-30):
+
+```
+$ dig @1.1.1.1 +dnssec cloudflare.com A
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+; EDNS: version: 0, flags: do; udp: 1232
+cloudflare.com.  107  IN  A      104.16.132.229
+cloudflare.com.  107  IN  A      104.16.133.229
+cloudflare.com.  107  IN  RRSIG  A 13 2 300 20261001062904 20260929042904 34505 cloudflare.com. …
+$ dig @1.1.1.1 cloudflare.com A
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+; EDNS: version: 0, flags:; udp: 1232
+```
+
+- The `ad` flag means the resolver validated the answer: it followed the chain of trust from the root, as in the walkthrough. Without `+dnssec`, the EDNS flags have no `do`, and the RRSIG is left out. `ad` is still there, because dig sets the AD bit in its query by default (RFC 6840 §5.7); `+noadflag` turns that off.
+- The RRSIG covers the A records: algorithm 13 (ECDSAP256SHA256), 2 labels, the original TTL 300, the expiration and the inception time (about two days apart here), the key tag 34505 of the DNSKEY that signed it, and the signer’s name.
+- `dig +dnssec DNSKEY cloudflare.com` and `dig +dnssec DS cloudflare.com` show the keys and the delegation signer one level up. On Linux, `delv cloudflare.com` validates by itself and prints “fully validated”. In Wireshark, the filter `dns.flags.authenticated == 1` shows answers with `ad`.
+
 ## References
 
 - [RFC 4033: DNS Security Introduction and Requirements](https://www.rfc-editor.org/rfc/rfc4033) — §4 “Services Not Provided by DNS Security”

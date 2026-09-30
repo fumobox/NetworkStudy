@@ -73,6 +73,22 @@ HSTS が効くのは、ブラウザーが一度 https でヘッダーを受け�
   - 更新される記録。
 - 攻撃者の証明書のとき: `unknown_ca` のアラートと、先へ進めないこと。
 
+## 手元で試す
+
+```sh
+curl -sI https://github.com/ | grep -i '^strict-transport-security'
+```
+
+出力（macOS 26、2026-09-30）:
+
+```
+$ curl -sI https://github.com/ | grep -i '^strict-transport-security'
+strict-transport-security: max-age=31536000; includeSubdomains; preload
+```
+
+- `max-age=31536000` は 1 年、`includeSubdomains` は規則をすべてのサブドメインに広げ、`preload` はプリロードリストに載ることに同意しているということ。このヘッダーが効くのは、https で届いたから。
+- Chrome が覚えているものは `chrome://net-internals/#hsts` で見える。「Query HSTS/PKP domain」にドメインを入れる。Firefox はプロファイルの `SiteSecurityServiceState` のファイルに同じものを持つ。[hstspreload.org](https://hstspreload.org/) で、ドメインがプリロードリストにあるかがわかる。
+
 ## このページについて
 
 - スキームを付けずに入力した名前は http で開く。ブラウザーが自動で https に上げるしくみは使わない。

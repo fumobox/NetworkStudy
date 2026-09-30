@@ -32,6 +32,33 @@ DNSSEC は、データの出どころと、書き換えられていないこと�
 - **最後の署名の検証**と、最後の答えの **AD** ビット。
 - 「もしも…」のオプションで、**署名のない**ゾーン（Insecure）、途中で**書き換えられた**答えや**期限切れ**の署名（Bogus、SERVFAIL）、PC が **CD** を立てる場合。
 
+## 手元で試す
+
+`+dnssec` は署名も求める（DO ビット）。ここでは検証するリゾルバーに問い合わせる。
+
+```sh
+dig @1.1.1.1 +dnssec cloudflare.com A
+dig @1.1.1.1 cloudflare.com A
+```
+
+出力の一部（macOS 26、2026-09-30）:
+
+```
+$ dig @1.1.1.1 +dnssec cloudflare.com A
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 3, AUTHORITY: 0, ADDITIONAL: 1
+; EDNS: version: 0, flags: do; udp: 1232
+cloudflare.com.  107  IN  A      104.16.132.229
+cloudflare.com.  107  IN  A      104.16.133.229
+cloudflare.com.  107  IN  RRSIG  A 13 2 300 20261001062904 20260929042904 34505 cloudflare.com. …
+$ dig @1.1.1.1 cloudflare.com A
+;; flags: qr rd ra ad; QUERY: 1, ANSWER: 2, AUTHORITY: 0, ADDITIONAL: 1
+; EDNS: version: 0, flags:; udp: 1232
+```
+
+- `ad` のフラグは、リゾルバーが答えを検証したこと。ステップ実行と同じく、ルートから信頼の連鎖をたどった。`+dnssec` を付けないと、EDNS のフラグに `do` がなく、RRSIG は返らない。それでも `ad` は付く。dig は既定で問い合わせに AD ビットを立てるから（RFC 6840 §5.7）。`+noadflag` で立てなくなる。
+- RRSIG は A レコードを覆う。アルゴリズム 13（ECDSAP256SHA256）、ラベルの数 2、元の TTL 300、有効期限と開始の時刻（ここでは約 2 日の間）、署名した DNSKEY の鍵タグ 34505、署名者の名前。
+- `dig +dnssec DNSKEY cloudflare.com` と `dig +dnssec DS cloudflare.com` で、鍵と 1 つ上の DS が見える。Linux では、`delv cloudflare.com` が自分で検証して「fully validated」と表示する。Wireshark では、フィルター `dns.flags.authenticated == 1` で `ad` の付いた答えが見える。
+
 ## 参考
 
 - [RFC 4033: DNS Security Introduction and Requirements](https://www.rfc-editor.org/rfc/rfc4033) — §4「Services Not Provided by DNS Security」

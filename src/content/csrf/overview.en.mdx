@@ -75,6 +75,26 @@ CORS decides whether a page may **read** a response from another origin. It does
 - The cookie jar, the bank's sessions and Alice's balance.
 - In the "What if…" options: Lax and Strict, a GET that moves money, a CSRF token, and a Fetch Metadata check.
 
+## Try it yourself
+
+The attributes of real cookies show the defenses of this page:
+
+```sh
+curl -sI https://github.com/ | grep -i '^set-cookie'
+```
+
+Output (macOS 26, 2026-09-30; the values are replaced with “…”):
+
+```
+$ curl -sI https://github.com/ | grep -i '^set-cookie'
+set-cookie: _gh_sess=…; path=/; HttpOnly; secure; SameSite=Lax
+set-cookie: _octo=…; expires=…; domain=.github.com; path=/; secure; SameSite=Lax
+set-cookie: logged_in=no; expires=…; domain=.github.com; path=/; HttpOnly; secure; SameSite=Lax
+```
+
+- Every cookie is `SameSite=Lax`: it is not sent on cross-site POSTs or subresource requests, only on top-level navigations with a safe method, as in the Lax option of the walkthrough. `secure` keeps them to https, and `HttpOnly` hides the session cookie from JavaScript.
+- In a browser’s developer tools, the Application (Storage) panel lists each cookie with its SameSite value, and the Network panel shows the `Sec-Fetch-Site` header on each request. The Fetch Metadata option of the walkthrough is built on it.
+
 ## About this page
 
 - One user and one attacker page. The form is submitted as a top-level navigation, not in a hidden iframe or popup as real attacks often do.

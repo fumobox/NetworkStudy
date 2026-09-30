@@ -32,6 +32,27 @@ A DMARC pass means the From domain is genuine; it does not mean the mail is harm
 - The three DNS lookups, and the receiver’s **checks** table filling in: SPF, DKIM, then the alignment for DMARC.
 - In “What if…”, a **forged** message, a **forwarded** one (SPF fails, DKIM saves it), a **mailing list** (SPF passes for the wrong domain, DKIM breaks), and the three **policies**.
 
+## Try it yourself
+
+SPF and DMARC policies are TXT records anyone can look up:
+
+```sh
+dig +short TXT example.com
+dig +short TXT _dmarc.example.com
+```
+
+Trimmed output (macOS 26, 2026-09-30; example.com also has an unrelated TXT record):
+
+```
+$ dig +short TXT example.com
+"v=spf1 -all"
+$ dig +short TXT _dmarc.example.com
+"v=DMARC1;p=reject;sp=reject;adkim=s;aspf=s"
+```
+
+- `v=spf1 -all` says no server at all may send mail for example.com: a domain that sends no mail can protect itself this way. `p=reject` asks receivers to reject messages that fail DMARC, `sp=reject` does the same for subdomains, and `adkim=s` and `aspf=s` require strict alignment.
+- A DKIM key is found from a received message: its `DKIM-Signature` header names the selector (`s=`) and the domain (`d=`), and the key is at `selector._domainkey.domain`. In a mail client, “show original” (or “view source”) shows the receiver’s `Authentication-Results` header with the results `spf=`, `dkim=` and `dmarc=`.
+
 ## References
 
 - [RFC 5321: Simple Mail Transfer Protocol](https://www.rfc-editor.org/rfc/rfc5321)
