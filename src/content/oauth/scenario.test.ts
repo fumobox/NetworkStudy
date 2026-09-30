@@ -246,11 +246,9 @@ describe('oauthScenario', () => {
       expect(field(byId(steps, 'token'), 'code_verifier')).toBe('(none)')
       const after = stateAt(steps, 'token-response')
       expect(after.as?.values.decision).toBe('no code_challenge on record: nothing to check')
-      expect(rows(after.client?.values.idToken)[4]).toEqual([
-        'nonce',
-        VALUES.nonce,
-        'not requested',
-      ])
+      expect(rows(after.client?.values.idToken)[4]).toEqual(['nonce', '-', 'not requested'])
+      // nonce を送っていないので、ID トークンにも入らない（OIDC Core §2）
+      expect(field(byId(steps, 'tokens'), 'ID token claims')).not.toContain('nonce')
       expect(rows(after.client?.values.sessions)).toEqual([
         [VALUES.sid, VALUES.state, '-', '-', '-'],
         [VALUES.mallorySid, VALUES.malloryState, '-', '-', 'alice (sub 24400320)'],

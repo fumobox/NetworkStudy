@@ -117,14 +117,15 @@ const LIFETIME_S = 3600
 const REFRESH_AT = NOW + LIFETIME_S + 300
 const KID = '2026-09-k1'
 
-const ID_CLAIMS: IdTokenClaims = {
+/** ID トークンのクレーム。nonce は認可要求で送ったときだけ入る（OIDC Core §2） */
+const idClaims = (withNonce: boolean): IdTokenClaims => ({
   iss: ISSUER,
   sub: VALUES.sub,
   aud: VALUES.clientId,
   exp: NOW + LIFETIME_S,
   iat: NOW,
-  nonce: VALUES.nonce,
-}
+  ...(withNonce ? { nonce: VALUES.nonce } : {}),
+})
 const idToken = (claims: IdTokenClaims) =>
   `${jwtSegments({ alg: 'RS256', kid: KID }, claims)}.(signature)`
 
@@ -467,11 +468,11 @@ function startStep(params: AuthorizeParams): StepBody {
     description: pkce
       ? {
           en: `The client creates a session for Alice and stores three random values in it: state, nonce and code_verifier. It sends the browser to the authorization server with state, nonce and the code_challenge (${CHALLENGE}), which is the SHA-256 of the verifier. The verifier itself stays at the client. The session cookie is SameSite=Lax, because Alice will come back through a top-level navigation from another site (see the CSRF theme).`,
-          ja: `クライアントはアリスのセッションを作り、3 つの乱数を入れる。state、nonce、code_verifier。ブラウザーを、state と nonce と code_challenge（${CHALLENGE}。code_verifier の SHA-256）を付けて認可サーバーへ送る。code_verifier そのものはクライアントに残る。セッションの Cookie は SameSite=Lax。アリスは別のサイトからのトップレベルのナビゲーションで戻ってくるから（CSRF のテーマを参照）。`,
+          ja: `クライアントはアリスのセッションを作り、3 つの乱数を入れる。state、nonce、code_verifier。ブラウザーを、state と nonce と code_challenge（code_verifier の SHA-256、${CHALLENGE}）を付けて認可サーバーへ送る。code_verifier そのものはクライアントに残る。セッションの Cookie は SameSite=Lax。アリスは別のサイトからのトップレベルのナビゲーションで戻ってくるから（CSRF のテーマを参照）。`,
         }
       : {
-          en: 'This client is an older integration: it sends state, but no code_challenge and no nonce. RFC 9700 only recommends PKCE for confidential clients like this one, so the authorization server accepts the request.',
-          ja: 'このクライアントは古い作りで、state は送るが、code_challenge も nonce も送らない。RFC 9700 は、このようなコンフィデンシャルクライアントには PKCE を勧めるだけなので、認可サーバーは要求を受け入れる。',
+          en: 'This client is an older integration: it sends state, but no code_challenge and no nonce. RFC 9700 requires every client to protect its codes with PKCE or, for OpenID Connect, the nonce. For a confidential client like this one PKCE is only recommended (it is required for public clients), but this client uses neither. The authorization server does not insist, so the request goes through.',
+          ja: 'このクライアントは古い作りで、state は送るが、code_challenge も nonce も送らない。RFC 9700 は、どのクライアントにも、PKCE か（OpenID Connect なら）nonce でコードを守ることを求める。このようなコンフィデンシャルクライアントには PKCE は推奨にとどまる（パブリッククライアントには必須）が、このクライアントはどちらも使わない。認可サーバーも求めないので、要求は通る。',
         },
     events: [
       send(
@@ -689,20 +690,20 @@ function tokenRequest(id: string, verifier: string | null): Message {
   )
 }
 
-const tokenJson = (access: AccessTokenClaims, refresh: string, withIdToken: boolean) =>
+const tokenJson = (access: AccessTokenClaims, refresh: string, claims: IdTokenClaims | null) =>
   JSON.stringify({
     access_token: short(accessToken(access)),
     token_type: 'Bearer',
     expires_in: LIFETIME_S,
     refresh_token: refresh,
-    ...(withIdToken ? { id_token: short(idToken(ID_CLAIMS)) } : {}),
+    ...(claims === null ? {} : { id_token: short(idToken(claims)) }),
   })
 
 function tokenResponse(
   id: string,
   access: AccessTokenClaims,
   refresh: string,
-  withIdToken: boolean,
+  claims: IdTokenClaims | null,
 ): Message {
   return http(
     id,
@@ -714,16 +715,16 @@ function tokenResponse(
       { name: 'Content-Type', value: 'application/json' },
       { name: 'Cache-Control', value: 'no-store', text: FIELD_TEXT.noStore },
       { name: 'Pragma', value: 'no-cache' },
-      { name: 'Body', value: tokenJson(access, refresh, withIdToken) },
+      { name: 'Body', value: tokenJson(access, refresh, claims) },
       { name: 'access_token', value: accessToken(access), highlight: true },
       { name: 'Access token claims', value: JSON.stringify(access) },
       { name: 'refresh_token', value: refresh },
-      ...(withIdToken
-        ? [
-            { name: 'id_token', value: idToken(ID_CLAIMS), highlight: true },
-            { name: 'ID token claims', value: JSON.stringify(ID_CLAIMS) },
-          ]
-        : []),
+      ...(claims === null
+        ? []
+        : [
+            { name: 'id_token', value: idToken(claims), highlight: true },
+            { name: 'ID token claims', value: JSON.stringify(claims) },
+          ]),
     ],
     {
       en: 'The tokens, also on the back channel. JWTs are shown decoded; the signatures are not computed on this page.',
@@ -761,14 +762,15 @@ function tokenSteps(session: Session): StepBody[] {
       ? 'code_verifier: S256 match'
       : 'no code_challenge on record: nothing to check'
     : `invalid_grant: ${redeemed.reason}`
+  const mallory = session.sid === VALUES.mallorySid
+  const claims = idClaims(session.nonce)
   const check = validateIdToken({
-    claims: ID_CLAIMS,
+    claims,
     issuer: ISSUER,
     clientId: VALUES.clientId,
     nonce: session.nonce ? VALUES.nonce : null,
     now: NOW + 60,
   })
-  const mallory = session.sid === VALUES.mallorySid
   return [
     {
       id: 'token-request',
@@ -776,7 +778,7 @@ function tokenSteps(session: Session): StepBody[] {
         en: 'The client trades the code for tokens',
         ja: 'クライアントがコードをトークンに引き換える',
       },
-      description: pkce
+      description: !mallory
         ? {
             en: `The client authenticates with its client_id and secret, and sends the code, the same redirect_uri, and the code_verifier of this session. The authorization server checks that the code is unused, not expired, issued to this client for this redirect_uri, and that BASE64URL(SHA256(code_verifier)) equals the code_challenge it stored with the code. It does: ${CHALLENGE}.`,
             ja: `クライアントは client_id と秘密で自分を認証し、コード、同じ redirect_uri、このセッションの code_verifier を送る。認可サーバーは、コードが未使用で、切れておらず、このクライアントにこの redirect_uri で発行したものか、そして BASE64URL(SHA256(code_verifier)) が、コードとともに覚えた code_challenge と同じかを確かめる。同じ（${CHALLENGE}）。`,
@@ -809,7 +811,7 @@ function tokenSteps(session: Session): StepBody[] {
             ja: '応答には、アクセストークン（API のため）、リフレッシュトークン（後のため）、ID トークン（クライアントのため。誰がログインしたか）が入っている。クライアントは ID トークンを確かめる。iss は使ったサーバー、aud は自分の client_id、期限は切れておらず、nonce はアリスのセッションのもの（OIDC Core §3.1.3.7）。署名もサーバーの鍵で確かめられる。TLS で直接受け取ったトークンなら、OIDC は TLS に頼ることを認めている。アリスは、メールアドレスではなく iss と sub で見分ける。',
           },
       events: [
-        send(tokenResponse('tokens', FIRST_ACCESS, VALUES.refresh, true)),
+        send(tokenResponse('tokens', FIRST_ACCESS, VALUES.refresh, claims)),
         set(CLIENT, ID_TOKEN, idTokenTable([...check.rows, SIGNATURE_ROW])),
         set(CLIENT, SESSIONS, sessionTable(sessionsAfterLogin(session))),
         set(CLIENT, TOKENS, tokenRows(FIRST_ACCESS, VALUES.refresh, false)),
@@ -1250,7 +1252,7 @@ function noPkceSteps(): Step[] {
         },
         description: {
           en: 'Mallory sends Alice’s code to the client’s callback, with her own session cookie and her own state. state matches, because it is Mallory’s own: state protects Alice from being logged in as someone else, not the other way round.',
-          ja: 'マロリーは、アリスのコードを、自分のセッションの Cookie と自分の state とともに、クライアントのコールバックに送る。state は合う。マロリー自身のものだから。state が守るのは、アリスが別の誰かとしてログインさせられることで、その逆ではない。',
+          ja: 'マロリーは、アリスのコードを、自分のセッションの Cookie と自分の state とともに、クライアントのコールバックに送る。state は合う。マロリー自身のものだから。state が防ぐのは、アリスが別の誰かとしてログインさせられることで、その逆ではない。',
         },
         events: [
           send(
@@ -1410,7 +1412,7 @@ function expiredSteps(): Step[] {
             ]),
           ),
           set(AS, DECISION, 'refresh_token: active → rotated'),
-          send(tokenResponse('refresh-response', SECOND_ACCESS, VALUES.rotatedRefresh, false)),
+          send(tokenResponse('refresh-response', SECOND_ACCESS, VALUES.rotatedRefresh, null)),
           set(CLIENT, TOKENS, tokenRows(SECOND_ACCESS, VALUES.rotatedRefresh, false)),
         ],
       },
