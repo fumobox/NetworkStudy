@@ -297,45 +297,7 @@ export const ja = {
 
 ## 7. ディレクトリ構成
 
-```
-NetworkStudy/
-├── .github/
-│   ├── workflows/ci.yml        # check（検証・ビルド）→ deploy（main のみ）
-│   ├── ISSUE_TEMPLATE/ (design.md, enhancement.md, bug.md)
-│   └── pull_request_template.md
-├── docs/ (PLAN.md, glossary.md)
-├── public/
-├── scripts/                     # generate-static-pages.ts, verify-static-pages.ts, static-pages/（純関数）
-├── src/
-│   ├── main.tsx
-│   ├── app/ (AppRoutes.tsx, LocaleLayout.tsx, LocaleRedirect.tsx)
-│   ├── components/
-│   │   ├── ui/                 # shadcn
-│   │   ├── layout/             # AppLayout, Header, Footer, LanguageSwitcher（Sidebar はテーマ追加時）
-│   │   └── features/ (quiz/, progress/, theme-card/)
-│   ├── engine/
-│   │   ├── types.ts
-│   │   ├── derive.ts / derive.test.ts
-│   │   ├── player.ts / player.test.ts
-│   │   ├── hooks/ (useScenarioPlayer.ts, useScenarioUrlState.ts)
-│   │   └── ui/ (ScenarioPlayer, SequenceDiagram, PacketInspector, ActorStatePanel, StepControls, ScenarioOptionsForm)
-│   ├── content/
-│   │   ├── registry.ts
-│   │   ├── types.ts            # ThemeModule
-│   │   ├── tcp-handshake/ (index.ts, scenario.ts, scenario.test.ts, quiz.ts, overview.{en,ja}.mdx)
-│   │   ├── dns-resolution/
-│   │   └── tls-handshake/ (+ CertChainPanel.tsx)
-│   ├── pages/ (HomePage, ThemePage, NotFoundPage, AboutPage)
-│   ├── hooks/
-│   ├── lib/ (i18n/, url.ts, storage.ts, utils.ts)
-│   └── types/ (mdx.d.ts)
-├── .dependency-cruiser.cjs
-├── eslint.config.js
-├── vite.config.ts / vitest.config.ts / tsconfig*.json
-├── CLAUDE.md
-├── LICENSE
-└── README.md
-```
+今の構成とレイヤの依存の向きは [CLAUDE.md](../CLAUDE.md) の「ディレクトリとレイヤ」にまとめている（初期の計画の図は、実装が進んで古くなったので外した）。
 
 ## 8. ロードマップ
 

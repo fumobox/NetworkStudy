@@ -36,6 +36,13 @@ describe('registry', () => {
     expect(groupByCategory(THEME_META).flatMap((group) => group.themes)).toEqual(THEME_META)
   })
 
+  it('クイズは 3〜5 問（PLAN §1）', () => {
+    for (const theme of THEMES) {
+      expect(theme.quiz.questions.length, theme.meta.id).toBeGreaterThanOrEqual(3)
+      expect(theme.quiz.questions.length, theme.meta.id).toBeLessThanOrEqual(5)
+    }
+  })
+
   it('テーマ id は URL とファイルパスに使える形', () => {
     for (const id of THEME_IDS) {
       expect(id).toMatch(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
