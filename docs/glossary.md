@@ -418,6 +418,7 @@
 | anycast | エニーキャスト | |
 | site (of an anycast service) | 拠点 | Web のサイト（site）とは別 |
 | forwarding table (FIB) | 転送の表（FIB） | ルーターの表。VXLAN の FDB とは別 |
+| BGP table (RIB) | BGP の経路の表 | 経路表とは別。最良経路だけが転送の表（FIB）に入る |
 | data plane | データプレーン | |
 | route leak / hijack | 経路の漏れ／乗っ取り（ハイジャック） | |
 | defense in depth | 多層防御 | |

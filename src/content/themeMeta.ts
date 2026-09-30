@@ -431,7 +431,7 @@ export const BGP_ANYCAST_META = {
     ja: 'BGP とエニーキャスト: 経路が伝わるしくみと、1 つのアドレスを複数の拠点で',
   },
   summary: {
-    en: 'How networks tell each other which addresses they reach (OPEN, KEEPALIVE, UPDATE, AS_PATH), how a router picks the shortest path, and how one DNS address served from two sites fails over, and why a route change breaks TCP but not UDP.',
+    en: 'How networks tell each other which addresses they reach (OPEN, KEEPALIVE, UPDATE, AS_PATH), how a router picks the shortest path, how one DNS address served from two sites fails over, and why a route change breaks TCP but not UDP.',
     ja: 'ネットワークどうしが、届けられるアドレスを伝え合うしくみ（OPEN、KEEPALIVE、UPDATE、AS_PATH）、ルーターが短い経路を選ぶしくみ、2 つの拠点で応える 1 つの DNS のアドレスの切り替わり方、経路が変わると TCP は切れて UDP は切れない理由。',
   },
   difficulty: 'intermediate',

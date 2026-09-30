@@ -2,7 +2,7 @@
 
 [Route lookup](/themes/route-lookup) picks the best matching entry in a routing table. But where do the entries come from? Inside one network, an administrator or an interior protocol fills the table. Between networks, the routes come from **BGP** (Border Gateway Protocol, version 4, RFC 4271).
 
-The Internet is made of tens of thousands of **autonomous systems** (ASes): networks run by one organisation with one routing policy, each identified by an AS number. An AS announces the address ranges it can reach to its neighbours, and each neighbour passes the announcement on. Every router ends up knowing, for each prefix, which neighbour to send packets to.
+The Internet is made of tens of thousands of **autonomous systems** (ASes): networks run by one organization with one routing policy, each identified by an AS number. An AS announces the address ranges it can reach to its neighbors, and each neighbor passes the announcement on. Every router ends up knowing, for each prefix, which neighbor to send packets to.
 
 This page uses AS numbers and addresses reserved for documentation (RFC 5398, RFC 5737):
 
@@ -15,13 +15,13 @@ This page uses AS numbers and addresses reserved for documentation (RFC 5398, RF
 
 ## Sessions: OPEN, KEEPALIVE, and the Hold Time
 
-Two BGP neighbours talk over a TCP connection to port 179. Every BGP message starts with the same 19-octet header: a 16-octet Marker of all ones, a Length and a Type.
+Two BGP neighbors talk over a TCP connection to port 179. Every BGP message starts with the same 19-octet header: a 16-octet Marker of all ones, a Length and a Type.
 
 1. Each side sends **OPEN**: its version (4), its AS number, a proposed **Hold Time**, its BGP Identifier, and optional capabilities. Here both can use four-octet AS numbers (RFC 6793).
 2. Both use the smaller Hold Time. RFC 4271 suggests 90 seconds, and it must be 0 or at least 3.
 3. Each side confirms with a **KEEPALIVE**, which is only the header. The session is now **Established**.
 
-After that, each side sends a KEEPALIVE about every third of the Hold Time (30 seconds here) whenever it has nothing else to send. If nothing at all arrives for the whole Hold Time, the session is declared dead. The side that notices sends **NOTIFICATION** with Error Code 4 (Hold Timer Expired), closes the connection, and deletes every route it learned from that neighbour.
+After that, each side sends a KEEPALIVE about every third of the Hold Time (30 seconds here) whenever it has nothing else to send. If nothing at all arrives for the whole Hold Time, the session is declared dead. The side that notices sends **NOTIFICATION** with Error Code 4 (Hold Timer Expired), closes the connection, and deletes every route it learned from that neighbor.
 
 The session states are Idle, Connect (or Active while retrying), OpenSent, OpenConfirm and Established (RFC 4271 §8).
 
@@ -31,18 +31,18 @@ An **UPDATE** can do two things at once: withdraw prefixes that are no longer re
 
 - **ORIGIN**: where the route came from (IGP here).
 - **AS_PATH**: the ASes the announcement has passed through, the newest first. The originating AS puts in only its own number. Each AS that passes the route on to another AS adds its own number on the left.
-- **NEXT_HOP**: where to send packets for the prefix. Between neighbouring ASes it is normally the sender’s address on the shared link, so it changes at every AS.
+- **NEXT_HOP**: where to send packets for the prefix. Between neighboring ASes it is normally the sender’s address on the shared link, so it changes at every AS.
 
-When a router receives a route whose AS_PATH already contains its own AS, it ignores it: that route would loop (RFC 4271 §9.1.2). A new announcement of the same prefix from the same neighbour replaces the old one. A withdrawal, or the end of the session, removes it.
+When a router receives a route whose AS_PATH already contains its own AS, it ignores it: that route would loop (RFC 4271 §9.1.2). A new announcement of the same prefix from the same neighbor replaces the old one. A withdrawal, or the end of the session, removes it.
 
 ## Choosing the best path
 
-When several neighbours announce the same prefix, a router picks one. The full decision process (RFC 4271 §9.1) starts with the router’s own policy: **LOCAL_PREF**, used inside an AS to prefer one exit over another. Among equally preferred routes, it prefers:
+When several neighbors announce the same prefix, a router picks one. The full decision process (RFC 4271 §9.1) starts with the router’s own policy: **LOCAL_PREF**, used inside an AS to prefer one exit over another. Among equally preferred routes, it prefers:
 
 1. the shortest AS_PATH;
 2. the lowest ORIGIN;
-3. the lowest **MED** (a hint from a neighbour about which of its links to use; compared only between routes from the same neighbouring AS);
-4. then more tie-breakers, ending with the lowest BGP Identifier.
+3. the lowest **MED** (a hint from a neighbor about which of its links to use; compared only between routes from the same neighboring AS);
+4. then more tie-breakers (eBGP over iBGP, interior cost), the lowest BGP Identifier and, last, the lowest peer address.
 
 This page configures no policy, so the shortest AS_PATH decides. In practice, operators set LOCAL_PREF according to business relationships (their customers first, then peers, then transit), so the shortest path does not always win.
 
@@ -67,8 +67,8 @@ A TCP connection has state, and that state exists only at the site where it was 
 
 BGP carries no proof that an AS may announce a prefix. Two consequences:
 
-- A **route leak** passes announcements on where they should not go, for example an ISP re-announcing a route from one provider to another. That is why the ISP on this page announces only its own prefix to the transit provider. RFC 8212 makes “no policy, no routes” the default for sessions between ASes.
-- A **hijack** announces someone else’s prefix. **RPKI** origin validation (RFC 6811) lets routers check that the origin AS is authorised. It is not covered here.
+- A **route leak** passes announcements on where they should not go, for example an ISP re-announcing a route from one provider to another. That is why an ISP like the one on this page should announce only its own prefix (192.0.2.0/24) to the transit provider. RFC 8212 makes “no policy, no routes” the default for sessions between ASes.
+- A **hijack** announces someone else’s prefix. **RPKI** origin validation (RFC 6811) lets routers check that the origin AS is authorized. It is not covered here.
 
 ## What to look for in the walkthrough
 
@@ -93,7 +93,7 @@ These commands only read.
 ## About this page
 
 - One lane per site stands for a router and a DNS server together (RFC 4786 §4.4.1 also describes running the routing software on the server).
-- IPv4 only. The sessions between the ISP and the transit provider, and between the transit provider and Site B, are already up, and the route back to 192.0.2.0/24 is set up beforehand.
+- IPv4 only. The sessions between the ISP and the transit provider, and between the transit provider and Site B, are already up, and the route back to 192.0.2.0/24 is assumed and not drawn.
 - Not covered: iBGP, policies (LOCAL_PREF, MED, communities), the minimum interval between announcements, route flap damping, graceful restart, RPKI, and IPv6.
 - The TCP handshake for BGP is one arrow. Ephemeral ports, DNS answer values and TCP initial sequence numbers are example values.
 
