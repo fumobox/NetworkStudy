@@ -18,7 +18,7 @@ export type ThemeKind = (typeof THEME_KINDS)[number]
  * テーマの分類（ホームとサイドバーの見出し。表示名は辞書の `categories`）。この順に案内する。
  * basics: ネットワークの基礎、ip: ネットワークにつながるまで（ARP、DHCP、ICMP、パス MTU 探索、NAT、NAT 越え、経路制御）、lan: LAN の中（スイッチ、VLAN、コンテナーのネットワーク、VXLAN、Wi-Fi、IPv6 の近隣探索）、
  * web: Web ページが届くまで（DNS → TCP → TLS → HTTPS）、tcp: TCP をもっと詳しく、
- * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket、Server-Sent Events、リバースプロキシとロードバランサー）、security: ネットワークのセキュリティ（ファイアウォール、WireGuard、DNSSEC、メールの送信ドメイン認証、HSTS、Cookie と CSRF）
+ * http: Web 開発で出会う HTTP（キャッシュ、CORS、HTTP/2、QUIC、WebSocket、Server-Sent Events、リバースプロキシとロードバランサー）、security: ネットワークのセキュリティ（ARP スプーフィング、ファイアウォール、WireGuard、DNSSEC、メールの送信ドメイン認証、HSTS、Cookie と CSRF）
  */
 export const THEME_CATEGORIES = ['basics', 'ip', 'lan', 'web', 'tcp', 'http', 'security'] as const
 export type ThemeCategory = (typeof THEME_CATEGORIES)[number]
@@ -166,6 +166,22 @@ export const TCP_SACK_META = {
   },
   difficulty: 'intermediate',
   minutes: 12,
+} as const satisfies ThemeMeta
+
+export const ARP_SPOOFING_META = {
+  id: 'arp-spoofing',
+  kind: 'sequence',
+  category: 'security',
+  title: {
+    en: 'ARP spoofing and Dynamic ARP Inspection',
+    ja: 'ARP スプーフィングと Dynamic ARP Inspection',
+  },
+  summary: {
+    en: 'How one forged ARP reply sends a PC’s traffic through an attacker on the same LAN, and how DHCP snooping with Dynamic ARP Inspection, ARP ACLs and static entries stop it.',
+    ja: '偽の ARP の応答 1 つで、PC の通信が同じ LAN の攻撃者を通るようになるしくみと、DHCP スヌーピングと Dynamic ARP Inspection、ARP ACL、静的なエントリーでの止め方。',
+  },
+  difficulty: 'intermediate',
+  minutes: 15,
 } as const satisfies ThemeMeta
 
 export const FIREWALL_META = {
@@ -578,7 +594,7 @@ export const IPV6_ND_META = {
 
 /**
  * サイトで案内する学習順。分類（THEME_CATEGORIES）の順にまとめて並べる（registry.test.ts で確かめる）。
- * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → コンテナーのネットワーク → VXLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ファイアウォール → WireGuard → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
+ * 基礎（OSI 参照モデル → サブネット計算 → IPv6 アドレス）→ ネットワークにつながるまで（ARP → DHCP → ICMP → パス MTU 探索 → NAT → NAT 越え → 経路の検索）→ LAN の中（スイッチ → VLAN → コンテナーのネットワーク → VXLAN → Wi-Fi → IPv6 の SLAAC・近隣探索）→ Web ページが届くまで（DNS → TCP → TLS → HTTPS の全体像）→ TCP をもっと詳しく → Web 開発で出会う HTTP（HTTP のキャッシュ → CORS → HTTP/2 → QUIC → WebSocket → Server-Sent Events → リバースプロキシとロードバランサー）→ ネットワークのセキュリティ（ARP スプーフィング → ファイアウォール → WireGuard → DNSSEC → メールの送信ドメイン認証 → HSTS → Cookie と CSRF）
  */
 export const THEME_META = [
   OSI_MODEL_META,
@@ -612,6 +628,7 @@ export const THEME_META = [
   WEBSOCKET_META,
   SERVER_SENT_EVENTS_META,
   REVERSE_PROXY_META,
+  ARP_SPOOFING_META,
   FIREWALL_META,
   WIREGUARD_META,
   DNSSEC_META,

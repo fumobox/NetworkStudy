@@ -1,0 +1,102 @@
+## ARP believes anyone
+
+[ARP](/themes/arp) turns an IP address on the LAN into a MAC address. It was designed for a network whose hosts trust each other, and it has no way to prove who sent a packet. RFC 826 also tells a host to learn from every ARP packet it receives: if the sender’s IP address is already in the cache, its MAC address is replaced with the one in the packet. This happens before the host even looks at whether the packet is a request or a reply, and nothing checks that a reply answers a request the host sent.
+
+So one forged reply, “192.168.1.1 is at 00:00:5e:00:53:42”, is enough to make a PC send its frames for the gateway to another host on the same LAN. This is **ARP spoofing** (or ARP cache poisoning). It only works from inside the LAN: ARP never crosses a router.
+
+## The switch cannot tell
+
+A [switch](/themes/switching) forwards frames by their Ethernet addresses. The forged reply is honest about its own source: its Ethernet source address and its sender MAC address (SHA) are both the attacker’s real MAC address. Only the sender IP address (SPA) is a lie. The switch’s MAC address table stays correct, and it delivers the frame like any other. After that, PC A’s frames for the gateway carry the attacker’s MAC address, and the switch correctly delivers them to the attacker.
+
+## A man in the middle, one direction at a time
+
+The attacker forwards the packets on to the real gateway, so nothing breaks and nobody notices. It is now a **man in the middle (MITM)**:
+
+- It can read everything that is not encrypted, such as plain DNS and plain HTTP, and change it.
+- Under TLS it cannot read or change the content, but it still sees which addresses PC A talks to, and when.
+
+The gateway’s cache is untouched, so answers from the Internet still go straight to PC A. To see both directions, the attacker also sends the gateway a forged reply claiming PC A’s address.
+
+The attacker sends its replies as unicast, to one victim. RFC 5227 §2.4 says what a host should do when it sees a packet that claims its own IP address with another MAC address: it is a conflict, and a host that needs a stable address, such as a default router, may defend it by announcing its own address again. A broadcast would reach the gateway and could start that defence. A unicast reply to PC A never does.
+
+The attacker also has to keep repeating the lie. Cache entries expire and are checked again, and any genuine ARP packet from the gateway repairs PC A’s entry. The steady stream of conflicting ARP packets is what monitoring tools look for.
+
+## What operating systems add
+
+RFC 826 describes the basic behaviour. Operating systems add their own rules, and the details differ:
+
+- Linux (`arp_accept`, default 0) does not create a new entry from unsolicited ARP. But when an entry already exists, Linux updates it from any ARP packet, whatever `arp_accept` says.
+- A PC almost always has an entry for its gateway, so rules about new entries do not stop this attack.
+
+## Defence 1: DHCP snooping and Dynamic ARP Inspection
+
+Switches such as Cisco’s Catalyst can check ARP themselves. The features are not IETF or IEEE standards. The names used here are Cisco’s, and other vendors offer similar features under other names.
+
+- **DHCP snooping** builds a **binding table**. Ports are **trusted** (where the DHCP server and the uplinks are) or **untrusted** (where the hosts are). When the server’s DHCPACK passes through a trusted port, the switch records which IP address was given to which MAC address, on which port, for how long. Server messages that arrive on an untrusted port are dropped, which also stops a fake DHCP server.
+- **Dynamic ARP Inspection (DAI)** intercepts every ARP request and reply on an untrusted port. It checks the sender pair (SPA and SHA) against the binding table before forwarding. A pair that is not there is dropped and logged. ARP on a trusted port is not checked. That is why the gateway itself needs no binding.
+- **Hosts with static addresses** (printers, servers) have no binding, so DAI drops their own ARP. The administrator lists them in an **ARP ACL**, which DAI checks before the binding table. An ACL entry that denies a pair wins even over a matching binding.
+- Cisco’s switches also limit ARP on untrusted ports to 15 packets per second by default and shut a port down when it floods. They can check more fields (the Ethernet source against SHA, the Ethernet destination against THA, and invalid IP addresses). These numbers and options are Cisco’s, and they vary between releases.
+
+DAI does not recognise attacks. It only lets through ARP packets whose sender it has a reason to believe, and the reason comes from DHCP.
+
+## Defence 2: static ARP entries
+
+An administrator can write the gateway’s MAC address into a host’s cache as a **static entry**. ARP never overwrites it. This is a feature of the operating system, not of RFC 826. The protection is narrow:
+
+- It covers only that one entry on that one host. The gateway’s cache can still be poisoned (the other direction).
+- Every entry must be changed by hand when a network card is replaced.
+- It does not scale beyond a few critical machines.
+
+## Legitimate gratuitous ARP
+
+Not every unsolicited ARP packet is an attack. A host announces its new address with ARP Announcements (RFC 5227 §2.3): requests whose sender and target IP addresses are both its own. When a pair of routers running VRRP fails over (RFC 9568), the new active router sends gratuitous ARP for the virtual router’s MAC address. The MAC address stays the same, and the packet mainly updates the switches’ MAC address tables. A packet cannot show whether it is honest. Under DAI, what decides is whether the sender pair is bound.
+
+## Is there a standard?
+
+The IETF’s version of this idea is **SAVI** (Source Address Validation Improvement). RFC 7039 describes the framework. RFC 7513 (SAVI for DHCP) builds bindings from DHCP in the same way and records them only from server replies on trusted ports (§6). It also discards ARP packets whose sender IP address is not bound to the port they arrived on, and ARP replies whose target IP address is not bound (§8.2), so it would stop this page’s forged reply as well. The differences are in the details: a SAVI binding is tied to the port (the “binding anchor”) rather than to an IP–MAC pair, and SAVI also checks the source address of every data packet. SAVI is a specification; what switches ship are vendor features such as DAI. IPv6 has its own versions of this attack and of the defences (Neighbor Discovery spoofing, RA Guard, SEND), which this page does not cover.
+
+Encryption at higher layers is the other half of the answer. With TLS (and [HSTS](/themes/hsts)), a man in the middle cannot read or change the content even when ARP is fooled.
+
+## What to look for in the walkthrough
+
+- **PC A**’s ARP cache (the Type column shows dynamic or static), the MAC address its frames to the Internet go to, and what it did with the last ARP packet.
+- The **switch**’s MAC address table, trusted ports, DHCP snooping binding table, ARP ACL, and what it did with each frame.
+- The forged reply’s fields: SHA and Eth Src are the attacker’s, SPA is the gateway’s. It is the same packet in every option; only the network changes.
+- In the “What if…” options:
+  - the attack, and why only one direction is hijacked;
+  - DAI: the binding from DHCPACK, the gateway’s reply on a trusted port, and the forged reply dropped;
+  - a host with a static IP address that DAI blocks until an ARP ACL lists it;
+  - a static ARP entry.
+
+## Try it yourself
+
+These commands only read state. None of them changes a cache or sends ARP.
+
+```sh
+arp -a -n
+```
+
+- macOS lists the ARP cache (see the [ARP](/themes/arp) theme for sample output). Static entries (and entries for the computer’s own addresses) are marked `permanent`. On Linux, `ip neigh` shows the same cache, and a static entry is `PERMANENT`.
+- Two IP addresses with the same MAC address in your cache can be innocent (a router with several addresses), but it is also what a poisoned cache looks like.
+- On Linux, `sysctl net.ipv4.conf.all.arp_accept` prints the setting described above; `0` is the default.
+- In Wireshark, the display filter `arp.duplicate-address-detected` shows ARP packets that claim an IP address Wireshark has already seen with another MAC address. The expert information names the frame with the earlier use. `arp.isgratuitous` shows gratuitous ARP.
+
+## About this page
+
+- One switch, one VLAN, four lanes. The gateway is also the DHCP server.
+- In the attack, only PC A is fooled. The other direction is described but not drawn.
+- The DHCP DISCOVER, OFFER and REQUEST, ARP retries and cache timers are not drawn. The attacker passes packets on unchanged, and TTL is left out.
+- DAI’s additional checks, rate limiting and logging are described but not drawn.
+- How to carry out the attack is deliberately left out: this page is about why it works and how to stop it.
+
+## References
+
+- [RFC 826: An Ethernet Address Resolution Protocol](https://www.rfc-editor.org/rfc/rfc826) — Packet Reception
+- [RFC 5227: IPv4 Address Conflict Detection](https://www.rfc-editor.org/rfc/rfc5227) — §2.3, §2.4
+- [RFC 2131: Dynamic Host Configuration Protocol](https://www.rfc-editor.org/rfc/rfc2131)
+- [RFC 7039: Source Address Validation Improvement (SAVI) Framework](https://www.rfc-editor.org/rfc/rfc7039) and [RFC 7513: SAVI Solution for DHCP](https://www.rfc-editor.org/rfc/rfc7513) — §6, §8.2
+- [RFC 9568: Virtual Router Redundancy Protocol (VRRP) Version 3](https://www.rfc-editor.org/rfc/rfc9568) — §6.4, §8.1.2
+- [RFC 9542](https://www.rfc-editor.org/rfc/rfc9542) — §2.1.4 (MAC addresses for documentation)
+- Cisco IOS XE, Catalyst 9300 Security Configuration Guide: “Configuring Dynamic ARP Inspection”; IP Addressing Services Configuration Guide: “Configuring DHCP” (DHCP snooping)
+- [Linux IP sysctl](https://docs.kernel.org/networking/ip-sysctl.html) — `arp_accept`, and [arp(7)](https://man7.org/linux/man-pages/man7/arp.7.html)
+- [Wireshark display filter reference: ARP](https://www.wireshark.org/docs/dfref/a/arp.html)

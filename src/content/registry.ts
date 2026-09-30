@@ -4,6 +4,7 @@ import { csrfTheme } from './csrf'
 import { dhcpTheme } from './dhcp'
 import { dnsResolutionTheme } from './dns-resolution'
 import { dnssecTheme } from './dnssec'
+import { arpSpoofingTheme } from './arp-spoofing'
 import { firewallTheme } from './firewall'
 import { wireguardTheme } from './wireguard'
 import { hstsTheme } from './hsts'
@@ -70,6 +71,7 @@ export const THEMES: readonly ThemeModule[] = [
   webSocketTheme,
   serverSentEventsTheme,
   reverseProxyTheme,
+  arpSpoofingTheme,
   firewallTheme,
   wireguardTheme,
   dnssecTheme,

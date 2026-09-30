@@ -61,6 +61,7 @@ HTTP for web developers / Web 開発で出会う HTTP
 
 Network security / ネットワークのセキュリティ
 
+- ARP spoofing and Dynamic ARP Inspection / ARP スプーフィングと Dynamic ARP Inspection
 - Stateful firewall: letting replies in, keeping strangers out / ステートフルファイアウォール: 返事は通し、見知らぬ相手は止める
 - WireGuard: a remote-access VPN built on public keys / WireGuard: 公開鍵で結ぶリモートアクセス VPN
 - DNSSEC: a chain of trust for DNS answers / DNSSEC: DNS の答えをたどる信頼の連鎖
