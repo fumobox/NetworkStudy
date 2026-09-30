@@ -5,8 +5,8 @@ An interactive portal for learning how network protocols work, one packet at a t
 
 ## Learning paths / 学習の道筋
 
-Not sure where to start? Follow a path: Web developers (14 themes) or Infrastructure and operations (19 themes).
-どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（14 テーマ）、インフラ運用向け（19 テーマ）。
+Not sure where to start? Follow a path: Web developers (14 themes) or Infrastructure and operations (20 themes).
+どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（14 テーマ）、インフラ運用向け（20 テーマ）。
 
 ## Topics / テーマ
 
