@@ -16,6 +16,14 @@ As devices talk, the table fills up by itself and flooding becomes rare. Entries
 - Which ports each frame goes out of, and the switch’s decision (`learn`, `flood`, `forward`).
 - In the “What if…” options: a broadcast (ARP request), a switch that already knows the router, and ageing.
 
+## Try it yourself
+
+A computer cannot see a switch’s MAC address table: the switch keeps it to itself. What you can see from your computer is the effect of learning.
+
+- In Wireshark on a wired port, frames for other computers do not appear (the switch forwards them only to their port), but broadcasts do. The display filter `eth.dst == ff:ff:ff:ff:ff:ff` shows them, for example ARP requests.
+- Many managed switches show their table with a command such as `show mac address-table`; the exact command depends on the vendor.
+- On Linux, a software bridge keeps the same kind of table, which `bridge fdb show` prints (see the container networking theme).
+
 ## About this page
 
 There is one switch and no loops, so the Spanning Tree Protocol is left out. VLANs are covered in the VLAN theme, and the ICMP and ARP messages themselves are explained in their own themes. Real switches also handle full-duplex links, a full table, and much more.

@@ -62,6 +62,22 @@ On a **user-defined network** (`docker network create`), Docker also gives each 
   - two containers using the same source port;
   - a port that is not published.
 
+## Try it yourself
+
+These commands are for Docker on Linux. Docker Desktop on macOS and Windows runs everything inside a VM, so its bridge is not visible on your computer. The first three only read the configuration; the last starts a throwaway container (it downloads the small alpine image the first time):
+
+```sh
+docker network inspect bridge
+ip addr show docker0
+bridge link
+docker run --rm alpine ip route
+```
+
+- `docker network inspect bridge` shows the subnet (usually 172.17.0.0/16), the gateway (172.17.0.1) and the address of each running container.
+- `ip addr show docker0` shows the bridge’s own address, and `bridge link` lists the host ends of the veth pairs attached to it.
+- Inside a container, `ip route` shows the default route via 172.17.0.1, the bridge.
+- In Wireshark on `docker0`, the display filter `arp || icmp` shows a container asking for the gateway and pinging out, before MASQUERADE rewrites the source.
+
 ## About this page
 
 - One host with IPv4 only, and its address can be reached from the Internet. In practice it is often behind another NAT.

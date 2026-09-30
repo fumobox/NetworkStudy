@@ -28,6 +28,31 @@ IPv6 にはブロードキャストがない。NS は相手の**要請ノード�
 - 近隣キャッシュ。RA で `STALE`、PC 2 については `INCOMPLETE` → `REACHABLE`。
 - 「もしも…」のオプションで、アドレスの重複と、ルーターのない LAN。
 
+## 手元で試す
+
+```sh
+ifconfig en0 inet6
+ndp -an
+```
+
+出力の一部（macOS 26、2026-09-29）。アドレスと MAC アドレスは、このテーマのプレフィックス（2001:db8:1::/64）の作った値に置き換えた。
+
+```
+$ ifconfig en0 inet6
+inet6 fe80::a1b2:c3d4:e5f6:1%en0 prefixlen 64 secured scopeid 0xb
+inet6 2001:db8:1:0:5c1e:7a2b:9d04:3e61 prefixlen 64 autoconf secured
+inet6 2001:db8:1:0:8f3a:2c6d:b1e0:47d9 prefixlen 64 deprecated autoconf temporary
+inet6 2001:db8:1:0:e27b:15f8:6c90:a3b2 prefixlen 64 autoconf temporary
+$ ndp -an
+Neighbor                    Linklayer Address  Netif Expire    St
+2001:db8:1:0:200:5eff:fe00:5314 00:00:5e:00:53:14  en0 21h33m13s S
+2001:db8:1:0:5c1e:7a2b:9d04:3e61 00:00:5e:00:53:0a  en0 permanent R
+```
+
+- `fe80::` のアドレスがリンクローカルのもの。ほかは、ルーター広告のプレフィックスから SLAAC（`autoconf`）で作ったもの。macOS は EUI-64 を使わない。`secured` のアドレスは、このコンピューターが持つ鍵とプレフィックスから作る暗号学的に生成したアドレス（CGA、RFC 3972）で、このネットワークでは変わらない。`temporary` のものは乱数で、プライバシーのために定期的に変わる（RFC 8981）。古い一時的なアドレスは `deprecated` で、まだ有効だが、新しい接続には使わない。
+- `ndp -an` は近隣キャッシュ。`St` は状態で、R（REACHABLE）と S（STALE）。`permanent` の行は、コンピューター自身のアドレス。
+- Linux では、`ip -6 addr` と `ip -6 neigh` が同じものを表示する。Wireshark では、表示フィルター `icmpv6.type >= 133 && icmpv6.type <= 137` で近隣探索のメッセージ（RS、RA、NS、NA、Redirect）が見える。
+
 ## このページについて
 
 アドレスを追いやすいよう、インターフェース ID は MAC アドレスから作った（EUI-64）。今のほとんどの OS は、代わりにランダムなインターフェース ID を使う（RFC 7217、RFC 8981）。MLD（参加したグループをホストが知らせるしくみ）、スイッチの MLD スヌーピング、DAD と RS の前のランダムな待ち、定期的な RA、DHCPv6、近隣キャッシュの DELAY と PROBE の状態は扱わない。PC 2 が自分のアドレスを設定するところは描いていない。アドレスの書き方と種類は、IPv6 アドレスのテーマも参照。

@@ -95,6 +95,26 @@ Without an AP, stations can form an **IBSS** (independent BSS). There is no asso
   - hidden nodes, with and without RTS/CTS;
   - ad hoc mode.
 
+## Try it yourself
+
+```sh
+system_profiler SPAirPortDataType
+```
+
+Trimmed output for the current network (macOS 26, 2026-09-29; macOS hides the network’s name):
+
+```
+PHY Mode: 802.11ax
+Channel: 6 (2GHz, 20MHz)
+Security: WPA2 Personal
+Signal / Noise: -46 dBm / -88 dBm
+Transmit Rate: 229
+```
+
+- **PHY Mode** 802.11ax is Wi-Fi 6. **Channel** 6 is in the 2.4 GHz band and 20 MHz wide. **Security** WPA2 Personal means the keys came from a passphrase through the 4-way handshake of the walkthrough.
+- **Signal / Noise** in dBm: the difference (42 dB here) largely decides how fast the link can go; **Transmit Rate** is the current rate in Mb/s.
+- On Linux, `iw dev wlan0 link` shows the connected AP, the frequency and the signal. In Wireshark, the display filter `eapol` shows the 4-way handshake, but only when capturing 802.11 frames in monitor mode; a normal capture sees the traffic as Ethernet.
+
 ## About this page
 
 - One 5 GHz channel with non-HT OFDM at 24 Mb/s and DCF. There are no QoS headers, power save, fragmentation or aggregation.

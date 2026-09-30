@@ -89,6 +89,19 @@ Learning by flooding works, but it floods, and a VTEP learns only once traffic a
   - the 1500-byte packet that does not fit;
   - two flows on two different paths.
 
+## Try it yourself
+
+On Linux, these commands only read the configuration of a VXLAN device (here `vxlan100`) and its table:
+
+```sh
+ip -d link show type vxlan
+bridge fdb show dev vxlan100
+```
+
+- `ip -d link show type vxlan` shows each device’s VNI (`id 100`), the local address, the destination port (`dstport 4789`, or 8472 if it was not set), and options such as `nolearning`.
+- `bridge fdb show dev vxlan100` shows the forwarding table: MAC addresses with `dst` (the remote VTEP’s address). Rows with the all-zero MAC address `00:00:00:00:00:00` are the flood list of head-end replication.
+- In Wireshark, the display filter `vxlan` shows the VNI and decodes the inner Ethernet frame. Wireshark decodes UDP port 4789 as VXLAN by default; for Linux’s old default 8472, use “Decode As”.
+
 ## About this page
 
 - There are two hosts, each with one VTEP. The VTEP lane stands for the host’s bridge and VXLAN device together.

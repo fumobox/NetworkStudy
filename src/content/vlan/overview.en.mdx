@@ -20,6 +20,14 @@ A switch never moves a frame from one VLAN to another. Each VLAN is usually its 
 - The MAC address table with its VLAN column: the router is learned in both VLANs on port 4.
 - In the “What if…” options: a destination in the same VLAN (no router), and a switch without VLANs.
 
+## Try it yourself
+
+VLAN tags usually live between switches, on trunk links, so an ordinary computer on an access port never sees them.
+
+- On Linux, `ip -d link show` prints the details of each interface. A VLAN interface (for example `eth0.10`) shows `vlan protocol 802.1Q id 10`.
+- In Wireshark, the display filter `vlan` shows tagged frames, and `vlan.id == 10` those of one VLAN. Many network adapters remove the tag before the capture sees it, so a tag may be missing even on a trunk.
+- Managed switches show which ports belong to which VLAN, for example with `show vlan`; the command depends on the vendor.
+
 ## About this page
 
 There is one switch. Native VLANs, the Spanning Tree Protocol, and protocols that distribute VLAN settings are left out, and PCP and DEI are always 0. The router is assumed to know PC C’s MAC address already. VLAN IDs 10 and 20 are just examples; there is no documentation range for them. The switch itself is explained in the switching theme.
