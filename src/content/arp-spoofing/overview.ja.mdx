@@ -53,7 +53,7 @@ DAI は攻撃を見分けるのではない。送信元を信じる理由のあ�
 
 ## 標準はあるか
 
-IETF の同じ考え方は **SAVI**（Source Address Validation Improvement）。RFC 7039 が枠組みを説明し、RFC 7513（SAVI for DHCP）は同じように DHCP から束縛を作り、信頼するポートのサーバーの応答からだけ記録する。ただし SAVI が確かめるのはデータのパケットの送信元の IP アドレスで、ARP の中身ではない。IPv6 には、この攻撃と守りの IPv6 版（近隣探索のなりすまし、RA Guard、SEND）があるが、このページでは扱わない。
+IETF の同じ考え方は **SAVI**（Source Address Validation Improvement）。RFC 7039 が枠組みを説明し、RFC 7513（SAVI for DHCP）は同じように DHCP から束縛を作り、信頼するポートのサーバーの応答からだけ記録する（§6）。さらに、送信元の IP アドレスが届いたポートに束縛されていない ARP のパケットと、対象の IP アドレスが束縛されていない ARP の応答を捨てる（§8.2）。そのため、このページの偽の応答も止まる。違いは細部にある。SAVI の束縛は、IP アドレスと MAC アドレスの組ではなくポート（binding anchor）に結びつき、SAVI はデータのパケットの送信元のアドレスもすべて確かめる。SAVI は仕様で、スイッチが持つのは DAI のようなメーカーの機能。IPv6 には、この攻撃と守りの IPv6 版（近隣探索のなりすまし、RA Guard、SEND）があるが、このページでは扱わない。
 
 答えのもう半分は、上の層の暗号化。TLS（と [HSTS](/themes/hsts)）があれば、ARP がだまされても、中間者は中身を読めず、書き換えられない。
 
@@ -94,7 +94,7 @@ arp -a -n
 - [RFC 826: An Ethernet Address Resolution Protocol](https://www.rfc-editor.org/rfc/rfc826) — Packet Reception
 - [RFC 5227: IPv4 Address Conflict Detection](https://www.rfc-editor.org/rfc/rfc5227) — §2.3、§2.4
 - [RFC 2131: Dynamic Host Configuration Protocol](https://www.rfc-editor.org/rfc/rfc2131)
-- [RFC 7039: Source Address Validation Improvement (SAVI) Framework](https://www.rfc-editor.org/rfc/rfc7039)、[RFC 7513: SAVI Solution for DHCP](https://www.rfc-editor.org/rfc/rfc7513) — §6
+- [RFC 7039: Source Address Validation Improvement (SAVI) Framework](https://www.rfc-editor.org/rfc/rfc7039)、[RFC 7513: SAVI Solution for DHCP](https://www.rfc-editor.org/rfc/rfc7513) — §6、§8.2
 - [RFC 9568: Virtual Router Redundancy Protocol (VRRP) Version 3](https://www.rfc-editor.org/rfc/rfc9568) — §6.4、§8.1.2
 - [RFC 9542](https://www.rfc-editor.org/rfc/rfc9542) — §2.1.4（説明用の MAC アドレス）
 - Cisco IOS XE、Catalyst 9300 Security Configuration Guide の「Configuring Dynamic ARP Inspection」、IP Addressing Services Configuration Guide の「Configuring DHCP」（DHCP スヌーピング）

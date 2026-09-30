@@ -134,8 +134,8 @@ export const arpSpoofingQuiz: Quiz = {
       ],
       answerId: 'unseen',
       explanation: {
-        en: 'A host can only react to packets it receives. The attacker sent the reply as unicast to PC A, and the switch delivered it only there. RFC 5227 §2.4 even suggests that hosts such as a default router keep defending their address, but only against conflicts they see.',
-        ja: 'ホストが反応できるのは、受け取ったパケットだけ。攻撃者は応答を PC A へのユニキャストで送り、スイッチはそこにだけ届けた。RFC 5227 §2.4 は、既定のルーターのようなホストにはアドレスを守り続けることまで勧めているが、守れるのは見えた衝突だけ。',
+        en: 'A host can only react to packets it receives. The attacker sent the reply as unicast to PC A, and the switch delivered it only there. RFC 5227 §2.4 even allows hosts such as a default router to keep defending their address, but only against conflicts they see.',
+        ja: 'ホストが反応できるのは、受け取ったパケットだけ。攻撃者は応答を PC A へのユニキャストで送り、スイッチはそこにだけ届けた。RFC 5227 §2.4 は、既定のルーターのようなホストにはアドレスを守り続けることまで認めているが、守れるのは見えた衝突だけ。',
       },
     },
   ],

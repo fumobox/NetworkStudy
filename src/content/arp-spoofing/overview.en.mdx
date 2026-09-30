@@ -53,7 +53,7 @@ Not every unsolicited ARP packet is an attack. A host announces its new address 
 
 ## Is there a standard?
 
-The IETF’s version of this idea is **SAVI** (Source Address Validation Improvement). RFC 7039 describes the framework. RFC 7513 (SAVI for DHCP) builds bindings from DHCP in the same way, and records them only from server replies on trusted ports. But SAVI checks the source IP address of data packets, not the contents of ARP. IPv6 has its own versions of this attack and of the defences (Neighbor Discovery spoofing, RA Guard, SEND), which this page does not cover.
+The IETF’s version of this idea is **SAVI** (Source Address Validation Improvement). RFC 7039 describes the framework. RFC 7513 (SAVI for DHCP) builds bindings from DHCP in the same way and records them only from server replies on trusted ports (§6). It also discards ARP packets whose sender IP address is not bound to the port they arrived on, and ARP replies whose target IP address is not bound (§8.2), so it would stop this page’s forged reply as well. The differences are in the details: a SAVI binding is tied to the port (the “binding anchor”) rather than to an IP–MAC pair, and SAVI also checks the source address of every data packet. SAVI is a specification; what switches ship are vendor features such as DAI. IPv6 has its own versions of this attack and of the defences (Neighbor Discovery spoofing, RA Guard, SEND), which this page does not cover.
 
 Encryption at higher layers is the other half of the answer. With TLS (and [HSTS](/themes/hsts)), a man in the middle cannot read or change the content even when ARP is fooled.
 
@@ -94,7 +94,7 @@ arp -a -n
 - [RFC 826: An Ethernet Address Resolution Protocol](https://www.rfc-editor.org/rfc/rfc826) — Packet Reception
 - [RFC 5227: IPv4 Address Conflict Detection](https://www.rfc-editor.org/rfc/rfc5227) — §2.3, §2.4
 - [RFC 2131: Dynamic Host Configuration Protocol](https://www.rfc-editor.org/rfc/rfc2131)
-- [RFC 7039: Source Address Validation Improvement (SAVI) Framework](https://www.rfc-editor.org/rfc/rfc7039) and [RFC 7513: SAVI Solution for DHCP](https://www.rfc-editor.org/rfc/rfc7513) — §6
+- [RFC 7039: Source Address Validation Improvement (SAVI) Framework](https://www.rfc-editor.org/rfc/rfc7039) and [RFC 7513: SAVI Solution for DHCP](https://www.rfc-editor.org/rfc/rfc7513) — §6, §8.2
 - [RFC 9568: Virtual Router Redundancy Protocol (VRRP) Version 3](https://www.rfc-editor.org/rfc/rfc9568) — §6.4, §8.1.2
 - [RFC 9542](https://www.rfc-editor.org/rfc/rfc9542) — §2.1.4 (MAC addresses for documentation)
 - Cisco IOS XE, Catalyst 9300 Security Configuration Guide: “Configuring Dynamic ARP Inspection”; IP Addressing Services Configuration Guide: “Configuring DHCP” (DHCP snooping)
