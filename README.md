@@ -5,8 +5,8 @@ An interactive portal for learning how network protocols work, one packet at a t
 
 ## Learning paths / 学習の道筋
 
-Not sure where to start? Follow a path: Web developers (15 themes) or Infrastructure and operations (20 themes).
-どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（15 テーマ）、インフラ運用向け（20 テーマ）。
+Not sure where to start? Follow a path: Web developers (15 themes) or Infrastructure and operations (21 themes).
+どこから始めるか迷ったら、道筋に沿って読めます: Web エンジニア向け（15 テーマ）、インフラ運用向け（21 テーマ）。
 
 ## Topics / テーマ
 
@@ -25,6 +25,7 @@ Getting on the network / ネットワークにつながるまで
 - NAT: sharing one public address / NAT: 1 つのグローバルアドレスを共有する
 - NAT traversal: STUN, TURN and ICE / NAT 越え: STUN・TURN・ICE
 - Route lookup: longest prefix match / 経路の検索: 最長一致
+- BGP and anycast: how routes travel, and one address in many places / BGP とエニーキャスト: 経路が伝わるしくみと、1 つのアドレスを複数の拠点で
 
 Inside the LAN / LAN の中
 

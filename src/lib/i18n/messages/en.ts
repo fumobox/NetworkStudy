@@ -164,7 +164,7 @@ export const en = {
     },
     ip: {
       title: 'Getting on the network',
-      lead: 'How your PC gets an address (DHCP), finds its neighbors (ARP), tests the path (ICMP), learns how big a packet can be (path MTU), shares one public address (NAT), how two PCs behind NATs still reach each other (STUN, TURN and ICE), and how a router picks the next hop.',
+      lead: 'How your PC gets an address (DHCP), finds its neighbors (ARP), tests the path (ICMP), learns how big a packet can be (path MTU), shares one public address (NAT), how two PCs behind NATs still reach each other (STUN, TURN and ICE), how a router picks the next hop, and how networks exchange routes with BGP, so that one anycast address can be served from many places.',
     },
     lan: {
       title: 'Inside the LAN',

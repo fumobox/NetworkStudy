@@ -23,6 +23,7 @@ import { quicTheme } from './quic'
 import { oauthTheme } from './oauth'
 import { reverseProxyTheme } from './reverse-proxy'
 import { routeLookupTheme } from './route-lookup'
+import { bgpAnycastTheme } from './bgp-anycast'
 import { serverSentEventsTheme } from './server-sent-events'
 import { subnetCalculatorTheme } from './subnet-calculator'
 import { switchingTheme } from './switching'
@@ -51,6 +52,7 @@ export const THEMES: readonly ThemeModule[] = [
   natTheme,
   natTraversalTheme,
   routeLookupTheme,
+  bgpAnycastTheme,
   switchingTheme,
   vlanTheme,
   containerNetworkingTheme,
