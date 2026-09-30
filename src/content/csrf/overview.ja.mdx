@@ -92,7 +92,7 @@ set-cookie: _octo=…; expires=…; domain=.github.com; path=/; secure; SameSite
 set-cookie: logged_in=no; expires=…; domain=.github.com; path=/; HttpOnly; secure; SameSite=Lax
 ```
 
-- どの Cookie も `SameSite=Lax`。クロスサイトの POST やサブリソースの要求には付かず、安全なメソッドのトップレベルのナビゲーションにだけ付く。ウォークスルーの Lax の場合と同じ。`secure` は https だけに限り、`HttpOnly` はセッションの Cookie を JavaScript から隠す。
+- どの Cookie も `SameSite=Lax`。サイトをまたぐ POST やサブリソースの要求には付かず、安全なメソッドのトップレベルのナビゲーションにだけ付く。ウォークスルーの Lax の場合と同じ。`secure` は https だけに限り、`HttpOnly` はセッションの Cookie を JavaScript から隠す。
 - ブラウザーの開発者ツールでは、Application（ストレージ）のパネルに Cookie ごとの SameSite の値が並び、Network のパネルで各要求の `Sec-Fetch-Site` のヘッダーが見える。ウォークスルーの Fetch Metadata の場合は、これを使う。
 
 ## このページについて

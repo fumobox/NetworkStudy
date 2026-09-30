@@ -48,7 +48,7 @@ Firewall is disabled. (State = 0)
 ```
 
 - これは macOS のアプリケーションファイアウォールで、入ってくる接続をアプリごとに許すかを決める。既定では無効。このページのステートフルな絞り込みは、ふつう家庭のルーターが NAT とともに行う。こちらから開いた接続への返事は入り、頼んでいないパケットは入らない。
-- Linux では、カーネルがステップ実行と同じような接続の追跡の表を持つ。`sudo conntrack -L` がそれを表示し（読むだけ。root と conntrack の道具が要る）、`ESTABLISHED` などの状態が見える。`sudo nft list ruleset` は規則を表示する。Wireshark では、表示フィルター `tcp.flags.syn == 1 && tcp.flags.ack == 0` で新しい接続を開こうとするパケットが見える。
+- Linux では、カーネルがステップ実行と同じような接続の追跡の表を持つ。`sudo conntrack -L` がそれを表示し（読むだけ。root と conntrack の道具が要る）、`ESTABLISHED` などの状態が見える。`sudo nft list ruleset` はルールを表示する。Wireshark では、表示フィルター `tcp.flags.syn == 1 && tcp.flags.ack == 0` で新しい接続を開こうとするパケットが見える。
 
 ## 参考
 
