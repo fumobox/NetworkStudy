@@ -29,8 +29,8 @@ $ sysctl net.inet.tcp.use_newreno
 net.inet.tcp.use_newreno: 0
 ```
 
-- 0 means macOS does not use NewReno: its TCP uses CUBIC (RFC 9438) by default. The slow start and the reactions to loss of this page are the same idea; CUBIC only grows cwnd differently after a loss.
-- On Linux, `sysctl net.ipv4.tcp_congestion_control` shows the algorithm (usually `cubic`), and `ss -ti` shows each connection’s current `cwnd`, `ssthresh` and RTT, the values this page draws. In Wireshark, choose Statistics → TCP Stream Graphs → Stevens to see a connection’s sequence numbers grow.
+- 0 means macOS does not use NewReno: its TCP uses CUBIC (RFC 9438) by default. The slow start and the reactions to loss of this page are the same idea; CUBIC grows cwnd differently and, on a loss, cuts it to 0.7 times instead of half.
+- On Linux, `sysctl net.ipv4.tcp_congestion_control` shows the algorithm (usually `cubic`), and `ss -ti` shows each connection’s current `cwnd`, `ssthresh` and RTT, the values this page draws. In Wireshark, choose Statistics → TCP Stream Graphs → Time Sequence (Stevens) to see a connection’s sequence numbers grow.
 
 ## About this page
 

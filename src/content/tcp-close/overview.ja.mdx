@@ -29,21 +29,21 @@ curl が接続を閉じた後、先に閉じた側である自分の側では、
 
 ```sh
 curl -4 -s -o /dev/null https://example.com/ ; sleep 1
-netstat -an -p tcp | grep 172.66.147.243
+netstat -an -p tcp | grep -E '104.20.23.154|172.66.147.243'
 sysctl net.inet.tcp.msl
 ```
 
-出力（macOS 26、2026-09-29。自分のアドレスは置き換えた。example.com のアドレスは違うことがある）:
+出力（macOS 26、2026-09-29。自分のアドレスは置き換え、列の幅を詰めた）:
 
 ```
 $ curl -4 -s -o /dev/null https://example.com/ ; sleep 1
-$ netstat -an -p tcp | grep 172.66.147.243
+$ netstat -an -p tcp | grep -E '104.20.23.154|172.66.147.243'
 tcp4  0  0  192.168.1.10.52257  172.66.147.243.443  TIME_WAIT
 $ sysctl net.inet.tcp.msl
 net.inet.tcp.msl: 15000
 ```
 
-- 接続は TIME_WAIT にある（netstat は状態の名前を下線で書く）。30 秒ほどしてもう一度 netstat を実行すると、消えている。macOS の MSL は 15 秒（`15000` ms）なので、TIME-WAIT は 2 × MSL = 30 秒。RFC 9293 が例に挙げる 2 分より短い。
+- 接続は TIME_WAIT にある（netstat は状態の名前を下線で書く）。30 秒ほどしてもう一度 netstat を実行すると、消えている。macOS の MSL は 15 秒（`15000` ms）なので、TIME-WAIT は 2 × MSL = 30 秒。RFC 9293 が定める 2 分より短い。
 - Linux では `ss -tan state time-wait` で同じものが見える。Linux は TIME-WAIT を 60 秒保つ。Wireshark では、表示フィルター `tcp.flags.fin == 1` で FIN のセグメントが見える。
 
 ## 参考

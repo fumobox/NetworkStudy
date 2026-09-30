@@ -42,7 +42,7 @@ $ sysctl net.inet.tcp.sack
 net.inet.tcp.sack: 1
 ```
 
-- 1 は SACK が有効なこと。SYN で SACK-permitted を申し出て、相手が同意すれば、ACK に SACK のブロックを付けられる。
+- 1 は SACK が有効なこと。SYN で SACK-Permitted を申し出て、相手が同意すれば、ACK に SACK のブロックを付けられる。
 - `netstat -s -p tcp` の出力のうち、「data packet … retransmitted」「duplicate ack」「SACK recovery episode」「segment rexmit in SACK recovery episodes」の行が、コンピューターが起動してから、このページが描く出来事を数えている。
 - Linux では、`sysctl net.ipv4.tcp_sack` が同じ設定を、`nstat -az | grep -i sack` が数を表示する。Wireshark では、表示フィルター `tcp.options.sack_le` で SACK のブロックを付けた ACK が、`tcp.analysis.retransmission || tcp.analysis.fast_retransmission` で再送が見える。
 
