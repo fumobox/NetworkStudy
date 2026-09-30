@@ -30,6 +30,22 @@ If the receiver reopened the window as soon as a few bytes were free, the sender
 - The ACK with **win=0**, the **window probe**, and the ACK that reopens the window.
 - In “What if…”, a **lost window update** recovered by the next probe, an application that reads **immediately**, and one that reads **500 bytes at a time** (silly window avoidance).
 
+## Try it yourself
+
+```sh
+sysctl net.inet.tcp.autorcvbufmax
+```
+
+Output (macOS 26, 2026-09-29):
+
+```
+$ sysctl net.inet.tcp.autorcvbufmax
+net.inet.tcp.autorcvbufmax: 4194304
+```
+
+- macOS grows each connection’s receive buffer as needed, up to 4 MiB. The window it advertises follows the free space in that buffer, as in the walkthrough. Windows this large only fit in the 16-bit window field with the window scale option (RFC 7323).
+- On Linux, `sysctl net.ipv4.tcp_rmem` shows the minimum, default and maximum receive buffer, and `ss -tmi` shows each connection’s buffers. In Wireshark, the display filter `tcp.analysis.zero_window || tcp.analysis.window_update` shows zero windows and window updates, and `tcp.window_size` is the window after scaling.
+
 ## References
 
 - [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.8.6 “Managing the Window”

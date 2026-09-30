@@ -30,6 +30,22 @@ TCP は、受け取ったデータを、アプリケーションが読んだと�
 - **win=0** の ACK、**ウィンドウプローブ**、ウィンドウを開く ACK。
 - 「もしも…」のオプションで、**ウィンドウの更新が失われ**次のプローブで回復する場合、**すぐに読む**アプリケーション、**500 バイトずつ読む**アプリケーション（SWS 回避）。
 
+## 手元で試す
+
+```sh
+sysctl net.inet.tcp.autorcvbufmax
+```
+
+出力（macOS 26、2026-09-29）:
+
+```
+$ sysctl net.inet.tcp.autorcvbufmax
+net.inet.tcp.autorcvbufmax: 4194304
+```
+
+- macOS は、接続ごとの受信バッファーを必要に応じて 4 MiB まで大きくする。通知するウィンドウは、ステップ実行と同じく、このバッファーの空きに従う。これほど大きなウィンドウが 16 ビットのウィンドウのフィールドに収まるのは、ウィンドウスケールのオプション（RFC 7323）があるから。
+- Linux では、`sysctl net.ipv4.tcp_rmem` が受信バッファーの最小・既定・最大を、`ss -tmi` が各接続のバッファーを表示する。Wireshark では、表示フィルター `tcp.analysis.zero_window || tcp.analysis.window_update` でゼロウィンドウとウィンドウの更新が見え、`tcp.window_size` はスケールした後のウィンドウ。
+
 ## 参考
 
 - [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.8.6「Managing the Window」

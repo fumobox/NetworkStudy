@@ -28,6 +28,24 @@ How cwnd and ssthresh change during recovery is shown in the congestion control 
 - The **scoreboard** on the sender: in flight, ACKed, SACKed, retransmitted.
 - In “What if…”, **cumulative ACKs only** (the partial ACK costs a round trip), **one** lost segment, and a lost **last** segment (only the RTO helps).
 
+## Try it yourself
+
+```sh
+sysctl net.inet.tcp.sack
+netstat -s -p tcp
+```
+
+Output of the first command (macOS 26, 2026-09-29):
+
+```
+$ sysctl net.inet.tcp.sack
+net.inet.tcp.sack: 1
+```
+
+- 1 means SACK is on: the SYN offers SACK-Permitted, and if the other side agrees, ACKs can carry SACK blocks.
+- In the output of `netstat -s -p tcp`, the lines “data packet … retransmitted”, “duplicate ack”, “SACK recovery episode” and “segment rexmit in SACK recovery episodes” count, since the computer started, the events this page draws.
+- On Linux, `sysctl net.ipv4.tcp_sack` shows the same setting and `nstat -az | grep -i sack` the counters. In Wireshark, the display filter `tcp.options.sack_le` shows ACKs that carry SACK blocks, and `tcp.analysis.retransmission || tcp.analysis.fast_retransmission` the retransmissions.
+
 ## References
 
 - [RFC 5681: TCP Congestion Control](https://www.rfc-editor.org/rfc/rfc5681) — §3.2 “Fast Retransmit/Fast Recovery”

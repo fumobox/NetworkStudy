@@ -23,6 +23,29 @@ The side that sends the last ACK waits in TIME-WAIT for **2MSL** (twice the maxi
 - How **Seq**, **Ack**, **SND.NXT**, and **RCV.NXT** move by one for each FIN.
 - In the “What if…” options: a **simultaneous close**, where both sides pass through CLOSING; losing the **last ACK**; and an **abort** with RST, which skips TIME-WAIT.
 
+## Try it yourself
+
+After curl closes its connection, the connection stays for a while in TIME-WAIT on your side, the side that closed first:
+
+```sh
+curl -4 -s -o /dev/null https://example.com/ ; sleep 1
+netstat -an -p tcp | grep -E '104.20.23.154|172.66.147.243'
+sysctl net.inet.tcp.msl
+```
+
+Output (macOS 26, 2026-09-29; the local address is replaced, and the columns are narrowed):
+
+```
+$ curl -4 -s -o /dev/null https://example.com/ ; sleep 1
+$ netstat -an -p tcp | grep -E '104.20.23.154|172.66.147.243'
+tcp4  0  0  192.168.1.10.52257  172.66.147.243.443  TIME_WAIT
+$ sysctl net.inet.tcp.msl
+net.inet.tcp.msl: 15000
+```
+
+- The connection is in TIME_WAIT (netstat writes the state names with an underscore). Run netstat again after half a minute and it is gone: macOS uses an MSL of 15 seconds (`15000` ms), so TIME-WAIT lasts 2 × MSL = 30 seconds, shorter than the 2 minutes RFC 9293 assumes.
+- On Linux, `ss -tan state time-wait` lists the same; Linux keeps TIME-WAIT for 60 seconds. In Wireshark, the display filter `tcp.flags.fin == 1` shows the FIN segments.
+
 ## References
 
 - [RFC 9293: Transmission Control Protocol (TCP)](https://www.rfc-editor.org/rfc/rfc9293) — §3.6 “Closing a Connection”, §3.4.2 “Knowing When to Keep Quiet”

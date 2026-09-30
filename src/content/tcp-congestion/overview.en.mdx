@@ -16,6 +16,22 @@ The sender keeps a **congestion window (cwnd)**: how much data it may have sent 
 
 This “increase slowly, cut in half on loss” pattern is called **AIMD** (additive increase, multiplicative decrease) and gives the sawtooth shape in the graph.
 
+## Try it yourself
+
+```sh
+sysctl net.inet.tcp.use_newreno
+```
+
+Output (macOS 26, 2026-09-29):
+
+```
+$ sysctl net.inet.tcp.use_newreno
+net.inet.tcp.use_newreno: 0
+```
+
+- 0 means macOS does not use NewReno: its TCP uses CUBIC (RFC 9438) by default. The slow start and the reactions to loss of this page are the same idea; CUBIC grows cwnd differently and, on a loss, cuts it to 0.7 times instead of half.
+- On Linux, `sysctl net.ipv4.tcp_congestion_control` shows the algorithm (usually `cubic`), and `ss -ti` shows each connection’s current `cwnd`, `ssthresh` and RTT, the values this page draws. In Wireshark, choose Statistics → TCP Stream Graphs → Time Sequence (Stevens) to see a connection’s sequence numbers grow.
+
 ## About this page
 
 This page follows TCP Reno as described in RFC 5681 and simplifies it: it counts segments instead of bytes, summarizes each round trip as one step, and starts from cwnd = 1 and ssthresh = 8. Today’s operating systems usually use other algorithms, such as CUBIC (RFC 9438) on Linux, but the reactions to duplicate ACKs and timeouts are the same idea.
