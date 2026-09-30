@@ -11,7 +11,8 @@ export default defineConfig({
   base: '/NetworkStudy/',
   // MDX は JSX に変換してから React のプラグインに渡すため、先に実行する
   plugins: [
-    { enforce: 'pre', ...mdx({ remarkPlugins: [remarkGfm] }) },
+    // .md は MDX にしない（テストが README などを ?raw の文字列として読む。概要はすべて .mdx）
+    { enforce: 'pre', ...mdx({ remarkPlugins: [remarkGfm], mdExtensions: [] }) },
     // MDX を編集したときも Fast Refresh が効くように、.mdx も対象にする
     react({ include: /\.(mdx|[tj]sx?)$/ }),
     tailwindcss(),
