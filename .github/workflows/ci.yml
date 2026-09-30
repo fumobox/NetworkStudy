@@ -16,8 +16,8 @@ jobs:
   check:
     name: Check
     runs-on: ubuntu-24.04
-    # Lighthouse CI は sitemap.xml の全ページ（テーマと学習の道筋 × en / ja）を 1 つずつ測るので、ページが増えると長くなる
-    timeout-minutes: 40
+    # e2e（axe を全ページ × 明暗で実行）はテーマとともに伸びる。Lighthouse CI は代表の 8 URL に固定（lighthouserc.cjs）
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
