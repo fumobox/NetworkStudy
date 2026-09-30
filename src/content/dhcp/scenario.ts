@@ -512,6 +512,8 @@ function initFlow(options: DhcpOptions): Step[] {
             ipDst: BROADCAST_IP,
             ciaddr: ZERO,
             yiaddr: ZERO,
+            // RFC 2131 §3.1: 答える DHCPDISCOVER と同じ secs を使う
+            secs: options.discoverLost ? FIRST_RETRANSMIT_MS / 1000 : 0,
             broadcastFlag: true,
             options: [
               OPT.type('DHCPREQUEST'),

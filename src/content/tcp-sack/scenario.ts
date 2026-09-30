@@ -320,8 +320,8 @@ function buildSteps(options: TcpSackOptions): readonly Step[] {
       id: 'rto',
       title: { en: 'Only the timeout helps', ja: 'タイムアウトを待つしかない' },
       description: {
-        en: 'The sender has to wait for the retransmission timer (RTO, at least 1 second) and then resends the last segment. Modern TCP stacks shorten this wait with a tail loss probe (RACK-TLP, RFC 8985).',
-        ja: '送信側は再送タイマー（RTO。最短でも 1 秒）を待ってから、最後のセグメントを再送するしかない。今の TCP の実装は、テールロスプローブ（RACK-TLP、RFC 8985）でこの待ちを短くする。',
+        en: 'The sender has to wait for the retransmission timer (RTO; RFC 6298 says it should be at least 1 second, though real stacks often use less) and then resends the last segment. Modern TCP stacks shorten this wait with a tail loss probe (RACK-TLP, RFC 8985).',
+        ja: '送信側は再送タイマー（RTO。RFC 6298 は 1 秒以上にすべきとするが、実際の実装はもっと短いことが多い）を待ってから、最後のセグメントを再送するしかない。今の TCP の実装は、テールロスプローブ（RACK-TLP、RFC 8985）でこの待ちを短くする。',
       },
       events: [
         { kind: 'timer', actorId: SENDER, name: 'RTO', durationMs: RTO_MS },

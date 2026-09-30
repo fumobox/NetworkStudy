@@ -4,7 +4,7 @@ A TCP ACK is **cumulative**: its Ack number is the first byte the receiver is st
 
 ## Fast retransmit
 
-Waiting for the retransmission timer (RTO, at least 1 second) would be slow. Instead, when the sender sees the **third duplicate ACK**, it concludes that the segment was lost and resends it at once. It waits for three because one or two duplicates may just mean the segments were **reordered** on the way.
+Waiting for the retransmission timer (RTO; RFC 6298 says it should be at least 1 second, though real stacks often use less) would be slow. Instead, when the sender sees the **third duplicate ACK**, it concludes that the segment was lost and resends it at once. It waits for three because one or two duplicates may just mean the segments were **reordered** on the way.
 
 ## One hole per round trip
 

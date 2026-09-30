@@ -135,6 +135,13 @@ describe('dhcpScenario', () => {
     expect(finalPc(steps).elapsedMs).toBe(4000)
   })
 
+  it('DHCPREQUEST の secs は、答える DHCPDISCOVER と同じ（RFC 2131 §3.1）', () => {
+    const request = (discoverLost: boolean) =>
+      messages(build({ discoverLost })).find((m) => m.id === 'request')
+    expect(field(request(false), 'secs')).toBe('0')
+    expect(field(request(true), 'secs')).toBe('4')
+  })
+
   describe('リースの更新（RFC 2131 §4.3.2 RENEWING、§4.4.5）', () => {
     const steps = build({ flow: 'renew' })
 

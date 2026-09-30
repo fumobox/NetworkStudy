@@ -845,8 +845,8 @@ function homeStep(to: ActorId, sid: string): StepBody {
           ja: 'マロリーのブラウザーは、クライアントがアリスのものだと信じるセッションを持つ。マロリーはアリスとしてクライアントを使え、API を通じてアリスの写真にも届く。',
         }
       : {
-          en: 'The client sends the browser on to /home, so that the URL with the code does not stay in the address bar or leak through Referer (RFC 9700 §4.2.4). Look at what passed through the browser: state, nonce, the code_challenge and the code. The code_verifier, the client secret and all three tokens never did.',
-          ja: 'クライアントはブラウザーを /home に送り、コードの入った URL がアドレスバーに残ったり、Referer で漏れたりしないようにする（RFC 9700 §4.2.4）。ブラウザーを通ったものを見る。state、nonce、code_challenge、コード。code_verifier、クライアントの秘密、3 つのトークンは、どれも通っていない。',
+          en: 'The client sends the browser on to /home, a common practice, so that the URL with the code does not stay in the address bar. Against leaks through Referer and history, RFC 9700 (§4.2.4, §4.3.1) relies on codes that work only once, a Referrer-Policy and no third-party content on the callback page. Look at what passed through the browser: state, nonce, the code_challenge and the code. The code_verifier, the client secret and all three tokens never did.',
+          ja: 'クライアントはブラウザーを /home に送り、コードの入った URL がアドレスバーに残らないようにする。よくある作り方。Referer や履歴からの漏れに対して RFC 9700（§4.2.4、§4.3.1）が頼るのは、1 回しか使えないコード、Referrer-Policy、コールバックのページにサードパーティーのリソースを置かないこと。ブラウザーを通ったものを見る。state、nonce、code_challenge、コード。code_verifier、クライアントの秘密、3 つのトークンは、どれも通っていない。',
         },
     events: [
       send(

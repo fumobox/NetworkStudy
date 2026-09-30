@@ -551,10 +551,16 @@ function buildSteps(options: TlsOptions): readonly Step[] {
                 name: 'certificate_list',
                 value: certs.sent.join('\n'),
                 highlight: true,
-                description: {
-                  en: 'Each certificate is signed by the next one. The root is not included.',
-                  ja: '各証明書は次の証明書で署名されている。ルートは含めない。',
-                },
+                description:
+                  problem === 'unknownCa'
+                    ? {
+                        en: 'Each certificate is signed by the next one. Here the server also sends its own root, which proves nothing unless the client already trusts it.',
+                        ja: '各証明書は次の証明書で署名されている。ここではサーバーが自分のルートも送るが、クライアントがもともと信頼していなければ何の証明にもならない。',
+                      }
+                    : {
+                        en: 'Each certificate is signed by the next one. The root is not included.',
+                        ja: '各証明書は次の証明書で署名されている。ルートは含めない。',
+                      },
               },
             ],
           }),

@@ -257,8 +257,8 @@ const FIELD_TEXT = {
     ja: '1.1 は、応答をバックエンドから HTTP/1.1 で受けたという意味',
   },
   removed: {
-    en: 'Not a header: hop-by-hop fields the proxy removed (RFC 9110 §7.6.1). HTTP/2 does not allow them at all',
-    ja: 'ヘッダーではない。プロキシが外した区間ごとのフィールド（RFC 9110 §7.6.1）。HTTP/2 ではそもそも使えない',
+    en: 'Not a header: hop-by-hop fields the proxy removed (RFC 9110 §7.6.1). HTTP/2 does not allow them (except TE: trailers)',
+    ja: 'ヘッダーではない。プロキシが外した区間ごとのフィールド（RFC 9110 §7.6.1）。HTTP/2 では、TE: trailers を除いて使えない',
   },
   healthz: {
     en: 'The path, interval and thresholds of health checks are product settings, not part of HTTP',
