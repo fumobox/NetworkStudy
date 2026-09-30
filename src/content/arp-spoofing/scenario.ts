@@ -403,7 +403,7 @@ const FROM_SERVER: IpFrame = {
   ipSrc: ADDRESSES.server.ip,
   ipDst: ADDRESSES.pc.ip,
 }
-const PACKET_toServer = `IP ${ADDRESSES.pc.ip} → ${ADDRESSES.server.ip}`
+const PACKET_TO_SERVER = `IP ${ADDRESSES.pc.ip} → ${ADDRESSES.server.ip}`
 
 /** DHCPACK（RFC 2131、RFC 2132）。層は付けない（DHCP のテーマと同じく平らな一覧） */
 function dhcpAckMessage(
@@ -726,7 +726,7 @@ function poisonSteps(): Step[] {
           }),
         ),
         set(SWITCH, DAI, forward(ADDRESSES.attacker.port)),
-        set(ATTACKER, CAPTURED, capturedTable([[PACKET_toServer, '-']])),
+        set(ATTACKER, CAPTURED, capturedTable([[PACKET_TO_SERVER, '-']])),
       ],
     },
     {
@@ -756,7 +756,7 @@ function poisonSteps(): Step[] {
         set(
           ATTACKER,
           CAPTURED,
-          capturedTable([[PACKET_toServer, `gateway (${ADDRESSES.gateway.mac})`]]),
+          capturedTable([[PACKET_TO_SERVER, `gateway (${ADDRESSES.gateway.mac})`]]),
         ),
       ],
     },
